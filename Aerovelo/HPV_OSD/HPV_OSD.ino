@@ -66,7 +66,7 @@ char slipBuffer[N_SLIP];
 int slipLen;
 
 char display_string[128];
-float cadence;
+float cadence, power = 120;
 uint32_t GPS_Time, GPS_Distance;
 uint8_t GPS_NumSats;
 int32_t GPS_Altitude, GPS_Heading;
@@ -162,7 +162,7 @@ void loop()
   if (slipLen>0){
     Serial.println(slipLen);
     OSD_SlipParse(slipBuffer);
-    slipBuffer[slipLen] = 0;
+    slipBuffer[slipLen] = 0; // Is this just the null character? Isn't this unsafe?
     //memcpy((void*)completedPacket, (void*)slipBuffer, slipLen+1);
     Serial.println(slipBuffer);
     //Serial.println(completedPacket);

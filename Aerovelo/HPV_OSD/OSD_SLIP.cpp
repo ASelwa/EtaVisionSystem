@@ -1,6 +1,6 @@
 #include "OSD_SLIP.h"
 
-extern float cadence;
+extern float cadence, power;
 extern uint32_t GPS_Time, GPS_Distance;
 extern uint8_t GPS_NumSats;
 extern int32_t GPS_Altitude, GPS_Heading;
@@ -43,6 +43,14 @@ void OSD_SlipParse(char *slipBuffer) {
 		INSERT CODE HERE
      		*/
 
+    break;
+    
+  case ID_POWER:
+    power = 120;
+    /*
+		INSERT CODE HERE
+     		*/
+  
     break;
 
 

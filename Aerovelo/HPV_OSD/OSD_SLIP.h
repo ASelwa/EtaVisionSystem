@@ -15,6 +15,7 @@
 #define ID_PROFNUM      12
 #define ID_TSPEED       13
 #define ID_PROFNAME     14
+#define ID_POWER        15
 
 typedef struct {
           uint16_t year;

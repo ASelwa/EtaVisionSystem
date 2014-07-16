@@ -27,6 +27,7 @@
 #define ID_PROFNUM      12
 #define ID_TSPEED       13
 #define ID_PROFNAME     14
+#define ID_POWER        15
 
 #define MAX_PROFILE_NUM   3
 
@@ -82,8 +83,6 @@ void setup() {
   GPS.Init();
 
   
-
-
   // Set up SD
   sd_Init();
   
@@ -111,7 +110,26 @@ void setup() {
 }
 
 int8_t START = 0;
+
 void loop() {
+        static int cadenceTime = 200;
+  
+        *((uint8_t*)slipBuffer + 0) = ID_CADENCE;
+        *((uint16_t*)(slipBuffer + 1 + 0)) = cadenceTime; //cadenceTime - cadenceTimePrev;
+        *((uint8_t*)slipBuffer + 1 + 2) = 2; //cadenceRev - cadenceRevPrev;
+        *((uint8_t*)slipBuffer + 1 + 3) = 0;
+        //Serial.println("Cadence:");
+        //Serial.println(*((uint16_t*)slipBuffer + 1 + 0));
+        //Serial.println(*((uint8_t*)slipBuffer + 1 + 2));
+
+        //SlipPacketSend(uint8_t len, char *slipBuffer, HardwareSerial *serial);
+        SlipPacketSend(4, (char*)slipBuffer, &Serial3);
+        
+        cadenceTime += 100;
+        delay(1000);
+}
+
+void loop1() { // Original loop
 
   int8_t slipLen;
   //oscIn.packetAvailable(); //SLIP
@@ -196,7 +214,7 @@ void loop() {
               Serial.println(slipBuffer[1]);
               break;
 
-            }
+            } // Why is this bracket after the next case????????????????????????????
           }
           //sd_Write(sdBuffer, antFilename);
         }
