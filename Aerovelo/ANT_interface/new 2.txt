@@ -1,0 +1,150 @@
+Set up CTS interrupt. 
+Set up ANT+ reset pin 
+Receive successful
+Set up serial ports. 
+Program start!
+Set up Channel. 
+New command; T = 14
+New command; T = 14
+Receive successful
+1 6F 1 CB 
+Receive successful
+Receive successful
+3 40 0 42 0 A5 
+Receive successful
+Receive successful
+3 40 0 43 0 A4 
+Receive successful
+Receive successful
+3 40 0 4B 0 AC 
+Receive successful
+New command; T = 2002
+New command; T = 4002
+New command; T = 6002
+New command; T = 8002
+New command; T = 10002
+New command; T = 12002
+5 51 0 0 0 B 0 FB 
+9 4E 0 20 3 0 CC 1D A6 A 43 FE 
+Cadence =    0; Torque =    0; Power = ?.3;
+New command; T = 14002
+9 4E 0 20 4 0 CC 28 45 E E1 89 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 20 4 0 CC 28 45 E E1 89 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 20 4 0 CC 28 45 E E1 89 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 20 5 0 CC 33 29 13 9D 9E 
+Cadence =    0; Torque =    0; Power = ?.3;
+New command; T = 16002
+9 4E 0 20 5 0 CC 33 29 13 9D 9E 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 20 5 0 CC 33 29 13 9D 9E 
+Cadence =    0; Torque =    0; Power = ?.3;
+3 40 0 1 2 E4 
+9 4E 0 20 6 0 CC 3D CF 18 45 A6 
+Cadence =    0; Torque =    0; Power = ?.3;
+New command; T = 18002
+9 4E 0 20 6 0 CC 3D CF 18 45 A6 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 20 7 0 CC 48 8D 1C F7 26 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 20 7 0 CC 48 8D 1C F7 26 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 20 8 0 CC 52 23 22 1F 4B 
+Cadence =    0; Torque =    0; Power = ?.3;
+New command; T = 20002
+9 4E 0 20 8 0 CC 52 23 22 1F 4B 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 20 9 0 CC 59 29 26 8F DF 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 20 A 0 CC 5E A8 2A 80 59 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 20 B 0 CC 63 2B 2D CC AD 
+Cadence =    0; Torque =    0; Power = ?.3;
+New command; T = 22002
+9 4E 0 20 C 0 CC 67 26 30 98 EA 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 20 D 0 CC 6A CE 33 F 9A 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 20 E 0 CC 6E 34 35 6E 0 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 20 F 0 CC 71 6E 37 70 58 
+Cadence =    0; Torque =    0; Power = ?.3;
+New command; T = 24002
+9 4E 0 20 10 0 CC 74 B5 38 B4 52 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 20 10 0 CC 74 B5 38 B4 52 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 20 10 0 CC 74 B5 38 B4 52 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 20 10 0 CC 74 B5 38 B4 52 
+Cadence =    0; Torque =    0; Power = ?.3;
+New command; T = 26002
+9 4E 0 20 10 0 CC 74 B5 38 B4 52 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 20 10 0 CC 74 B5 38 B4 52 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 20 10 0 CC 74 B5 38 B4 52 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 20 10 0 CC 74 B5 38 B4 52 
+Cadence =    0; Torque =    0; Power = ?.3;
+New command; T = 28002
+9 4E 0 1 10 1 0 0 0 1 FA 8 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 1 10 1 0 0 0 1 FA 8 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 1 10 1 0 0 0 1 F9 B 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 1 10 1 0 0 0 1 F9 B 
+Cadence =    0; Torque =    0; Power = ?.3;
+New command; T = 30002
+9 4E 0 1 10 1 0 0 0 1 F9 B 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 1 10 1 0 0 0 1 F9 B 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 1 10 1 0 0 0 1 F9 B 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 1 10 1 0 0 0 1 F9 B 
+Cadence =    0; Torque =    0; Power = ?.3;
+New command; T = 32002
+9 4E 0 1 10 1 0 0 0 1 F9 B 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 1 10 1 0 0 0 1 F9 B 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 1 10 1 0 0 0 1 F9 B 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 1 10 1 0 0 0 1 F9 B 
+Cadence =    0; Torque =    0; Power = ?.3;
+New command; T = 34002
+9 4E 0 1 10 1 0 0 0 1 F9 B 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 1 10 1 0 0 0 1 F9 B 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 1 10 1 0 0 0 1 F9 B 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 1 10 1 0 0 0 1 F9 B 
+Cadence =    0; Torque =    0; Power = ?.3;
+New command; T = 36002
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 FA FF FF 0 97 19 D8 1C 53 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 FA FF FF 0 97 19 D8 1C 53 
+Cadence =    0; Torque =    0; Power = ?.3;
+New command; T = 38002
+9 4E 0 FB 0 0 C F7 D8 1C FF D8 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 FB 0 0 C F7 D8 1C FF D8 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 FB 0 0 C F7 D8 1C FF D8 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 FB 0 0 C F7 D8 1C FF D8 
+Cadence =    0; Torque =    0; Power = ?.3;
+New command; T = 40002
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+Cadence =    0; Torque =    0; Power = ?.3;
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+Cadence =    0; Torque =    0; Power = ?.3;
