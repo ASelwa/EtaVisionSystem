@@ -212,7 +212,7 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
 	uint8_t i;
 	static uint8_t prev_data[12] = {0};
 	static uint16_t offset = 507;
-	static uint16_t coast_time = 0;
+	static int last_msg_time = 0;
 	uint16_t temp_time = 0;
 	float cadence = 0;
 	float torque_freq = 0;
@@ -229,10 +229,13 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
 	}
 	
 	if (print == 2) {
+		Serial.print("Time: ");
+		Serial.println(millis());
 		for (i=0;i<12;i++) {
 			Serial.print(pwrRx[i], HEX);
 			Serial.print(" ");
 		} Serial.print("\n");
+		
 	}
 	switch(pwrRx[3]) {
 	
@@ -247,8 +250,9 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
 						
 				// if not first data, and prev_data is 9 4E ch# 20 ... ie not corrupted
 				if (!first_data && prev_data[0] == 0x09 && prev_data[1] == 0x4E && prev_data[3] == 0x20) {
-			
-					if ( cB(pwrRx[7], pwrRx[8]) < cB(prev_data[7], prev_data[8])) {
+					if (*coast) {
+						temp_time = (millis() - last_msg_time)*2;
+					} else if ( cB(pwrRx[7], pwrRx[8]) < cB(prev_data[7], prev_data[8])) {
 						temp_time = (65536-cB(prev_data[7], prev_data[8])) + cB(pwrRx[7],pwrRx[8]);
 						//Serial.print("\ntemp_time Rollover!\n");
 					} else {
@@ -272,7 +276,7 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
 					torque = (torque_freq * 10) / cB(pwrRx[5], pwrRx[6]);
 					pwr = torque * cadence * 3.14159f / 30;
 				
-					if (print ==1) {
+					if (print == 1) {
 						Serial.print("Time stamp: ");
 						Serial.print(cB(pwrRx[7], pwrRx[8]));
 						Serial.print("\tTime diff: ");
@@ -300,7 +304,7 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
 					prev_data[i] = pwrRx[i];
 				}
 				// received new power data message, so must not be coasting anymore
-				if (*coast == true) *coast = false;
+				*coast = false;
 			}
 			break;
 		
@@ -312,20 +316,14 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
 				Serial.print(cB(pwrRx[9], pwrRx[10]));
 				Serial.println("Hz.");
 			}
-			if (*coast == false) coast_time = millis();
-			// add time past to prev_data time stamp.
-			tc = cB(prev_data[7],prev_data[8]) + (millis() - coast_time)*2;
-			prev_data[7] = (tc>>8);
-			prev_data[8] = ((tc<<8)>>8);
+
+			last_msg_time = millis();
 			*coast = true;
 			break;
 		
 		default:
-			if (*coast == false) coast_time = millis();
-			// add time past to prev_data time stamp.
-			tc = cB(prev_data[7],prev_data[8]) + (millis() - coast_time)*2;
-			prev_data[7] = (tc>>8); 
-			prev_data[8] = ((tc<<8)>>8);
+
+			last_msg_time = millis();
 			*coast = true;
 			break;
 			
@@ -364,6 +362,7 @@ float getElevation(float distance) {
 	int distIndex = 0;
 	const uint8_t elevationsLength = 19;
 	const float endSlope = -0.00715;
+	float elev;
 	
 	// Simple extrapolation
 	if (distance > elevations[elevationsLength-1][0]) {
@@ -375,7 +374,10 @@ float getElevation(float distance) {
 		distIndex++;
 	}
 	
-	float elev = elevations[distIndex-1][1] + (distance - elevations[distIndex-1][0]) * (elevations[distIndex][1] - elevations[distIndex-1][1]) / (elevations[distIndex][0] - elevations[distIndex-1][0]);
+	if (distIndex == 0)
+		elev = elevations[0][1];
+	else
+		elev = elevations[distIndex-1][1] + (distance - elevations[distIndex-1][0]) * (elevations[distIndex][1] - elevations[distIndex-1][1]) / (elevations[distIndex][0] - elevations[distIndex-1][0]);
 	
 	return elev;
 }
@@ -440,8 +442,19 @@ void simulate2(float power, uint16_t time_interval, uint8_t print, float* velo, 
 	t1 = millis();
 	if (power == 0 && time_interval == 0) return;
 
-	float velocity = *velo;
-	float distance = *dist;
+	static float velocity = 0;
+	static float distance = 0;
+		
+	
+	if (isnan(velocity)) {
+		Serial.print("static variable velocity in function simulate2 is NAN. velocity passed in as a parameter is ");
+		Serial.println(*velo);
+		velocity = *velo;
+	}
+		
+// start iterations
+bool calc_run = true;
+while (calc_run) {
 		
 	// constants
 	float g = 9.81;	// m/s
@@ -492,14 +505,28 @@ void simulate2(float power, uint16_t time_interval, uint8_t print, float* velo, 
 	if (velocity == 0) Paero = 0;
 	else Paero = q*CdA*velocity;
 	
-	// change in elevation
-	float Pelev = 0;
-
-	float power_left = 0;
-	float power_interval = time_interval * 0.0005;
+	if (isnan(velocity)) {
+		Serial.print("static variable velocity in function simulate2 is NAN. (check #2) velocity passed in as a parameter is ");
+		Serial.println(*velo);
+		velocity = *velo;
+	}
+	
 	float prev_velo = velocity;	// for average speed calculation used in distance formula
 	float prev_dist = distance; // for Pelev
+	float power_left = 0;
+	float power_interval = time_interval * 0.0005; // in seconds
 	
+	// change in elevation
+	float change_elev, Pelev = 0; 
+	change_elev = getElevation(prev_dist + prev_velo*power_interval)-getElevation(prev_dist); // guess elevation change using previous velocity and time travelled
+	Serial.print("Elevation change = ");
+	Serial.println(change_elev);
+	Serial.println(M*g*change_elev);
+	Serial.println(power_interval);
+	Pelev = M*(-g)*change_elev/power_interval; //kgm2/s3  kg*m/s2 * m / s 
+
+	float delta_v, delta_d;
+	/***************** subtract the powers added in the previous iteration first *******************/
 	// check for bad input (power can't be negative)
 	if (power >= 0) {
 	
@@ -507,37 +534,21 @@ void simulate2(float power, uint16_t time_interval, uint8_t print, float* velo, 
 		//energy_in = power_in * power_interval;	// energy (joules) input since previous measurement
 		
 		power_left = power_in 	/*rolling friction*/ - Proll
-								/*air drag*/ - Paero;
+								/*air drag*/ - Paero
+								/*elevation change*/ + Pelev;
 		
-		float change_elev;
-		while (!calc_done) {
+		if (power_left < 0)	delta_v = (-1)*sqrt(2*(-1)*power_left*power_interval/(M + /*Mwheels*/ 2));
+		else if (power_left == 0) delta_v = 0;
+		else delta_v = sqrt(2*power_left*power_interval/(M + /*Mwheels*/ 2));
+			
+		delta_d = 0.5*(prev_velo*2 + delta_v)*power_interval;	
 		
-			if (power_left < 0)	velocity -= sqrt(2*(-1)*power_left*power_interval/(M + /*Mwheels*/ 2));
-			else if (power_left == 0) velocity = velocity;
-			else velocity += sqrt(2*power_left*power_interval/(M + /*Mwheels*/ 2));
-			if (velocity < 0) velocity = 0;
-			
-			distance += 0.5*(prev_velo + velocity)* power_interval;	
-			
-			power_left -= Pelev; // Pelev starts as 0
-			
-			change_elev = getElevation(distance)-getElevation(prev_dist);
-			Pelev = M*(-1)*g*change_elev/power_interval;
-
-			power_left += Pelev;
-			
-			velocity = prev_velo;
-			distance = prev_dist;
-			
-		}
+		velocity += delta_v;
+		distance += delta_d;
 		
-		
+		if (velocity < 0) velocity = 0;
 		
 		t2 = millis();
-		if (print) {
-			Serial.print("Time: ");
-			Serial.println(t2);
-		}
 		
 		if (print == 1) {
 			Serial.print("Power: ");
@@ -564,11 +575,15 @@ void simulate2(float power, uint16_t time_interval, uint8_t print, float* velo, 
 			Serial.print(Proll);
 			Serial.print(" W.\tAir Power: ");
 			Serial.print(Paero);
+			Serial.print(" W.\tElev Power: ");
+			Serial.print(Pelev);
 			Serial.print(" W.\tPower left: ");
 			Serial.print(power_left);
 			Serial.print(" W.\tVelocity: ");
 			Serial.print(velocity*3.6);
-			Serial.println(" km/h.");
+			Serial.print(" km/h.\tDistance: ");
+			Serial.print(distance*1.0);
+			Serial.print(" m.\n");
 		} else if (print == 3) {
 			Serial.print("Velocity = ");
 			Serial.print(velocity*3.6);
@@ -576,6 +591,9 @@ void simulate2(float power, uint16_t time_interval, uint8_t print, float* velo, 
 		}
 		if (print) Serial.flush();
 	}
+	if (abs(prev_velo - velocity) <= 1) calc_run = false;
+} // calculation is complete
+	
 	*dist = distance;
 	*velo = velocity;
 }
@@ -605,10 +623,10 @@ void loop() {
 			if (len = receiveANT(rxBuffer) > 0) {
 				readPowerMeter(rxBuffer, 0, &time_int, &power, &cadence, &coast);
 				if (!coast && power != 0 && time_int != 0) {
-					simulate2(power, time_int, 1, &velocity, &distance); 
+					simulate2(power, time_int, 2, &velocity, &distance); 
 					t2 = millis();	// last power meter data message received
 				} else if (coast) {
-					simulate2(0, 2*(millis()-t2) , 1, &velocity, &distance);
+					simulate2(0, 2*(millis()-t2) , 2, &velocity, &distance);
 					t2 = millis();
 				}
 			}
