@@ -111,7 +111,7 @@ void setup() {
 
 int8_t START = 0;
 
-void loop() {
+void loopTest() {
         static int cadenceTime = 200;
   
         *((uint8_t*)slipBuffer + 0) = ID_CADENCE;
@@ -129,7 +129,7 @@ void loop() {
         delay(1000);
 }
 
-void loop1() { // Original loop
+void loop() { // Original loop
 
   int8_t slipLen;
   //oscIn.packetAvailable(); //SLIP
@@ -214,7 +214,7 @@ void loop1() { // Original loop
               Serial.println(slipBuffer[1]);
               break;
 
-            } // Why is this bracket after the next case????????????????????????????
+            } // Why is this bracket after the next case?
           }
           //sd_Write(sdBuffer, antFilename);
         }
