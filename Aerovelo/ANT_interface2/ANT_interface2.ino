@@ -443,19 +443,14 @@ void simulate2(float power, uint16_t time_interval, uint8_t print, float* velo, 
 	if (power == 0 && time_interval == 0) return;
 
 	static float velocity = 0;
-	static float distance = 0;
-		
+	static float distance = 0;	
 	
 	if (isnan(velocity)) {
 		Serial.print("static variable velocity in function simulate2 is NAN. velocity passed in as a parameter is ");
 		Serial.println(*velo);
 		velocity = *velo;
 	}
-		
-// start iterations
-bool calc_run = true;
-while (calc_run) {
-		
+
 	// constants
 	float g = 9.81;	// m/s
 	float mu = 0.0000185;	// Pa*s
@@ -515,15 +510,9 @@ while (calc_run) {
 	float prev_dist = distance; // for Pelev
 	float power_left = 0;
 	float power_interval = time_interval * 0.0005; // in seconds
-	
+
 	// change in elevation
-	float change_elev, Pelev = 0; 
-	change_elev = getElevation(prev_dist + prev_velo*power_interval)-getElevation(prev_dist); // guess elevation change using previous velocity and time travelled
-	Serial.print("Elevation change = ");
-	Serial.println(change_elev);
-	Serial.println(M*g*change_elev);
-	Serial.println(power_interval);
-	Pelev = M*(-g)*change_elev/power_interval; //kgm2/s3  kg*m/s2 * m / s 
+	float change_elev, Pelev, prev_Pelev = 0; 
 
 	float delta_v, delta_d;
 	/***************** subtract the powers added in the previous iteration first *******************/
@@ -533,18 +522,39 @@ while (calc_run) {
 		float power_in = power * etaD;	// watts (J/s)
 		//energy_in = power_in * power_interval;	// energy (joules) input since previous measurement
 		
-		power_left = power_in 	/*rolling friction*/ - Proll
-								/*air drag*/ - Paero
-								/*elevation change*/ + Pelev;
+		bool calc_dist = true;
+		uint8_t count = 0;
+		float elev_calc[10] = {0};
+		while (calc_dist) {
 		
-		if (power_left < 0)	delta_v = (-1)*sqrt(2*(-1)*power_left*power_interval/(M + /*Mwheels*/ 2));
-		else if (power_left == 0) delta_v = 0;
-		else delta_v = sqrt(2*power_left*power_interval/(M + /*Mwheels*/ 2));
+			power_left = power_in 	/*rolling friction*/ - Proll
+									/*air drag*/ - Paero
+									/*elevation change*/ + Pelev;
+		
+			if (power_left < 0)	delta_v = (-1)*sqrt(2*(-1)*power_left*power_interval/(M + /*Mwheels*/ 2));
+			else if (power_left == 0) delta_v = 0;
+			else delta_v = sqrt(2*power_left*power_interval/(M + /*Mwheels*/ 2));
 			
-		delta_d = 0.5*(prev_velo*2 + delta_v)*power_interval;	
+			delta_d = 0.5*(prev_velo*2 + delta_v)*power_interval;	
 		
-		velocity += delta_v;
-		distance += delta_d;
+			velocity = prev_velo + delta_v;
+			distance = prev_dist + delta_d;
+		
+			change_elev = getElevation(distance)-getElevation(prev_dist); // guess elevation change using previous velocity and time travelled
+			prev_Pelev = Pelev;
+			Pelev = M*(-g)*change_elev/power_interval; //kgm2/s3  kg*m/s2 * m / s 
+			
+			elev_calc[count] = Pelev;
+			count++;
+			
+			if (abs(Pelev - prev_Pelev) <= 1) calc_dist = false;
+			else if (count > 10) calc_dist = false;
+			
+		}
+		for (i=0;i<10;i++) {
+			Serial.print(elev_calc[i]);
+			Serial.print("W.\t");
+		}	Serial.print("\n");
 		
 		if (velocity < 0) velocity = 0;
 		
@@ -591,8 +601,6 @@ while (calc_run) {
 		}
 		if (print) Serial.flush();
 	}
-	if (abs(prev_velo - velocity) <= 1) calc_run = false;
-} // calculation is complete
 	
 	*dist = distance;
 	*velo = velocity;
