@@ -46,7 +46,7 @@ void OSD_SlipParse(char *slipBuffer) {
     break;
     
   case ID_POWER:
-    power = 120;
+    power = *((uint16_t*)((uint8_t*)slipBuffer+1));
     /*
 		INSERT CODE HERE
      		*/

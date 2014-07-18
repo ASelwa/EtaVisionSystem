@@ -66,7 +66,7 @@ char slipBuffer[N_SLIP];
 int slipLen;
 
 char display_string[128];
-float cadence, power = 120;
+float cadence, power;
 uint32_t GPS_Time, GPS_Distance;
 uint8_t GPS_NumSats;
 int32_t GPS_Altitude, GPS_Heading;
