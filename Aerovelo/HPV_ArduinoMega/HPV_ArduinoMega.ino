@@ -83,6 +83,7 @@ void setup() {
 
   // Initialize GPS
   GPS.Init();
+  GPS_setStart();
 
 
   // Set up SD
@@ -113,7 +114,7 @@ void setup() {
 
 int8_t START = 0;
 
-void loop1() {
+void loopTestPower() {
   float power = 65000.5678;
 
   *((uint8_t*)slipBuffer + 0) = ID_POWER;
@@ -131,7 +132,7 @@ void loop1() {
   delay(10000);
 }
 
-void loop2() {
+void loopTestCadence() {
   static uint16_t cadenceTime = 1000;
 
   *((uint8_t*)slipBuffer + 0) = ID_CADENCE;
@@ -273,13 +274,17 @@ void loop() { // Original loop
 
 
     //Read GPS Data
-    GPS.Read();
+    GPS.Read(); // Updates buffer
+    
+    Serial.print("Latitude: ");
+    Serial.println(GPS.Lattitude);
+    delay(1000);
 
     if (GPS.NewData) {
       GPS.NewData = 0;
       //Serial.println("GPS functions");
       //View GPS data
-      char gps_str[120];
+      //char gps_str[120];
       //sprintf((char*)gps_str, "GPS\r\n    Time: %lu\r\n    Lattitude: %li;\r\n    Longitude: %li;\r\n    Altitude: %li;\r\n\n\n",
       //	GPS.GPSTime, GPS.Lattitude, GPS.Longitude, GPS.Altitude);
 
@@ -310,7 +315,7 @@ void loop() { // Original loop
 
       Serial.print("Total Distance: ");
       Serial.println(currDistance);
-      /*
+      
       if (currDistance){
       GPS_totalDistance += currDistance;
 
@@ -319,10 +324,10 @@ void loop() { // Original loop
       AltitudePrev = GPS.Altitude;
 
       }
-      */
+      
 
       //Updates profileNum, profileFilename, logFilename and starting GPS location if the yellow button is pressed
-      toggle();
+      //toggle();
       //Send profileNum through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_PROFNUM;
       *((int8_t*)(slipBuffer + 1 + 0)) = profileNum;
