@@ -35,6 +35,7 @@ class GPS_UBLOX_Class
 	GPS_UBLOX_Class();
 	void Init();
 	void Read();
+	void printBuffer();
 	// Properties
 	uint32_t GPSTime;          //GPS Millisecond Time of Week
         struct {

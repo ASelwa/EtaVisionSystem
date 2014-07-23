@@ -30,11 +30,11 @@ uint32_t GPS_getDistance(GPS_UBLOX_Class GPS, int32_t lat1, int32_t lon1, int32_
 
   double x, y, z, dist;
   x = ((deg2rad(lon2)-deg2rad(lon1)) * cos((deg2rad(lat1)+deg2rad(lat2))/2))/10000.0;
-  Serial.println("x: ");
-  Serial.println(x);
+  //Serial.println("x: ");
+  //Serial.println(x);
   y = ((deg2rad(lat2)-deg2rad(lat1)))/10000.0;
-  Serial.println("y: ");
-  Serial.println(y);
+  //Serial.println("y: ");
+  //Serial.println(y);
   
   
   //if ((GPS.hacc > (R/2)*x) && (GPS.vacc > (R/2)*y)){
@@ -47,8 +47,8 @@ uint32_t GPS_getDistance(GPS_UBLOX_Class GPS, int32_t lat1, int32_t lon1, int32_
   */
   dist = sqrt(x*x + y*y) * R;
   //dist = sqrt(dist*dist + z*z);
-  Serial.println("Distance: ");
-  Serial.println(dist);
+  //Serial.println("Distance: ");
+  //Serial.println(dist);
 
   uint32_t final = 0;
   final += dist;  

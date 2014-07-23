@@ -80,6 +80,10 @@ void GPS_UBLOX_Class::Read(void)
 #else
 	numc = Serial.available();
 #endif
+
+	//Serial.print("Bytes available: ");
+	//Serial.println(numc);
+
 	if (numc > 0)
 		for (int i=0;i<numc;i++)  // Process bytes received
 		{
@@ -100,13 +104,13 @@ void GPS_UBLOX_Class::Read(void)
 			switch(UBX_step)     //Normally we start from zero. This is a state machine
 			{
 			case 0:  
-				if(data==0xB5)  // UBX sync char 1
+				if(data==0xB5) {  // UBX sync char 1
 					UBX_step++;   //OH first data packet is correct, so jump to the next step
-				break; 
+				} break; 
 			case 1:  
-				if(data==0x62)  // UBX sync char 2
+				if(data==0x62) { // UBX sync char 2
 					UBX_step++;   //ooh! The second data packet is correct, jump to the step 2
-				else 
+				} else 
 					UBX_step=0;   //Nop, is not correct so restart to step zero and try again.     
 				break;
 			case 2:
@@ -179,6 +183,15 @@ void GPS_UBLOX_Class::Read(void)
 			if (PrintErrors)
 				Serial.println("ERR:GPS_TimeOUT!!");
 		}
+}
+
+void GPS_UBLOX_Class::printBuffer() {
+	for (int i = 0; i < 10; i++) {
+		Serial.print(UBX_buffer[i]);
+		Serial.print("\t");
+	}
+
+	Serial.println();
 }
 
 /****************************************************************

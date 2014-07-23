@@ -272,23 +272,27 @@ void loop() { // Original loop
       }
     }
 
+    GPS.PrintErrors = 1;
 
     //Read GPS Data
     GPS.Read(); // Updates buffer
     
-    Serial.print("Latitude: ");
-    Serial.println(GPS.Lattitude);
-    delay(1000);
-
     if (GPS.NewData) {
       GPS.NewData = 0;
       //Serial.println("GPS functions");
       //View GPS data
       //char gps_str[120];
       //sprintf((char*)gps_str, "GPS\r\n    Time: %lu\r\n    Lattitude: %li;\r\n    Longitude: %li;\r\n    Altitude: %li;\r\n\n\n",
-      //	GPS.GPSTime, GPS.Lattitude, GPS.Longitude, GPS.Altitude);
+      // 	GPS.GPSTime, GPS.Lattitude, GPS.Longitude, GPS.Altitude);
 
       //Serial.println((char*)gps_str);
+      
+      Serial.print("Sats: ");
+      Serial.print(GPS.NumSats);
+      Serial.print("\t");
+      
+      Serial.print("Speed: ");
+      Serial.println(GPS.Ground_Speed);
 
       //Get Distance
       /*
@@ -313,8 +317,8 @@ void loop() { // Original loop
       uint32_t currDistance = GPS_getDistance(GPS, LattitudeStart, LongitudeStart, AltitudeStart, GPS.Lattitude, GPS.Longitude, GPS.Altitude);
 
 
-      Serial.print("Total Distance: ");
-      Serial.println(currDistance);
+      //Serial.print("Total Distance: ");
+      //Serial.println(currDistance);
       
       if (currDistance){
       GPS_totalDistance += currDistance;
@@ -353,8 +357,8 @@ void loop() { // Original loop
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
 
-      Serial.print("Target Speed: ");
-      Serial.println(targetSpeed);
+      //Serial.print("Target Speed: ");
+      //Serial.println(targetSpeed);
 
       // Send Speed through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_SPEED;
@@ -362,8 +366,8 @@ void loop() { // Original loop
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
 
-      Serial.print("Speed: ");
-      Serial.println(GPS.Ground_Speed);
+      //Serial.print("Speed: ");
+      //Serial.println(GPS.Ground_Speed);
 
       //Send Distance through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_DISTANCE;
