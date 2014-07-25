@@ -83,7 +83,6 @@ void setup() {
 
   // Initialize GPS
   GPS.Init();
-  GPS_setStart();
 
 
   // Set up SD
@@ -272,7 +271,7 @@ void loop() { // Original loop
       }
     }
 
-    GPS.PrintErrors = 1;
+    //GPS.PrintErrors = 1;
 
     //Read GPS Data
     GPS.Read(); // Updates buffer
@@ -281,11 +280,11 @@ void loop() { // Original loop
       GPS.NewData = 0;
       //Serial.println("GPS functions");
       //View GPS data
-      //char gps_str[120];
-      //sprintf((char*)gps_str, "GPS\r\n    Time: %lu\r\n    Lattitude: %li;\r\n    Longitude: %li;\r\n    Altitude: %li;\r\n\n\n",
-      // 	GPS.GPSTime, GPS.Lattitude, GPS.Longitude, GPS.Altitude);
+      char gps_str[120];
+      sprintf((char*)gps_str, "GPS\r\n    Time: %lu\r\n    Lattitude: %li;\r\n    Longitude: %li;\r\n    Altitude: %li;\r\n\n\n",
+       	GPS.GPSTime, GPS.Lattitude, GPS.Longitude, GPS.Altitude);
 
-      //Serial.println((char*)gps_str);
+      Serial.println((char*)gps_str);
       
       Serial.print("Sats: ");
       Serial.print(GPS.NumSats);
@@ -304,15 +303,17 @@ void loop() { // Original loop
        *((uint8_t*)(slipBuffer + 1 + 0)) = 1;
        *((uint8_t*)slipBuffer + 1 + 1) = 0;
        SlipPacketSend(3, (char*)slipBuffer, &Serial3);
-
+        */
+       
+       // Comment out after getting SD (toggle) to work
        if (startSet == 0){
-       GPS_setStart();
-       Serial.println(startSet);
-       Serial.println("GPS start set");
+         GPS_setStart();
+         Serial.println(startSet);
+         Serial.println("GPS start set!");
        }
-       else{
+       //else{
 
-         */
+         
       // Update total distance from start point
       uint32_t currDistance = GPS_getDistance(GPS, LattitudeStart, LongitudeStart, AltitudeStart, GPS.Lattitude, GPS.Longitude, GPS.Altitude);
 
@@ -371,12 +372,12 @@ void loop() { // Original loop
 
       //Send Distance through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_DISTANCE;
-      *((uint32_t*)(slipBuffer + 1 + 0)) = currDistance;
+      *((uint32_t*)(slipBuffer + 1 + 0)) = GPS_totalDistance; // currDistance
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
 
       //Serial.print("Distance: ");
-      //Serial.println(currDistance);
+      //Serial.println(GPS_totalDistance);
 
       //}
       //}

@@ -59,11 +59,10 @@ void GPS_UBLOX_Class::Init(void)
 	// Initialize serial port
 #if defined(GPS_SERIAL2)
 	Serial2.begin(GPS_BAUD);         // Serial port 1 on ATMega1280
-	Serial.println("GPS initalized - print 1");
+	Serial.println("GPS initalized");
 #else
 	Serial.begin(38400);
 #endif
-	Serial.println("GPS initalized - print 2");
 }
 
 // optimization : This code don�t wait for data, only proccess the data available

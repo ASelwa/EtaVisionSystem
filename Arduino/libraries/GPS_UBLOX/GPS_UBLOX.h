@@ -6,7 +6,7 @@
 #define UBX_MAXPAYLOAD 60
 
 #define GPS_SERIAL2
-#define GPS_BAUD 115200
+#define GPS_BAUD 38400
 
 
 class GPS_UBLOX_Class

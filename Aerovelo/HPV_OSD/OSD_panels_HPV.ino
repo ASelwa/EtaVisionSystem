@@ -154,7 +154,7 @@ void panSats(int first_col, int first_line){
 void panDist(int first_col, int first_line){
   osd.setPanel(first_col, first_line);
   osd.openPanel();
-  osd.printf("Dist: %lu m     ", GPS_Distance);
+  osd.printf("Dist: %lu m     ", GPS_totalDistance); // GPS_Distance
   osd.closePanel();
 }
 
