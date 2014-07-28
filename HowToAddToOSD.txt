@@ -1,0 +1,10 @@
+To add a variable to display onto the screen:
+
+1. Define an ID in OSD_SLIP.h and in HPV_ArduinoMega
+2. Perform calculations/read from ANT in main loop of HPV_ArduinoMega
+3. Send value in main loop via SlipPacketSend
+4. Add an extern variable declaration in OSD_SLIP.cpp
+5. Add the regular variable declaration in HPV_OSD
+6. Add a case to OSD_SLIP.cpp to extract the value and assign it to a variable
+7. Add a panel function to OSD_panels_HPV
+8. Call the function in writePanels() (also located in OSD_panels_HPV)
