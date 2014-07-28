@@ -48,8 +48,6 @@ uint32_t GPS_getDistance(GPS_UBLOX_Class GPS, int32_t lat1, int32_t lon1, int32_
   
   dist = sqrt(x*x + y*y) * R;
   //dist = sqrt(dist*dist + z*z);
-  Serial.println("Distance: ");
-  Serial.println(dist);
 
   uint32_t final = 0;
   final += dist;  

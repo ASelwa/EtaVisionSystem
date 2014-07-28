@@ -3,6 +3,7 @@
 // Message IDs
 #define ID_CADENCE	1
 #define ID_DISTANCE	2
+#define ID_DISPLACEMENT 16
 #define ID_SPEED	3
 #define ID_GPSTIME      4
 #define ID_NUMSATS      5

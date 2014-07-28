@@ -16,6 +16,7 @@
 // Message IDs
 #define ID_CADENCE	1
 #define ID_DISTANCE	2
+#define ID_DISPLACEMENT 16
 #define ID_SPEED	3
 #define ID_GPSTIME      4
 #define ID_NUMSATS      5
@@ -278,13 +279,13 @@ void loop() { // Original loop
     
     if (GPS.NewData) {
       GPS.NewData = 0;
-      //Serial.println("GPS functions");
+      
       //View GPS data
-      char gps_str[120];
-      sprintf((char*)gps_str, "GPS\r\n    Time: %lu\r\n    Lattitude: %li;\r\n    Longitude: %li;\r\n    Altitude: %li;\r\n\n\n",
-       	GPS.GPSTime, GPS.Lattitude, GPS.Longitude, GPS.Altitude);
+      //char gps_str[120];
+      //sprintf((char*)gps_str, "GPS\r\n    Time: %lu\r\n    Lattitude: %li;\r\n    Longitude: %li;\r\n    Altitude: %li;\r\n\n",
+      // 	GPS.GPSTime, GPS.Lattitude, GPS.Longitude, GPS.Altitude);
 
-      Serial.println((char*)gps_str);
+      //Serial.println((char*)gps_str);
       
       Serial.print("Sats: ");
       Serial.print(GPS.NumSats);
@@ -305,29 +306,80 @@ void loop() { // Original loop
        SlipPacketSend(3, (char*)slipBuffer, &Serial3);
         */
        
-       // Comment out after getting SD (toggle) to work
-       if (startSet == 0){
-         GPS_setStart();
-         Serial.println(startSet);
-         Serial.println("GPS start set!");
-       }
-       //else{
-
-         
-      // Update total distance from start point
-      uint32_t currDistance = GPS_getDistance(GPS, LattitudeStart, LongitudeStart, AltitudeStart, GPS.Lattitude, GPS.Longitude, GPS.Altitude);
-
-
-      //Serial.print("Total Distance: ");
-      //Serial.println(currDistance);
+                
+      // Track the moving average
+      const int numTerms = 3; // Moving average of this many values
+      static int32_t latitude[numTerms];
+      static int32_t longitude[numTerms];
+      static int32_t altitude[numTerms];
+      static int index = 0;
       
-      if (currDistance){
-      GPS_totalDistance += currDistance;
+      // Comment out after getting SD (toggle) to work
+      if (startSet == 0){
+        GPS_setStart();
+        Serial.println(startSet);
+        Serial.println("GPS start set!");
+        
+        for (int x = 0; x < numTerms; x++) {
+          latitude[x] = GPS.Lattitude;
+          longitude[x] = GPS.Longitude;
+          altitude[x] = GPS.Altitude;
+        }
+      }
+      //else{
+      
+      if (index == numTerms)
+        index = 0;
+      
+      //Serial.print(longitude[0]);
+      //Serial.print("\t");
+      //Serial.print(longitude[1]);
+      //Serial.print("\t");
+      //Serial.println(longitude[2]);
+      
+      latitude[index] = GPS.Lattitude;
+      longitude[index] = GPS.Longitude;
+      altitude[index++] = GPS.Altitude;
+      
+      int32_t lat = average(latitude, numTerms);
+      int32_t lon = average(longitude, numTerms);
+      int32_t alt = average(altitude, numTerms);
+      
+//      Serial.print("Current: ");
+//      Serial.print(lat);
+//      Serial.print("\t");
+//      Serial.print(lon);
+//      Serial.print("\t");
+//      Serial.println(alt);
+//      
+//      Serial.print("Last: ");
+//      Serial.print(LattitudePrev);
+//      Serial.print("\t");
+//      Serial.print(LongitudePrev);
+//      Serial.print("\t");
+//      Serial.println(AltitudePrev);
+//      
+//      Serial.print("Start: ");
+//      Serial.print(LattitudeStart);
+//      Serial.print("\t");
+//      Serial.print(LongitudeStart);
+//      Serial.print("\t");
+//      Serial.println(AltitudeStart);
+      
+      uint32_t displacement = GPS_getDistance(GPS, LattitudeStart, LongitudeStart, AltitudeStart, lat, lon, alt);
+      uint32_t currDistance = GPS_getDistance(GPS, LattitudePrev, LongitudePrev, AltitudePrev, lat, lon, alt);
 
-      LattitudePrev = GPS.Lattitude;
-      LongitudePrev = GPS.Longitude;
-      AltitudePrev = GPS.Altitude;
+      Serial.print("Cumulative Distance: ");
+      Serial.println(GPS_totalDistance + currDistance);
+      Serial.print("Displacement: ");
+      Serial.println(displacement);
+      
+      if (currDistance >= 0){
+        GPS_totalDistance += currDistance;
 
+        LattitudePrev = lat;
+        LongitudePrev = lon;
+        AltitudePrev = alt;
       }
       
 
@@ -372,12 +424,18 @@ void loop() { // Original loop
 
       //Send Distance through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_DISTANCE;
-      *((uint32_t*)(slipBuffer + 1 + 0)) = GPS_totalDistance; // currDistance
+      *((uint32_t*)(slipBuffer + 1 + 0)) = GPS_totalDistance; // previously sent currDistance
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
 
       //Serial.print("Distance: ");
       //Serial.println(GPS_totalDistance);
+      
+      //Send Displacement through SLIP
+      *((uint8_t*)slipBuffer + 0) = ID_DISPLACEMENT;
+      *((uint32_t*)(slipBuffer + 1 + 0)) = displacement;
+      *((uint8_t*)slipBuffer + 1 + 4) = 0;
+      SlipPacketSend(6, (char*)slipBuffer, &Serial3);
 
       //}
       //}
@@ -472,3 +530,12 @@ void loop() { // Original loop
   TIME += PERIOD;
 }
 
+int32_t average(int32_t *beg, const int len) {
+  int32_t total = 0;
+  
+  for (int i = 0; i < len; ++i) {
+    total += *(beg+i) / len;
+  }
+  
+  return total;
+}

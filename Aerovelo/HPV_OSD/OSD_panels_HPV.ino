@@ -28,6 +28,7 @@ void writePanels(){
     panDist(15,12);
     panHeart(16, 2);
     panPower(15, 10);
+    panDisplace(1, 12);
     //panProfile(10,0);
     //panSats(1,0);
   }
@@ -154,7 +155,14 @@ void panSats(int first_col, int first_line){
 void panDist(int first_col, int first_line){
   osd.setPanel(first_col, first_line);
   osd.openPanel();
-  osd.printf("Dist: %lu m     ", GPS_totalDistance); // GPS_Distance
+  osd.printf("Dist: %lu m ", GPS_Distance);
+  osd.closePanel();
+}
+
+void panDisplace(int first_col, int first_line){
+  osd.setPanel(first_col, first_line);
+  osd.openPanel();
+  osd.printf("Disp: %lu m ", GPS_Displacement);
   osd.closePanel();
 }
 
