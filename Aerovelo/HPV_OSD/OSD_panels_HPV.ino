@@ -22,7 +22,7 @@ void writePanels(){
   //Test
   if (osd_set == 0) { // setup panel is called in the else at the end
     //panUTC(6, 0);
-    //panGPS(1  , 6);
+    panGPS(1  , 6);
     //panHeading(8, 10);
     panCadence(15, 11);
     panDist(15,12);
