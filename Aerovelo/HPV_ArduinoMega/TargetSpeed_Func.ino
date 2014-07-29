@@ -1,6 +1,11 @@
 /* Target Speed Functions */
 
-
+// Log the longitude, latitude, altitude, ground speed, cumulative distance
+void logGPS() {
+  File dataFile;
+  
+  //dataFile = SD.open();
+}
 
 /*
 Updates profileNum, profileFilename, logFilename and starting GPS location if the yellow button is pressed
