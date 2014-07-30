@@ -23,7 +23,6 @@ void ANT_SetupChannel(uint8_t *buf, uint8_t channel, uint8_t Dev_T, uint8_t Tran
   uint8_t chType = 0x00;  // Bidirectional slave.
   //uint8_t chType = 0x40;  // Receive only slave.
 
-  //Serial.println("ANT Setup.");
 
   // Set Network Key
   buf[0] = MESG_TX_SYNC;
@@ -34,8 +33,6 @@ void ANT_SetupChannel(uint8_t *buf, uint8_t channel, uint8_t Dev_T, uint8_t Tran
 
   ANT_SendMessage(buf, 12);
   delayMicroseconds(1000);
-  
-  //Serial.println("ANT Message Key Sent.");
 
   // Assign channel.
   buf[0] = MESG_TX_SYNC;
@@ -48,13 +45,14 @@ void ANT_SetupChannel(uint8_t *buf, uint8_t channel, uint8_t Dev_T, uint8_t Tran
   ANT_SendMessage(buf, 6);
   delayMicroseconds(1000);
 
-
   // Assign channel ID. 121 device ID for speed sensor.
   buf[0] = MESG_TX_SYNC;
   buf[1] = MESG_CHANNEL_ID_SIZE;
   buf[2] = MESG_CHANNEL_ID_ID;
   buf[3] = channel;
+  
   *((uint16_t*)(buf+5)) = 0;      // Device number, 0 is wildcard.
+  
   buf[6] = 0b00000000 + Dev_T;     //121; // Pairing bit + device type. 0 is wildcard
   buf[7] = Trans_T;//0x01;      // Transmission type. 0 is wildcard to receive any type.
 
@@ -66,6 +64,7 @@ void ANT_SetupChannel(uint8_t *buf, uint8_t channel, uint8_t Dev_T, uint8_t Tran
   buf[1] = MESG_CHANNEL_MESG_PERIOD_SIZE;
   buf[2] = MESG_CHANNEL_MESG_PERIOD_ID;
   buf[3] = channel;
+  
   *((uint16_t*)(buf+4)) = period;
 
   ANT_SendMessage(buf, 6);
@@ -92,26 +91,26 @@ void ANT_SetupChannel(uint8_t *buf, uint8_t channel, uint8_t Dev_T, uint8_t Tran
 
 
   // Open RX Scan Mode.
-  //buf[0] = MESG_TX_SYNC;
-  //buf[1] = 1;
-  //buf[2] = 0x5B;
-  //buf[3] = 0;
+  buf[0] = MESG_TX_SYNC;
+  buf[1] = 1;
+  buf[2] = 0x5B;
+  buf[3] = 0;
 
-  //ANT_SendMessage(buf, 4);
-  //delayMicroseconds(1000);
+  ANT_SendMessage(buf, 4);
+  delayMicroseconds(1000);
 
 
   // Request data.
-  //buf[0] = MESG_TX_SYNC;
-  //buf[1] = MESG_REQUEST_SIZE;
-  //buf[2] = MESG_REQUEST_ID;
-  //buf[3] = channel;
-  //buf[4] = MESG_CHANNEL_ID_ID;
+  buf[0] = MESG_TX_SYNC;
+  buf[1] = MESG_REQUEST_SIZE;
+  buf[2] = MESG_REQUEST_ID;
+  buf[3] = channel;
+  buf[4] = MESG_CHANNEL_ID_ID;
 
-  //ANT_SendMessage(buf, 5);
-  //delayMicroseconds(1000);
+  ANT_SendMessage(buf, 5);
+  delayMicroseconds(1000);
 
-
+  Serial.print("Set up Channel. \n");
 
 
 }

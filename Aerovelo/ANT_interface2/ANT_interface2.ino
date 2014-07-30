@@ -195,7 +195,6 @@ void setup() {
   // Select serial port.
   Serial1.begin(9600);
   //Serial2.begin(9600);
-  Serial.begin(115200);
   Serial.print("Set up serial ports. \n");
 
   TIME = millis();
@@ -440,6 +439,7 @@ void simulate(float power, uint16_t time_interval, uint8_t print) {
 }
 
 void simulate2(float power, uint16_t time_interval, uint8_t print, float* velo, float* dist) {
+  uint8_t i;
   uint16_t t1, t2 = 0;
   t1 = millis();
   if (power == 0 && time_interval == 0) return;
@@ -614,18 +614,22 @@ void loop() {
   uint16_t time_int = 0;
   uint16_t t2 = 0;
 
-  /*
+  uint8_t m;
   while(1){
   	if (Serial1.available()) {
   		if ((m = receiveANT(rxBuffer)) > 0){
+			for (int i = 0; i< m+3;i++) {
+				Serial.print(rxBuffer[i], HEX);
+				Serial.print("\t");
+			}	Serial.println();
   			if (m == 9) {
-  				readPowerMeter(rxBuffer, 0, &time_int, &power);
-  				simulate2(power, time_int, 1);
+  				//readPowerMeter(rxBuffer, 0, &time_int, &power);
+  				//simulate2(power, time_int, 1);
   			}
   		}
   	}
-  }*/
-
+  }
+/*
   uint8_t len = 0;
   bool coast = false;
   while (1) {
@@ -641,7 +645,7 @@ void loop() {
         }
       }
     }
-  }
+  }*/
 }
 
 

@@ -72,15 +72,6 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
 		return;
 	}
 	
-	if (print == 2) {
-		Serial.print("Time: ");
-		Serial.println(millis());
-		for (i=0;i<12;i++) {
-			Serial.print(pwrRx[i], HEX);
-			Serial.print(" ");
-		} Serial.print("\n");
-		
-	}
 	switch(pwrRx[3]) {
 	
 		case 0x20: // broadcast pwr data page
@@ -155,7 +146,7 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
 		case 0x1: //broadcast calibration data page						
 			
 			//offset = cB(pwrRx[9], pwrRx[10]);
-			if (print) {
+			if (print==2) {
 				Serial.print("Calibration offset: ");
 				Serial.print(cB(pwrRx[9], pwrRx[10]));
 				Serial.println("Hz.");
@@ -272,14 +263,24 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
 									/*air drag*/ - Paero
 									/*elevation change*/ + Pelev;
 		
-			if (power_left < 0)	delta_v = (-1)*sqrt(2*(-1)*power_left*power_interval/(M + /*Mwheels*/ 2));
+			// Method 1
+			/*if (power_left < 0)	delta_v = (-1)*sqrt(2*(-1)*power_left*power_interval/(M + 2));
 			else if (power_left == 0) delta_v = 0;
-			else delta_v = sqrt(2*power_left*power_interval/(M + /*Mwheels*/ 2));
+			else delta_v = sqrt(2*power_left*power_interval/(M + 2));
 			
 			delta_d = 0.5*(prev_velo*2 + delta_v)*power_interval;	
 		
 			velocity = prev_velo + delta_v;
-			distance = prev_dist + delta_d;
+			distance = prev_dist + delta_d;*/
+			// end Method 1
+		
+			// Method 2
+			float net_energy = power_in*power_interval + 0.5*M*pow(velocity,2);
+			if (net_energy < 0) velocity = 0;
+			else velocity = sqrt(2*net_energy/(M+2));
+			
+			distance = prev_dist + 0.5*(prev_velo+velocity)*power_interval;
+			// end Method 2
 		
 			change_elev = getElevation(distance)-getElevation(prev_dist); // guess elevation change using previous velocity and time travelled
 			prev_Pelev = Pelev;
@@ -292,10 +293,10 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
 			else if (count > 10) calc_dist = false;
 			
 		}
-		for (uint8_t i=0;i<10;i++) {
+		/*for (uint8_t i=0;i<10;i++) {
 			Serial.print(elev_calc[i]);
 			Serial.print("W.\t");
-		}	Serial.print("\n");
+		}	Serial.print("\n");*/
 		
 		if (velocity < 0) velocity = 0;
 		

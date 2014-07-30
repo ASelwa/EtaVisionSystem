@@ -60,9 +60,10 @@ double coeff[7] = {0};
 void setup() {
 
   // Select serial port.
-  Serial.begin(115200);
-  Serial3.begin(115200);
-  Serial1.begin(57600);
+  // Serial2 is GPS
+  Serial.begin(115200);	// COM port
+  Serial3.begin(115200); // OSD
+  Serial1.begin(9600);	// ANT+
   Serial.println("Program start!");
   //delay(1000);
 
@@ -103,11 +104,11 @@ void setup() {
   //  }
   //}
 
-  // Speed and Cadence channel.
-  ANT_SetupChannel(antBuffer, 0, 121, 1, 8086);
+  // Crank Torque Frequency
+  ANT_SetupChannel(antBuffer, 0, 11, 0, 8182);
   // Heart rate channel.
   //ANT_SetupChannel(antBuffer, 1, 0x78, 1, 8086); // 8070
-  ANT_SetupChannel(antBuffer, 1, 0, 0, 8070);
+  ANT_SetupChannel(antBuffer, 1, 120, 0, 16140);
 
   Serial.println("ANT+ setup complete.");
 
@@ -163,7 +164,7 @@ void loopTestCadence() {
 float power, cadence, velocity, distance = 0;
 bool coast = false;
 uint16_t time_int = 0;
-
+uint16_t t2 = 0;
 void loop() { // Original loop
 
   int8_t slipLen;
@@ -171,6 +172,7 @@ void loop() { // Original loop
 
   uint8_t temp;
   int8_t i, m;
+
 
   // put main code here, to run repeatedly:
   while (TIME > millis()) {
@@ -191,18 +193,17 @@ void loop() { // Original loop
       //Serial.print(temp, HEX);
       //Serial.print(' ');
       if ((m = receiveANT(antBuffer)) > 0) {
-        Serial.print("ANT+ Packet Received: ");
+        /*Serial.print("ANT+ Packet Received: ");
         for (i = 0; i < m + 3; ++i) {
           Serial.print(antBuffer[i], HEX);
           Serial.print(' ');
         }
-        Serial.print('\n');
+        Serial.print('\n');*/
 
-        if (m == 9) {
-          uint16_t t2 = 0;
+        if (m == 9) { 
           switch (antBuffer[2]) { // Channel
             case 0: // Power meter
-              readPowerMeter(antBuffer, 0, &time_int, &power, &cadence, &coast);
+              readPowerMeter(antBuffer, 2, &time_int, &power, &cadence, &coast);
               if (!coast && power != 0 && time_int != 0) {
                 simulate(power, time_int, 2, &velocity, &distance);
                 t2 = millis();	// last power meter data message received
@@ -216,11 +217,11 @@ void loop() { // Original loop
               *((uint8_t*)slipBuffer + 1 + 2) = cadence;
               *((uint8_t*)slipBuffer + 1 + 3) = 0;
 
-              for (uint8_t counter = 0; counter < 5; i++) {
+              /*for (uint8_t counter = 0; counter < 5; i++) {
                 Serial.print(slipBuffer[i], HEX);
                 Serial.print(" ");
               }
-              Serial.println();
+              Serial.println();*/
 
               SlipPacketSend(4, (char*)slipBuffer, &Serial3);
 
@@ -266,8 +267,8 @@ void loop() { // Original loop
               *((uint16_t*)(slipBuffer + 1 + 0)) = Hrt;
               *((uint8_t*)slipBuffer + 1 + 1) = 0;
               SlipPacketSend(2, (char*)slipBuffer, &Serial3);
-              Serial.println("Hrt:");
-              Serial.println((uint8_t) slipBuffer[1]);
+              //Serial.println("Hrt:");
+              //Serial.println((uint8_t) slipBuffer[1]);
               break;
           }
           //sd_Write(sdBuffer, antFilename);
