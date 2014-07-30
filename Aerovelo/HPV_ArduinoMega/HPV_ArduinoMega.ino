@@ -203,7 +203,7 @@ void loop() { // Original loop
         if (m == 9) { 
           switch (antBuffer[2]) { // Channel
             case 0: // Power meter
-              readPowerMeter(antBuffer, 2, &time_int, &power, &cadence, &coast);
+              readPowerMeter(antBuffer, 0, &time_int, &power, &cadence, &coast);
               if (!coast && power != 0 && time_int != 0) {
                 simulate(power, time_int, 2, &velocity, &distance);
                 t2 = millis();	// last power meter data message received

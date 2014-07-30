@@ -69,6 +69,7 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
 	if (pwrRx[0] != 0x9 || pwrRx[1] != 0x4E || pwrRx[2] != 0x0) {
 		*power = 0;
 		*time_interval = 0;
+                Serial.print("RESET POWER");
 		return;
 	}
 	
@@ -132,7 +133,7 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
 						Serial.flush();
 					}
 				} else { // first data point, so don't calculate anything
-					first_data = false; 
+					first_data = false;
 				}
 				// copy received data in prev_data array
 				for (i = 0; i < 12; i++) {
@@ -140,6 +141,9 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
 				}
 				// received new power data message, so must not be coasting anymore
 				*coast = false;
+				
+				*power = pwr;
+				*cadence_out = cadence;
 			}
 			break;
 		
@@ -154,19 +158,22 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
 
 			last_msg_time = millis();
 			*coast = true;
+			*power = pwr;
+			*cadence_out = cadence;
+			
 			break;
 		
 		default:
 
 			last_msg_time = millis();
 			*coast = true;
+			*power = pwr;
+			*cadence_out = cadence;
 			break;
 			
 		// end of case statement
 	} // else do nothing
-	*power = pwr;
 	*time_interval = temp_time;
-	*cadence_out = cadence;
 }
 
 void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, float* dist) {
