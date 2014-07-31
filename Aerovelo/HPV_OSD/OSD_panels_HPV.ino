@@ -18,7 +18,7 @@ void panLogo(){
 /******* PANELS - POSITION *******/
 
 void writePanels(){ 
-
+  osd.clear();
   //Test
   if (osd_set == 0) { // setup panel is called in the else at the end
     //panUTC(6, 0);
@@ -257,7 +257,7 @@ void panCadence(int first_col, int first_line){
 
   osd.setPanel(first_col, first_line);
   osd.openPanel();
-  osd.printf(" Cad: %3.1f rpm ", cadence*60);
+  osd.printf(" Cad: %3.1f rpm ", cadence);
   osd.closePanel();
 }
 
@@ -265,7 +265,7 @@ void panHeart(int first_col, int first_line){
 
   osd.setPanel(first_col, first_line);
   osd.openPanel();
-  osd.printf("Hrt: %3.1f bpm ", heartRate);
+  osd.printf("Hrt: %u bpm ", heartRate);
   osd.closePanel();
 }
 

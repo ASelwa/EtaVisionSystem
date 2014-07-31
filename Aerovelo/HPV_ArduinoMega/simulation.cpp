@@ -69,7 +69,7 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
 	if (pwrRx[0] != 0x9 || pwrRx[1] != 0x4E || pwrRx[2] != 0x0) {
 		*power = 0;
 		*time_interval = 0;
-                Serial.print("RESET POWER");
+          Serial.print("RESET POWER");
 		return;
 	}
 	
@@ -88,18 +88,22 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
 				if (!first_data && prev_data[0] == 0x09 && prev_data[1] == 0x4E && prev_data[3] == 0x20) {
 					if (*coast) {
 						temp_time = (millis() - last_msg_time)*2;
+						Serial.print("Temp time: ");
+						Serial.println(temp_time);
 					} else if ( cB(pwrRx[7], pwrRx[8]) < cB(prev_data[7], prev_data[8])) {
 						temp_time = (65536-cB(prev_data[7], prev_data[8])) + cB(pwrRx[7],pwrRx[8]);
 						//Serial.print("\ntemp_time Rollover!\n");
 					} else {
 						temp_time = (cB(pwrRx[7], pwrRx[8]) - cB(prev_data[7], prev_data[8]));
 					}
+					
 					if (pwrRx[4] < prev_data[4]) {
 						cadence = (60 / 0.0005f) * ((256 - prev_data[4])+pwrRx[4]) / (temp_time);
 						//Serial.print("\ncadence Rollover!\n\n");
 					} else {
 						cadence = (60 / 0.0005f) * (pwrRx[4] - prev_data[4]) / (temp_time);
-					} 
+					}
+					
 					uint16_t torque_tick = 0;
 					if ( cB(pwrRx[9], pwrRx[10]) < cB(prev_data[9], prev_data[10])) {
 						torque_tick = (65536-cB(prev_data[9], prev_data[10])) + cB(pwrRx[9],pwrRx[10]);

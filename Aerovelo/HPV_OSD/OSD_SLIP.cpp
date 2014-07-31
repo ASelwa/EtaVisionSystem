@@ -37,8 +37,9 @@ void OSD_SlipParse(char *slipBuffer) {
     Serial.print(*((uint8_t*) slipBuffer+3));
     Serial.print(" T = ");
     Serial.println(*((uint16_t*)((uint8_t*)slipBuffer+1)));
-    heartRate = (*((uint8_t*) slipBuffer+3)*1000.0)/ (1.0* (*((uint16_t*)((uint8_t*)slipBuffer+1))));
+    //heartRate = (*((uint8_t*) slipBuffer+3)*1000.0)/ (1.0* (*((uint16_t*)((uint8_t*)slipBuffer+1))));
     Serial.println(heartRate);
+    heartRate = *((uint8_t*) (slipBuffer+1));
     /*
 		INSERT CODE HERE
      		*/
@@ -47,6 +48,7 @@ void OSD_SlipParse(char *slipBuffer) {
     
   case ID_POWER:
     power = *((uint16_t*)((uint8_t*)slipBuffer+1));
+    cadence = *((uint8_t*)(slipBuffer+3));
     /*
 		INSERT CODE HERE
      		*/

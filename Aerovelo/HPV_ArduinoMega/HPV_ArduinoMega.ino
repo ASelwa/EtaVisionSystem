@@ -193,18 +193,20 @@ void loop() { // Original loop
       //Serial.print(temp, HEX);
       //Serial.print(' ');
       if ((m = receiveANT(antBuffer)) > 0) {
-        /*Serial.print("ANT+ Packet Received: ");
+        Serial.print("ANT+ Packet Received: ");
         for (i = 0; i < m + 3; ++i) {
           Serial.print(antBuffer[i], HEX);
           Serial.print(' ');
         }
-        Serial.print('\n');*/
+        Serial.print('\n');
 
         if (m == 9) { 
           switch (antBuffer[2]) { // Channel
             case 0: // Power meter
-              readPowerMeter(antBuffer, 0, &time_int, &power, &cadence, &coast);
+              readPowerMeter(antBuffer, 1, &time_int, &power, &cadence, &coast);
               if (!coast && power != 0 && time_int != 0) {
+                Serial.print("Time interval: ");
+                Serial.println(time_int);
                 simulate(power, time_int, 2, &velocity, &distance);
                 t2 = millis();	// last power meter data message received
               } else if (coast) {
@@ -264,11 +266,13 @@ void loop() { // Original loop
             case 1: // Heart rate.
               Hrt = antBuffer[3 + 7];
               *((uint8_t*)slipBuffer + 0) = ID_HEART;
-              *((uint16_t*)(slipBuffer + 1 + 0)) = Hrt;
+              *((uint8_t*)(slipBuffer + 1 + 0)) = Hrt;
               *((uint8_t*)slipBuffer + 1 + 1) = 0;
               SlipPacketSend(2, (char*)slipBuffer, &Serial3);
               //Serial.println("Hrt:");
               //Serial.println((uint8_t) slipBuffer[1]);
+              Serial.print("\n\n");
+              Serial.println(*((uint8_t*) (slipBuffer+1)));
               break;
           }
           //sd_Write(sdBuffer, antFilename);
