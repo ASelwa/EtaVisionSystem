@@ -42,7 +42,7 @@ uint8_t Hrt;
 uint32_t TIME;
 uint32_t GPS_totalDistance = 0;
 
-int32_t LattitudeStart, LongitudeStart, AltitudeStart;
+int32_t LattitudeStart = 436585166, LongitudeStart = -793934912, AltitudeStart = 117689;
 int32_t LattitudePrev, LongitudePrev, AltitudePrev;
 int8_t startSet = 0;
 
@@ -56,6 +56,8 @@ char profileFilename[32] = {
 char logFilename[32] = "GPSlog.txt"; // "LGdflt.txt"
 char profileName[16];
 double coeff[7] = {0};
+
+bool simulation_mode;
 
 void setup() {
 
@@ -193,24 +195,24 @@ void loop() { // Original loop
       //Serial.print(temp, HEX);
       //Serial.print(' ');
       if ((m = receiveANT(antBuffer)) > 0) {
-        Serial.print("ANT+ Packet Received: ");
-        for (i = 0; i < m + 3; ++i) {
-          Serial.print(antBuffer[i], HEX);
-          Serial.print(' ');
-        }
-        Serial.print('\n');
+//        Serial.print("ANT+ Packet Received: ");
+//        for (i = 0; i < m + 3; ++i) {
+//          Serial.print(antBuffer[i], HEX);
+//          Serial.print(' ');
+//        }
+//        Serial.print('\n');
 
         if (m == 9) { 
           switch (antBuffer[2]) { // Channel
             case 0: // Power meter
-              readPowerMeter(antBuffer, 1, &time_int, &power, &cadence, &coast);
+              readPowerMeter(antBuffer, 0, &time_int, &power, &cadence, &coast);
               if (!coast && power != 0 && time_int != 0) {
                 Serial.print("Time interval: ");
                 Serial.println(time_int);
-                simulate(power, time_int, 2, &velocity, &distance);
+                simulate(power, time_int, 0, &velocity, &distance);
                 t2 = millis();	// last power meter data message received
               } else if (coast) {
-                simulate(0, 2 * (millis() - t2) , 2, &velocity, &distance);
+                simulate(0, 2 * (millis() - t2) , 0, &velocity, &distance);
                 t2 = millis();
               }
 
@@ -228,7 +230,7 @@ void loop() { // Original loop
               SlipPacketSend(4, (char*)slipBuffer, &Serial3);
 
               break;
-            case 2: // Speed and cadence.
+            case 2: // Speed and cadence. SHOULD NOT HAPPEN
               uint16_t cadenceTime, cadenceRev, bikeTime, bikeRev;
               static uint16_t cadenceTimePrev, cadenceRevPrev, bikeTimePrev, bikeRevPrev;
 
@@ -271,8 +273,6 @@ void loop() { // Original loop
               SlipPacketSend(2, (char*)slipBuffer, &Serial3);
               //Serial.println("Hrt:");
               //Serial.println((uint8_t) slipBuffer[1]);
-              Serial.print("\n\n");
-              Serial.println(*((uint8_t*) (slipBuffer+1)));
               break;
           }
           //sd_Write(sdBuffer, antFilename);
@@ -356,34 +356,36 @@ void loop() { // Original loop
       int32_t lon = average(longitude, numTerms);
       int32_t alt = average(altitude, numTerms);
 
-      //      Serial.print("Current: ");
-      //      Serial.print(lat);
-      //      Serial.print("\t");
-      //      Serial.print(lon);
-      //      Serial.print("\t");
-      //      Serial.println(alt);
-      //
-      //      Serial.print("Last: ");
-      //      Serial.print(LattitudePrev);
-      //      Serial.print("\t");
-      //      Serial.print(LongitudePrev);
-      //      Serial.print("\t");
-      //      Serial.println(AltitudePrev);
-      //
-      //      Serial.print("Start: ");
-      //      Serial.print(LattitudeStart);
-      //      Serial.print("\t");
-      //      Serial.print(LongitudeStart);
-      //      Serial.print("\t");
-      //      Serial.println(AltitudeStart);
+//            Serial.print("Current: ");
+//            Serial.print(lat);
+//            Serial.print("\t");
+//            Serial.print(lon);
+//            Serial.print("\t");
+//            Serial.println(alt);
+//      
+//            Serial.print("Last: ");
+//            Serial.print(LattitudePrev);
+//            Serial.print("\t");
+//            Serial.print(LongitudePrev);
+//            Serial.print("\t");
+//            Serial.println(AltitudePrev);
+//      
+//            Serial.print("Start: ");
+//            Serial.print(LattitudeStart);
+//            Serial.print("\t");
+//            Serial.print(LongitudeStart);
+//            Serial.print("\t");
+//            Serial.println(AltitudeStart);
 
       uint32_t displacement = GPS_getDistance(GPS, LattitudeStart, LongitudeStart, AltitudeStart, lat, lon, alt);
       uint32_t currDistance = GPS_getDistance(GPS, LattitudePrev, LongitudePrev, AltitudePrev, lat, lon, alt);
 
-      //Serial.print("Cumulative Distance: ");
-      //Serial.println(GPS_totalDistance + currDistance);
-      //Serial.print("Displacement: ");
-      //Serial.println(displacement);
+//      Serial.print("Current Distance: ");
+//      Serial.print(currDistance);
+//      Serial.print("\tDisplacement: ");
+//      Serial.print(displacement);
+//      Serial.print("\tCumulative Distance: ");
+//      Serial.println(GPS_totalDistance + currDistance);
 
       if (currDistance >= 0) {
         GPS_totalDistance += currDistance;
@@ -414,7 +416,13 @@ void loop() { // Original loop
       //Serial.println(profileNum);
 
       //Get target speed
-      int32_t targetSpeed = calcSpeed(currDistance, coeff);
+      int32_t targetSpeed = 0;
+      
+      if (simulation_mode) {
+        targetSpeed = calcSpeed(distance, coeff);
+      } else {
+        targetSpeed = calcSpeed(currDistance, coeff);
+      }
       //Send target speed through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_TSPEED;
       *((int32_t*)(slipBuffer + 1 + 0)) = targetSpeed;
@@ -426,7 +434,11 @@ void loop() { // Original loop
 
       // Send Speed through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_SPEED;
-      *((int32_t*)(slipBuffer + 1 + 0)) = GPS.Ground_Speed;
+      if (simulation_mode) {
+        *((int32_t*)(slipBuffer + 1 + 0)) = velocity;
+      } else {
+        *((int32_t*)(slipBuffer + 1 + 0)) = GPS.Ground_Speed;
+      }
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
 
@@ -435,7 +447,11 @@ void loop() { // Original loop
 
       //Send Distance through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_DISTANCE;
-      *((uint32_t*)(slipBuffer + 1 + 0)) = GPS_totalDistance; // previously sent currDistance
+      if (simulation_mode) {
+        *((uint32_t*)(slipBuffer + 1 + 0)) = distance;
+      } else {
+        *((uint32_t*)(slipBuffer + 1 + 0)) = GPS_totalDistance;
+      }
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
 
@@ -444,7 +460,11 @@ void loop() { // Original loop
 
       //Send Displacement through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_DISPLACEMENT;
-      *((uint32_t*)(slipBuffer + 1 + 0)) = displacement;
+      if (simulation_mode) {
+        *((uint32_t*)(slipBuffer + 1 + 0)) = distance; // Assume same as distance
+      } else {
+        *((uint32_t*)(slipBuffer + 1 + 0)) = displacement;
+      }
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
 

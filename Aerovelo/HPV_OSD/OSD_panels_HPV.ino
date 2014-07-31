@@ -17,8 +17,7 @@ void panLogo(){
 
 /******* PANELS - POSITION *******/
 
-void writePanels(){ 
-  osd.clear();
+void writePanels(){
   //Test
   if (osd_set == 0) { // setup panel is called in the else at the end
     //panUTC(6, 0);

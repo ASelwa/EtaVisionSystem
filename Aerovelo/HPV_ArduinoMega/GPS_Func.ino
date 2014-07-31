@@ -48,6 +48,9 @@ uint32_t GPS_getDistance(GPS_UBLOX_Class GPS, int32_t lat1, int32_t lon1, int32_
   
   dist = sqrt(x*x + y*y) * R;
   //dist = sqrt(dist*dist + z*z);
+  
+  if (dist < 0)
+    Serial.println("WARNING: dist is negative!");
 
   uint32_t final = 0;
   final += dist;  
