@@ -40,12 +40,11 @@ char gpsFilename[32];
 char antFilename[32];
 uint8_t Hrt;
 uint32_t TIME;
-uint32_t GPS_totalDistance = 0;
 
 int32_t LattitudeStart = 436585166, LongitudeStart = -793934912, AltitudeStart = 117689;
 int32_t LattitudePrev, LongitudePrev, AltitudePrev;
 int8_t startSet = 0;
-
+uint32_t GPS_totalDistance = 0;
 
 int8_t lastToggle;
 int8_t Toggle;
@@ -57,7 +56,7 @@ char logFilename[32] = "GPSlog.txt"; // "LGdflt.txt"
 char profileName[16];
 double coeff[7] = {0};
 
-bool simulation_mode;
+bool simulation_mode = 1;
 
 void setup() {
 
@@ -168,13 +167,11 @@ bool coast = false;
 uint16_t time_int = 0;
 uint16_t t2 = 0;
 void loop() { // Original loop
-
   int8_t slipLen;
   //oscIn.packetAvailable(); //SLIP
 
   uint8_t temp;
   int8_t i, m;
-
 
   // put main code here, to run repeatedly:
   while (TIME > millis()) {
@@ -195,6 +192,8 @@ void loop() { // Original loop
       //Serial.print(temp, HEX);
       //Serial.print(' ');
       if ((m = receiveANT(antBuffer)) > 0) {
+        if (m > 64)
+          Serial.print("\n\nANT Overflow\n\n");
 //        Serial.print("ANT+ Packet Received: ");
 //        for (i = 0; i < m + 3; ++i) {
 //          Serial.print(antBuffer[i], HEX);
@@ -377,22 +376,31 @@ void loop() { // Original loop
 //            Serial.print("\t");
 //            Serial.println(AltitudeStart);
 
-      uint32_t displacement = GPS_getDistance(GPS, LattitudeStart, LongitudeStart, AltitudeStart, lat, lon, alt);
-      uint32_t currDistance = GPS_getDistance(GPS, LattitudePrev, LongitudePrev, AltitudePrev, lat, lon, alt);
+      uint32_t displacement = GPS_getDistance(LattitudeStart, LongitudeStart, AltitudeStart, lat, lon, alt);
+      uint32_t currDistance = GPS_getDistance(LattitudePrev, LongitudePrev, AltitudePrev, lat, lon, alt);
 
 //      Serial.print("Current Distance: ");
 //      Serial.print(currDistance);
 //      Serial.print("\tDisplacement: ");
 //      Serial.print(displacement);
-//      Serial.print("\tCumulative Distance: ");
-//      Serial.println(GPS_totalDistance + currDistance);
+      
 
       if (currDistance >= 0) {
-        GPS_totalDistance += currDistance;
+        //GPS_totalDistance += currDistance;
+        
+//        Serial.print("\tCumulative Distance: ");
+//        Serial.println(GPS_totalDistance);
 
         LattitudePrev = lat;
         LongitudePrev = lon;
         AltitudePrev = alt;
+        
+//        Serial.print("Assigned Prev: ");
+//        Serial.print(LattitudePrev);
+//        Serial.print("\t");
+//        Serial.print(LongitudePrev);
+//        Serial.print("\t");
+//        Serial.println(AltitudePrev);
       }
 
 
@@ -435,7 +443,7 @@ void loop() { // Original loop
       // Send Speed through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_SPEED;
       if (simulation_mode) {
-        *((int32_t*)(slipBuffer + 1 + 0)) = velocity;
+        *((int32_t*)(slipBuffer + 1 + 0)) = velocity * 100; // Want cm / s
       } else {
         *((int32_t*)(slipBuffer + 1 + 0)) = GPS.Ground_Speed;
       }

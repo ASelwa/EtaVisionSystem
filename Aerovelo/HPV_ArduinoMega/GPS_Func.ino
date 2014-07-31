@@ -26,7 +26,7 @@ void GPS_setStart(){
 Calculates the 3D distance in meters between two points using 
  Pythagoras Theorem on an equirectangular projection
  */
-uint32_t GPS_getDistance(GPS_UBLOX_Class GPS, int32_t lat1, int32_t lon1, int32_t alt1, int32_t lat2, int32_t lon2, int32_t alt2){
+uint32_t GPS_getDistance(const int32_t lat1, const int32_t lon1, const int32_t alt1, const int32_t lat2, const int32_t lon2, const int32_t alt2){
 
   double x, y, z, dist;
   x = ((deg2rad(lon2)-deg2rad(lon1)) * cos((deg2rad(lat1)+deg2rad(lat2))/2))/10000.0;
