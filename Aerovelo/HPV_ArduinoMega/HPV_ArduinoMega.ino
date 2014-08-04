@@ -120,47 +120,47 @@ void setup() {
 
 int8_t START = 0;
 
-void loopTestPower() {
-  float power = 65000.5678;
-
-  *((uint8_t*)slipBuffer + 0) = ID_POWER;
-  *((uint16_t*)(slipBuffer + 1 + 0)) = power;
-  //*((uint8_t*)slipBuffer + 1 + 2) = cadence;
-  *((uint8_t*)slipBuffer + 1 + 4) = 1;
-
-  for (uint8_t counter = 0; counter < 6; counter++) {
-    Serial.print(slipBuffer[counter], HEX);
-    Serial.print(" ");
-  }
-  Serial.println();
-
-  SlipPacketSend(4, (char*)slipBuffer, &Serial3);
-  delay(10000);
-}
-
-void loopTestCadence() {
-  static uint16_t cadenceTime = 1000;
-
-  *((uint8_t*)slipBuffer + 0) = ID_CADENCE;
-  *((uint16_t*)(slipBuffer + 1 + 0)) = cadenceTime; //cadenceTime - cadenceTimePrev;
-  *((uint8_t*)slipBuffer + 1 + 2) = 2; //cadenceRev - cadenceRevPrev;
-  *((uint8_t*)slipBuffer + 1 + 4) = 1;
-  //Serial.println("Cadence:");
-  //Serial.println(*((uint16_t*)slipBuffer + 1 + 0));
-  //Serial.println(*((uint8_t*)slipBuffer + 1 + 2));
-
-  for (int i = 0; i < 4; i++) {
-    Serial.print(i);
-    Serial.print(": ");
-    Serial.println((uint8_t) slipBuffer[i]);
-  }
-
-  //SlipPacketSend(uint8_t len, char *slipBuffer, HardwareSerial *serial);
-  SlipPacketSend(4, (char*)slipBuffer, &Serial3);
-
-  //cadenceTime += 100;
-  delay(1000);
-}
+//void loopTestPower() {
+//  float power = 65000.5678;
+//
+//  *((uint8_t*)slipBuffer + 0) = ID_POWER;
+//  *((uint16_t*)(slipBuffer + 1 + 0)) = power;
+//  //*((uint8_t*)slipBuffer + 1 + 2) = cadence;
+//  *((uint8_t*)slipBuffer + 1 + 4) = 1;
+//
+//  for (uint8_t counter = 0; counter < 6; counter++) {
+//    Serial.print(slipBuffer[counter], HEX);
+//    Serial.print(" ");
+//  }
+//  Serial.println();
+//
+//  SlipPacketSend(4, (char*)slipBuffer, &Serial3);
+//  delay(10000);
+//}
+//
+//void loopTestCadence() {
+//  static uint16_t cadenceTime = 1000;
+//
+//  *((uint8_t*)slipBuffer + 0) = ID_CADENCE;
+//  *((uint16_t*)(slipBuffer + 1 + 0)) = cadenceTime; //cadenceTime - cadenceTimePrev;
+//  *((uint8_t*)slipBuffer + 1 + 2) = 2; //cadenceRev - cadenceRevPrev;
+//  *((uint8_t*)slipBuffer + 1 + 4) = 1;
+//  //Serial.println("Cadence:");
+//  //Serial.println(*((uint16_t*)slipBuffer + 1 + 0));
+//  //Serial.println(*((uint8_t*)slipBuffer + 1 + 2));
+//
+//  for (int i = 0; i < 4; i++) {
+//    Serial.print(i);
+//    Serial.print(": ");
+//    Serial.println((uint8_t) slipBuffer[i]);
+//  }
+//
+//  //SlipPacketSend(uint8_t len, char *slipBuffer, HardwareSerial *serial);
+//  SlipPacketSend(4, (char*)slipBuffer, &Serial3);
+//
+//  //cadenceTime += 100;
+//  delay(1000);
+//}
 
 float power, cadence, velocity, distance = 0;
 bool coast = false;
@@ -204,7 +204,7 @@ void loop() { // Original loop
         if (m == 9) { 
           switch (antBuffer[2]) { // Channel
             case 0: // Power meter
-              readPowerMeter(antBuffer, 0, &time_int, &power, &cadence, &coast);
+              readPowerMeter(antBuffer, 1, &time_int, &power, &cadence, &coast);
               if (!coast && power != 0 && time_int != 0) {
                 Serial.print("Time interval: ");
                 Serial.println(time_int);
@@ -456,7 +456,7 @@ void loop() { // Original loop
       //Send Distance through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_DISTANCE;
       if (simulation_mode) {
-        *((uint32_t*)(slipBuffer + 1 + 0)) = distance;
+        *((uint32_t*)(slipBuffer + 1 + 0)) = distance*1000;
       } else {
         *((uint32_t*)(slipBuffer + 1 + 0)) = GPS_totalDistance;
       }
@@ -469,7 +469,7 @@ void loop() { // Original loop
       //Send Displacement through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_DISPLACEMENT;
       if (simulation_mode) {
-        *((uint32_t*)(slipBuffer + 1 + 0)) = distance; // Assume same as distance
+        *((uint32_t*)(slipBuffer + 1 + 0)) = distance*1000; // Assume same as distance
       } else {
         *((uint32_t*)(slipBuffer + 1 + 0)) = displacement;
       }

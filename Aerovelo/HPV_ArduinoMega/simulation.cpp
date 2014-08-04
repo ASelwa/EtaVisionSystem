@@ -88,8 +88,6 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
         if (!first_data && prev_data[0] == 0x09 && prev_data[1] == 0x4E && prev_data[3] == 0x20) {
           if (*coast) {
             temp_time = (millis() - last_msg_time) * 2;
-            Serial.print("Temp time: ");
-            Serial.println(temp_time);
           } else if ( cB(pwrRx[7], pwrRx[8]) < cB(prev_data[7], prev_data[8])) {
             temp_time = (65536 - cB(prev_data[7], prev_data[8])) + cB(pwrRx[7], pwrRx[8]);
             //Serial.print("\ntemp_time Rollover!\n");
@@ -148,6 +146,11 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
 
         *power = pwr;
         *cadence_out = cadence;
+      } else if (first_data && *coast) {
+        // copy received data in prev_data array
+        for (i = 0; i < 12; i++) {
+          prev_data[i] = pwrRx[i];
+        } 
       }
       break;
 
@@ -161,6 +164,7 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
       }
 
       last_msg_time = millis();
+      first_data = true; // Skip the first calculation coming out of a coast
       *coast = true;
       *power = pwr;
       *cadence_out = cadence;
