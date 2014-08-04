@@ -17,6 +17,7 @@
 #define ID_TSPEED       13
 #define ID_PROFNAME     14
 #define ID_POWER        15
+#define ID_CALIBRATION  17
 
 typedef struct {
           uint16_t year;

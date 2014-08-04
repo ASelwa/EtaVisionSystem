@@ -9,6 +9,8 @@ extern UTC_t UTC;
 extern uint8_t START, heartRate;
 extern int8_t profile_Num;
 extern char profileName[16];
+extern uint8_t calibrationState;
+extern int16_t offset;
 
 
 void OSD_SlipParse(char *slipBuffer) {
@@ -92,6 +94,9 @@ void OSD_SlipParse(char *slipBuffer) {
   case ID_PROFNAME:
     memcpy(profileName, ((char*)(slipBuffer + 1 + 0)), 16);
     break;
+  case ID_CALIBRATION:
+    calibrationState = *((uint8_t*) (slipBuffer+1));
+    offset = *((int16_t*) (slipBuffer+1+1));
   default:;
   }
 }

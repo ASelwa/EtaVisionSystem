@@ -51,11 +51,19 @@ uint16_t cB(const uint8_t x, const uint8_t y) {
   return (x * 256 + y);
 }
 
+static uint16_t offset = 507;
+void setOffset(int off) {
+  offset = off;
+}
+
+uint16_t getOffset() {
+  return offset;
+}
+
 void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, float* power, float* cadence_out, bool* coast) {
 
   uint8_t i;
   static uint8_t prev_data[12] = {0};
-  static uint16_t offset = 507;
   static int last_msg_time = 0;
   uint16_t temp_time = 0;
   float cadence = 0;

@@ -21,6 +21,7 @@ void writePanels(){
   //Test
   if (osd_set == 0) { // setup panel is called in the else at the end
     //panUTC(6, 0);
+    panCalibration(1, 1);
     panGPS(1  , 6);
     //panHeading(8, 10);
     panCadence(15, 11);
@@ -250,7 +251,7 @@ void panHeading(int first_col, int first_line){
 // Needs  : X, Y locations
 // Output : Cadence (Hz)
 // Size   :  (rows x chars)
-// Status  : 
+// Status  : done
 
 void panCadence(int first_col, int first_line){
 
@@ -275,9 +276,36 @@ void panPower(int first_col, int first_line) {
   osd.closePanel();
 }
 
+/* **************************************************************** */
+// Panel  : Calibration
+// Needs  : X, Y locations
+// Output : Current calibration status
+// Size   :  (rows x chars)
+// Status : done
 
-
-
+void panCalibration(int first_col, int first_line) {
+  osd.setPanel(first_col, first_line);
+  osd.openPanel();
+  
+  switch (calibrationState) {
+    case 0: // Clear the calibration information
+      osd.printf("         ");
+      break;
+    case 1: // Waiting for first calibration message
+      osd.printf("Waiting  ");
+      break;
+    case 2:
+      osd.printf("Receiving");
+      break;
+    case 3:
+      osd.printf("Val: %4i", offset);
+      break;
+    default:
+      osd.printf("Invalid  ");
+  }
+  
+  osd.closePanel();
+}
 
 /* **************************************************************** */
 // Panel  : panRose

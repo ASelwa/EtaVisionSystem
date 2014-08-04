@@ -13,4 +13,6 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
 
 void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, float* dist);
 
+void setOffset(int off);
+
 #endif // SIMULATION_H

@@ -30,6 +30,7 @@
 #define ID_TSPEED       13
 #define ID_PROFNAME     14
 #define ID_POWER        15
+#define ID_CALIBRATION  17 // 1 = Waiting for first calibration message, 2 = Waiting for subsequent calibration messages, 3 = done, 0 = don't display
 
 #define MAX_PROFILE_NUM   3
 
@@ -114,6 +115,8 @@ void setup() {
   Serial.println("ANT+ setup complete.");
 
   TIME = millis() + PERIOD;
+  
+  calibrate();
 
   return;
 }
@@ -162,6 +165,54 @@ int8_t START = 0;
 //  delay(1000);
 //}
 
+void calibrate() {
+  bool calibrated = false;
+  int8_t m;
+  uint8_t i = 0; // Index for cal_values
+  int16_t cal_values[6];
+  int16_t calibrationValue;
+  
+  Serial.println("Begin calibration... Waiting for calibration messages.");
+  *((uint8_t*)slipBuffer + 0) = ID_CALIBRATION;
+  *((uint8_t*)(slipBuffer + 1 + 0)) = 1; // Waiting for first calibration message
+  *((int16_t*)(slipBuffer + 1 + 1)) = 0; // Calibration value
+  *((uint8_t*)slipBuffer + 1 + 3) = 0;
+  SlipPacketSend(4, (char*)slipBuffer, &Serial3);
+  
+  while(i < 6) {
+    if (Serial1.available() && (m = receiveANT(antBuffer)) == 9 && antBuffer[1] == 0x4E && antBuffer[4] == 0x10) {
+      cal_values[i++] = antBuffer[9]*256 + antBuffer[10];
+      
+      *((uint8_t*)slipBuffer + 0) = ID_CALIBRATION;
+      *((uint8_t*)(slipBuffer + 1 + 0)) = 2; // Waiting for subsequent calibration messages
+      *((int16_t*)(slipBuffer + 1 + 1)) = 0; // Calibration value
+      *((uint8_t*)slipBuffer + 1 + 3) = 0;
+      SlipPacketSend(4, (char*)slipBuffer, &Serial3);
+    }
+  }
+  
+  calibrationValue = average(cal_values, 6);
+  setOffset(calibrationValue);
+  
+  Serial.print("Calibration complete! Offset is: ");
+  Serial.print(calibrationValue);
+  Serial.println(" Hz");
+  
+  *((uint8_t*)slipBuffer + 0) = ID_CALIBRATION;
+  *((uint8_t*)(slipBuffer + 1 + 0)) = 3; // Done calibrating
+  *((int16_t*)(slipBuffer + 1 + 1)) = calibrationValue;
+  *((uint8_t*)slipBuffer + 1 + 3) = 0;
+  SlipPacketSend(4, (char*)slipBuffer, &Serial3);
+  
+  delay(1000);
+  
+  *((uint8_t*)slipBuffer + 0) = ID_CALIBRATION;
+  *((uint8_t*)(slipBuffer + 1 + 0)) = 0; // Clear message
+  *((int16_t*)(slipBuffer + 1 + 1)) = calibrationValue;
+  *((uint8_t*)slipBuffer + 1 + 3) = 0;
+  SlipPacketSend(4, (char*)slipBuffer, &Serial3);
+}
+
 float power, cadence, velocity, distance = 0;
 bool coast = false;
 uint16_t time_int = 0;
@@ -194,12 +245,12 @@ void loop() { // Original loop
       if ((m = receiveANT(antBuffer)) > 0) {
         if (m > 64)
           Serial.print("\n\nANT Overflow\n\n");
-//        Serial.print("ANT+ Packet Received: ");
-//        for (i = 0; i < m + 3; ++i) {
-//          Serial.print(antBuffer[i], HEX);
-//          Serial.print(' ');
-//        }
-//        Serial.print('\n');
+        Serial.print("ANT+ Packet Received: ");
+        for (i = 0; i < m + 3; ++i) {
+          Serial.print(antBuffer[i], HEX);
+          Serial.print(' ');
+        }
+        Serial.print('\n');
 
         if (m == 9) { 
           switch (antBuffer[2]) { // Channel
@@ -229,41 +280,41 @@ void loop() { // Original loop
               SlipPacketSend(4, (char*)slipBuffer, &Serial3);
 
               break;
-            case 2: // Speed and cadence. SHOULD NOT HAPPEN
-              uint16_t cadenceTime, cadenceRev, bikeTime, bikeRev;
-              static uint16_t cadenceTimePrev, cadenceRevPrev, bikeTimePrev, bikeRevPrev;
-
-              cadenceTime = *((uint16_t*)(antBuffer + m + 2 - 8));
-              cadenceRev = *((uint16_t*)(antBuffer + m + 2 - 6));
-              bikeTime = *((uint16_t*)(antBuffer + m + 2 - 4));
-              bikeRev = *((uint16_t*)(antBuffer + m + 2 - 2));
-
-              // Send Cadence data if different from previous
-              if (cadenceRev - cadenceRevPrev) {
-                *((uint8_t*)slipBuffer + 0) = ID_CADENCE;
-                *((uint16_t*)(slipBuffer + 1 + 0)) = cadenceTime - cadenceTimePrev;
-                *((uint8_t*)slipBuffer + 1 + 2) = cadenceRev - cadenceRevPrev;
-                *((uint8_t*)slipBuffer + 1 + 3) = 0;
-                //Serial.println("Cadence:");
-                //Serial.println(*((uint16_t*)slipBuffer + 1 + 0));
-                //Serial.println(*((uint8_t*)slipBuffer + 1 + 2));
-
-
-                //SlipPacketSend(uint8_t len, char *slipBuffer, HardwareSerial *serial);
-                SlipPacketSend(4, (char*)slipBuffer, &Serial3);
-                cadenceTimePrev = cadenceTime;
-                cadenceRevPrev = cadenceRev;
-                bikeTimePrev = bikeTime;
-                bikeRevPrev = bikeRev;
-              }
-
-
-              *((uint8_t*)slipBuffer + 0) = ID_HEART;
-              *((uint16_t*)(slipBuffer + 1 + 0)) = antBuffer[3 + 7];
-              *((uint8_t*)slipBuffer + 1 + 1) = 0;
-              SlipPacketSend(2, (char*)slipBuffer, &Serial3);
-
-              break;
+//            case 2: // Speed and cadence. SHOULD NOT HAPPEN
+//              uint16_t cadenceTime, cadenceRev, bikeTime, bikeRev;
+//              static uint16_t cadenceTimePrev, cadenceRevPrev, bikeTimePrev, bikeRevPrev;
+//
+//              cadenceTime = *((uint16_t*)(antBuffer + m + 2 - 8));
+//              cadenceRev = *((uint16_t*)(antBuffer + m + 2 - 6));
+//              bikeTime = *((uint16_t*)(antBuffer + m + 2 - 4));
+//              bikeRev = *((uint16_t*)(antBuffer + m + 2 - 2));
+//
+//              // Send Cadence data if different from previous
+//              if (cadenceRev - cadenceRevPrev) {
+//                *((uint8_t*)slipBuffer + 0) = ID_CADENCE;
+//                *((uint16_t*)(slipBuffer + 1 + 0)) = cadenceTime - cadenceTimePrev;
+//                *((uint8_t*)slipBuffer + 1 + 2) = cadenceRev - cadenceRevPrev;
+//                *((uint8_t*)slipBuffer + 1 + 3) = 0;
+//                //Serial.println("Cadence:");
+//                //Serial.println(*((uint16_t*)slipBuffer + 1 + 0));
+//                //Serial.println(*((uint8_t*)slipBuffer + 1 + 2));
+//
+//
+//                //SlipPacketSend(uint8_t len, char *slipBuffer, HardwareSerial *serial);
+//                SlipPacketSend(4, (char*)slipBuffer, &Serial3);
+//                cadenceTimePrev = cadenceTime;
+//                cadenceRevPrev = cadenceRev;
+//                bikeTimePrev = bikeTime;
+//                bikeRevPrev = bikeRev;
+//              }
+//
+//
+//              *((uint8_t*)slipBuffer + 0) = ID_HEART;
+//              *((uint16_t*)(slipBuffer + 1 + 0)) = antBuffer[3 + 7];
+//              *((uint8_t*)slipBuffer + 1 + 1) = 0;
+//              SlipPacketSend(2, (char*)slipBuffer, &Serial3);
+//
+//              break;
             case 1: // Heart rate.
               Hrt = antBuffer[3 + 7];
               *((uint8_t*)slipBuffer + 0) = ID_HEART;
@@ -574,4 +625,16 @@ int32_t average(int32_t *beg, const int len) {
   }
 
   return total;
+}
+
+int16_t average(int16_t *beg, const int len) {
+  float total = 0;
+  
+  for (int i = 0; i < len; ++i) {
+    total += *(beg + i);
+  }
+  
+  total /= len;
+
+  return (int16_t) (total + 0.5f);
 }
