@@ -269,30 +269,31 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
     float power_in = power * etaD;	// watts (J/s)
     //energy_in = power_in * power_interval;	// energy (joules) input since previous measurement
 
-    bool calc_dist = true;
+    //bool calc_dist = true;
     uint8_t count = 0;
     float elev_calc[10] = {0};
-    while (calc_dist) {
+    //while (calc_dist) {
+      Pelev = M*(-g)*change_elev/power_interval;
 
       power_left = power_in 	/*rolling friction*/ - Proll
-                   /*air drag*/ - Paero
+                   /*air drag*/ - Paero;
                    /*elevation change*/ + Pelev;
 
       // Method 1
-      /*if (power_left < 0)	delta_v = (-1)*sqrt(2*(-1)*power_left*power_interval/(M + 2));
-      else if (power_left == 0) delta_v = 0;
-      else delta_v = sqrt(2*power_left*power_interval/(M + 2));
-
-      delta_d = 0.5*(prev_velo*2 + delta_v)*power_interval;
-
-      velocity = prev_velo + delta_v;
-      distance = prev_dist + delta_d;*/
+//      if (power_left < 0)	delta_v = (-1)*sqrt(2*(-1)*power_left*power_interval/(M + 2));
+//      else if (power_left == 0) delta_v = 0;
+//      else delta_v = sqrt(2*power_left*power_interval/(M + 2));
+//
+//      delta_d = 0.5*(prev_velo*2 + delta_v)*power_interval;
+//
+//      velocity = prev_velo + delta_v;
+//      distance = prev_dist + delta_d;
       // end Method 1
 
       // Method 2
-      float net_energy = power_in * power_interval + 0.5 * M * pow(velocity, 2);
+      float net_energy = power_left * power_interval + 0.5 * M * pow(velocity, 2);
       if (net_energy < 0) velocity = 0;
-      else velocity = sqrt(2 * net_energy / (M + 2));
+      else velocity = sqrt(2 * net_energy / M);
 
       distance = prev_dist + 0.5 * (prev_velo + velocity) * power_interval;
       // end Method 2
@@ -304,10 +305,10 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
       elev_calc[count] = Pelev;
       count++;
 
-      if (abs(Pelev - prev_Pelev) <= 1) calc_dist = false;
-      else if (count > 10) calc_dist = false;
+    //  if (abs(Pelev - prev_Pelev) <= 1) calc_dist = false;
+    //  else if (count > 10) calc_dist = false;
 
-    }
+    //}
     /*for (uint8_t i=0;i<10;i++) {
     	Serial.print(elev_calc[i]);
     	Serial.print("W.\t");

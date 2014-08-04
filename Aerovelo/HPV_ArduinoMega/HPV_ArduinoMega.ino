@@ -56,7 +56,7 @@ char logFilename[32] = "GPSlog.txt"; // "LGdflt.txt"
 char profileName[16];
 double coeff[7] = {0};
 
-bool simulation_mode = 1;
+bool simulation_mode = true;
 
 void setup() {
 
@@ -204,14 +204,14 @@ void loop() { // Original loop
         if (m == 9) { 
           switch (antBuffer[2]) { // Channel
             case 0: // Power meter
-              readPowerMeter(antBuffer, 1, &time_int, &power, &cadence, &coast);
+              readPowerMeter(antBuffer, 0, &time_int, &power, &cadence, &coast);
               if (!coast && power != 0 && time_int != 0) {
                 Serial.print("Time interval: ");
                 Serial.println(time_int);
-                simulate(power, time_int, 0, &velocity, &distance);
+                simulate(power, time_int, 2, &velocity, &distance);
                 t2 = millis();	// last power meter data message received
               } else if (coast) {
-                simulate(0, 2 * (millis() - t2) , 0, &velocity, &distance);
+                simulate(0, 2 * (millis() - t2) , 2, &velocity, &distance);
                 t2 = millis();
               }
 
@@ -296,13 +296,6 @@ void loop() { // Original loop
 
       //Serial.println((char*)gps_str);
 
-      //Serial.print("Sats: ");
-      //Serial.print(GPS.NumSats);
-      //Serial.print("\t");
-
-      //Serial.print("Speed: ");
-      //Serial.println(GPS.Ground_Speed);
-
       //Get Distance
       /*
       if (START){
@@ -386,7 +379,7 @@ void loop() { // Original loop
       
 
       if (currDistance >= 0) {
-        //GPS_totalDistance += currDistance;
+        GPS_totalDistance += currDistance;
         
 //        Serial.print("\tCumulative Distance: ");
 //        Serial.println(GPS_totalDistance);
@@ -405,7 +398,7 @@ void loop() { // Original loop
 
 
       //Updates profileNum, profileFilename, logFilename and starting GPS location if the yellow button is pressed
-      //toggle();
+      toggle();
       //Send profileNum through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_PROFNUM;
       *((int8_t*)(slipBuffer + 1 + 0)) = profileNum;
@@ -443,9 +436,11 @@ void loop() { // Original loop
       // Send Speed through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_SPEED;
       if (simulation_mode) {
-        *((int32_t*)(slipBuffer + 1 + 0)) = velocity * 100; // Want cm / s
+        *((int32_t*)(slipBuffer + 1 + 0)) = velocity * 100; // Will be converted to km / h in OSD_SLIP
+        Serial.println(velocity * 3.6);
       } else {
         *((int32_t*)(slipBuffer + 1 + 0)) = GPS.Ground_Speed;
+        Serial.println(GPS.Ground_Speed);
       }
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);

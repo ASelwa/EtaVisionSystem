@@ -154,14 +154,14 @@ void panSats(int first_col, int first_line){
 void panDist(int first_col, int first_line){
   osd.setPanel(first_col, first_line);
   osd.openPanel();
-  osd.printf("Dist: %lu m ", GPS_Distance);
+  osd.printf("Dist: %5lu m ", GPS_Distance);
   osd.closePanel();
 }
 
 void panDisplace(int first_col, int first_line){
   osd.setPanel(first_col, first_line);
   osd.openPanel();
-  osd.printf("Disp: %lu m ", GPS_Displacement);
+  osd.printf("Disp: %5lu m ", GPS_Displacement);
   osd.closePanel();
 }
 
@@ -271,7 +271,7 @@ void panHeart(int first_col, int first_line){
 void panPower(int first_col, int first_line) {
   osd.setPanel(first_col, first_line);
   osd.openPanel();
-  osd.printf(" Pow: %3.1f W ", power);
+  osd.printf(" Pow: %5.1f W ", power);
   osd.closePanel();
 }
 

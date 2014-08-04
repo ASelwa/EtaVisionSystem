@@ -61,6 +61,6 @@ Saves data in the SD card
 UNDONE
 */
 void storeData(){
-	//sprintf(sdBuffer, "%li, %li, %li, %li, %li", );
+	sprintf(sdBuffer, "%li, %li, %li, %li, %li");
 	return;
 }

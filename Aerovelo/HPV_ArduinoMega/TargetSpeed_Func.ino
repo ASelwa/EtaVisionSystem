@@ -1,5 +1,4 @@
 /* Target Speed Functions */
-extern bool simulation_mode;
 /*
 Updates profileNum, profileFilename, logFilename and starting GPS location if the yellow button is pressed
  */
