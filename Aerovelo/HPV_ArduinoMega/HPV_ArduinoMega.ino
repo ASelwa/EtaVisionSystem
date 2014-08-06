@@ -32,7 +32,7 @@
 #define ID_POWER        15
 #define ID_CALIBRATION  17 // 1 = Waiting for first calibration message, 2 = Waiting for subsequent calibration messages, 3 = done, 0 = don't display
 
-#define MAX_PROFILE_NUM   3
+#define MAX_PROFILE_NUM   1
 
 char slipBuffer[128]; //SLIP
 uint8_t antBuffer[64]; // ANT+
@@ -107,15 +107,15 @@ void setup() {
   //}
 
   // Crank Torque Frequency
-  ANT_SetupChannel(antBuffer, 0, 11, 0, 8182);
+  ANT_SetupChannel(antBuffer, 0, 11, 0, 8182, 12131);
   // Heart rate channel.
   //ANT_SetupChannel(antBuffer, 1, 0x78, 1, 8086); // 8070
-  ANT_SetupChannel(antBuffer, 1, 120, 0, 16140);
+  ANT_SetupChannel(antBuffer, 1, 120, 0, 16140, 45063);
 
   Serial.println("ANT+ setup complete.");
 
   TIME = millis() + PERIOD;
-  
+
   calibrate();
 
   return;
@@ -171,18 +171,18 @@ void calibrate() {
   uint8_t i = 0; // Index for cal_values
   int16_t cal_values[6];
   int16_t calibrationValue;
-  
+
   Serial.println("Begin calibration... Waiting for calibration messages.");
   *((uint8_t*)slipBuffer + 0) = ID_CALIBRATION;
   *((uint8_t*)(slipBuffer + 1 + 0)) = 1; // Waiting for first calibration message
   *((int16_t*)(slipBuffer + 1 + 1)) = 0; // Calibration value
   *((uint8_t*)slipBuffer + 1 + 3) = 0;
   SlipPacketSend(4, (char*)slipBuffer, &Serial3);
-  
-  while(i < 6) {
+
+  while (i < 6) {
     if (Serial1.available() && (m = receiveANT(antBuffer)) == 9 && antBuffer[1] == 0x4E && antBuffer[4] == 0x10) {
-      cal_values[i++] = antBuffer[9]*256 + antBuffer[10];
-      
+      cal_values[i++] = antBuffer[9] * 256 + antBuffer[10];
+
       *((uint8_t*)slipBuffer + 0) = ID_CALIBRATION;
       *((uint8_t*)(slipBuffer + 1 + 0)) = 2; // Waiting for subsequent calibration messages
       *((int16_t*)(slipBuffer + 1 + 1)) = 0; // Calibration value
@@ -190,22 +190,22 @@ void calibrate() {
       SlipPacketSend(4, (char*)slipBuffer, &Serial3);
     }
   }
-  
+
   calibrationValue = average(cal_values, 6);
   setOffset(calibrationValue);
-  
+
   Serial.print("Calibration complete! Offset is: ");
   Serial.print(calibrationValue);
   Serial.println(" Hz");
-  
+
   *((uint8_t*)slipBuffer + 0) = ID_CALIBRATION;
   *((uint8_t*)(slipBuffer + 1 + 0)) = 3; // Done calibrating
   *((int16_t*)(slipBuffer + 1 + 1)) = calibrationValue;
   *((uint8_t*)slipBuffer + 1 + 3) = 0;
   SlipPacketSend(4, (char*)slipBuffer, &Serial3);
-  
-  delay(1000);
-  
+
+  delay(2000);
+
   *((uint8_t*)slipBuffer + 0) = ID_CALIBRATION;
   *((uint8_t*)(slipBuffer + 1 + 0)) = 0; // Clear message
   *((int16_t*)(slipBuffer + 1 + 1)) = calibrationValue;
@@ -252,17 +252,17 @@ void loop() { // Original loop
         }
         Serial.print('\n');
 
-        if (m == 9) { 
+        if (m == 9) {
           switch (antBuffer[2]) { // Channel
             case 0: // Power meter
               readPowerMeter(antBuffer, 0, &time_int, &power, &cadence, &coast);
               if (!coast && power != 0 && time_int != 0) {
                 Serial.print("Time interval: ");
                 Serial.println(time_int);
-                simulate(power, time_int, 2, &velocity, &distance);
+                simulate(power, time_int, 0, &velocity, &distance);
                 t2 = millis();	// last power meter data message received
               } else if (coast) {
-                simulate(0, 2 * (millis() - t2) , 2, &velocity, &distance);
+                simulate(0, 2 * (millis() - t2) , 0, &velocity, &distance);
                 t2 = millis();
               }
 
@@ -280,41 +280,41 @@ void loop() { // Original loop
               SlipPacketSend(4, (char*)slipBuffer, &Serial3);
 
               break;
-//            case 2: // Speed and cadence. SHOULD NOT HAPPEN
-//              uint16_t cadenceTime, cadenceRev, bikeTime, bikeRev;
-//              static uint16_t cadenceTimePrev, cadenceRevPrev, bikeTimePrev, bikeRevPrev;
-//
-//              cadenceTime = *((uint16_t*)(antBuffer + m + 2 - 8));
-//              cadenceRev = *((uint16_t*)(antBuffer + m + 2 - 6));
-//              bikeTime = *((uint16_t*)(antBuffer + m + 2 - 4));
-//              bikeRev = *((uint16_t*)(antBuffer + m + 2 - 2));
-//
-//              // Send Cadence data if different from previous
-//              if (cadenceRev - cadenceRevPrev) {
-//                *((uint8_t*)slipBuffer + 0) = ID_CADENCE;
-//                *((uint16_t*)(slipBuffer + 1 + 0)) = cadenceTime - cadenceTimePrev;
-//                *((uint8_t*)slipBuffer + 1 + 2) = cadenceRev - cadenceRevPrev;
-//                *((uint8_t*)slipBuffer + 1 + 3) = 0;
-//                //Serial.println("Cadence:");
-//                //Serial.println(*((uint16_t*)slipBuffer + 1 + 0));
-//                //Serial.println(*((uint8_t*)slipBuffer + 1 + 2));
-//
-//
-//                //SlipPacketSend(uint8_t len, char *slipBuffer, HardwareSerial *serial);
-//                SlipPacketSend(4, (char*)slipBuffer, &Serial3);
-//                cadenceTimePrev = cadenceTime;
-//                cadenceRevPrev = cadenceRev;
-//                bikeTimePrev = bikeTime;
-//                bikeRevPrev = bikeRev;
-//              }
-//
-//
-//              *((uint8_t*)slipBuffer + 0) = ID_HEART;
-//              *((uint16_t*)(slipBuffer + 1 + 0)) = antBuffer[3 + 7];
-//              *((uint8_t*)slipBuffer + 1 + 1) = 0;
-//              SlipPacketSend(2, (char*)slipBuffer, &Serial3);
-//
-//              break;
+              //            case 2: // Speed and cadence. SHOULD NOT HAPPEN
+              //              uint16_t cadenceTime, cadenceRev, bikeTime, bikeRev;
+              //              static uint16_t cadenceTimePrev, cadenceRevPrev, bikeTimePrev, bikeRevPrev;
+              //
+              //              cadenceTime = *((uint16_t*)(antBuffer + m + 2 - 8));
+              //              cadenceRev = *((uint16_t*)(antBuffer + m + 2 - 6));
+              //              bikeTime = *((uint16_t*)(antBuffer + m + 2 - 4));
+              //              bikeRev = *((uint16_t*)(antBuffer + m + 2 - 2));
+              //
+              //              // Send Cadence data if different from previous
+              //              if (cadenceRev - cadenceRevPrev) {
+              //                *((uint8_t*)slipBuffer + 0) = ID_CADENCE;
+              //                *((uint16_t*)(slipBuffer + 1 + 0)) = cadenceTime - cadenceTimePrev;
+              //                *((uint8_t*)slipBuffer + 1 + 2) = cadenceRev - cadenceRevPrev;
+              //                *((uint8_t*)slipBuffer + 1 + 3) = 0;
+              //                //Serial.println("Cadence:");
+              //                //Serial.println(*((uint16_t*)slipBuffer + 1 + 0));
+              //                //Serial.println(*((uint8_t*)slipBuffer + 1 + 2));
+              //
+              //
+              //                //SlipPacketSend(uint8_t len, char *slipBuffer, HardwareSerial *serial);
+              //                SlipPacketSend(4, (char*)slipBuffer, &Serial3);
+              //                cadenceTimePrev = cadenceTime;
+              //                cadenceRevPrev = cadenceRev;
+              //                bikeTimePrev = bikeTime;
+              //                bikeRevPrev = bikeRev;
+              //              }
+              //
+              //
+              //              *((uint8_t*)slipBuffer + 0) = ID_HEART;
+              //              *((uint16_t*)(slipBuffer + 1 + 0)) = antBuffer[3 + 7];
+              //              *((uint8_t*)slipBuffer + 1 + 1) = 0;
+              //              SlipPacketSend(2, (char*)slipBuffer, &Serial3);
+              //
+              //              break;
             case 1: // Heart rate.
               Hrt = antBuffer[3 + 7];
               *((uint8_t*)slipBuffer + 0) = ID_HEART;
@@ -399,52 +399,52 @@ void loop() { // Original loop
       int32_t lon = average(longitude, numTerms);
       int32_t alt = average(altitude, numTerms);
 
-//            Serial.print("Current: ");
-//            Serial.print(lat);
-//            Serial.print("\t");
-//            Serial.print(lon);
-//            Serial.print("\t");
-//            Serial.println(alt);
-//      
-//            Serial.print("Last: ");
-//            Serial.print(LattitudePrev);
-//            Serial.print("\t");
-//            Serial.print(LongitudePrev);
-//            Serial.print("\t");
-//            Serial.println(AltitudePrev);
-//      
-//            Serial.print("Start: ");
-//            Serial.print(LattitudeStart);
-//            Serial.print("\t");
-//            Serial.print(LongitudeStart);
-//            Serial.print("\t");
-//            Serial.println(AltitudeStart);
+      //            Serial.print("Current: ");
+      //            Serial.print(lat);
+      //            Serial.print("\t");
+      //            Serial.print(lon);
+      //            Serial.print("\t");
+      //            Serial.println(alt);
+      //
+      //            Serial.print("Last: ");
+      //            Serial.print(LattitudePrev);
+      //            Serial.print("\t");
+      //            Serial.print(LongitudePrev);
+      //            Serial.print("\t");
+      //            Serial.println(AltitudePrev);
+      //
+      //            Serial.print("Start: ");
+      //            Serial.print(LattitudeStart);
+      //            Serial.print("\t");
+      //            Serial.print(LongitudeStart);
+      //            Serial.print("\t");
+      //            Serial.println(AltitudeStart);
 
       uint32_t displacement = GPS_getDistance(LattitudeStart, LongitudeStart, AltitudeStart, lat, lon, alt);
       uint32_t currDistance = GPS_getDistance(LattitudePrev, LongitudePrev, AltitudePrev, lat, lon, alt);
 
-//      Serial.print("Current Distance: ");
-//      Serial.print(currDistance);
-//      Serial.print("\tDisplacement: ");
-//      Serial.print(displacement);
-      
+      //      Serial.print("Current Distance: ");
+      //      Serial.print(currDistance);
+      //      Serial.print("\tDisplacement: ");
+      //      Serial.print(displacement);
+
 
       if (currDistance >= 0) {
         GPS_totalDistance += currDistance;
-        
-//        Serial.print("\tCumulative Distance: ");
-//        Serial.println(GPS_totalDistance);
+
+        //        Serial.print("\tCumulative Distance: ");
+        //        Serial.println(GPS_totalDistance);
 
         LattitudePrev = lat;
         LongitudePrev = lon;
         AltitudePrev = alt;
-        
-//        Serial.print("Assigned Prev: ");
-//        Serial.print(LattitudePrev);
-//        Serial.print("\t");
-//        Serial.print(LongitudePrev);
-//        Serial.print("\t");
-//        Serial.println(AltitudePrev);
+
+        //        Serial.print("Assigned Prev: ");
+        //        Serial.print(LattitudePrev);
+        //        Serial.print("\t");
+        //        Serial.print(LongitudePrev);
+        //        Serial.print("\t");
+        //        Serial.println(AltitudePrev);
       }
 
 
@@ -469,7 +469,7 @@ void loop() { // Original loop
 
       //Get target speed
       int32_t targetSpeed = 0;
-      
+
       if (simulation_mode) {
         targetSpeed = calcSpeed(distance, coeff);
       } else {
@@ -488,10 +488,8 @@ void loop() { // Original loop
       *((uint8_t*)slipBuffer + 0) = ID_SPEED;
       if (simulation_mode) {
         *((int32_t*)(slipBuffer + 1 + 0)) = velocity * 100; // Will be converted to km / h in OSD_SLIP
-        Serial.println(velocity * 3.6);
       } else {
         *((int32_t*)(slipBuffer + 1 + 0)) = GPS.Ground_Speed;
-        Serial.println(GPS.Ground_Speed);
       }
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
@@ -502,7 +500,7 @@ void loop() { // Original loop
       //Send Distance through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_DISTANCE;
       if (simulation_mode) {
-        *((uint32_t*)(slipBuffer + 1 + 0)) = distance*1000;
+        *((uint32_t*)(slipBuffer + 1 + 0)) = distance * 1000;
       } else {
         *((uint32_t*)(slipBuffer + 1 + 0)) = GPS_totalDistance;
       }
@@ -515,7 +513,7 @@ void loop() { // Original loop
       //Send Displacement through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_DISPLACEMENT;
       if (simulation_mode) {
-        *((uint32_t*)(slipBuffer + 1 + 0)) = distance*1000; // Assume same as distance
+        *((uint32_t*)(slipBuffer + 1 + 0)) = distance * 1000; // Assume same as distance
       } else {
         *((uint32_t*)(slipBuffer + 1 + 0)) = displacement;
       }
@@ -612,7 +610,52 @@ void loop() { // Original loop
        */
 
       digitalWrite(9, HIGH);
-    }
+    } /*else if (simulation_mode) {
+      //Get target speed
+      int32_t targetSpeed = 0;
+      
+      //Updates profileNum, profileFilename, logFilename and starting GPS location if the yellow button is pressed
+      toggle();
+      //Send profileNum through SLIP
+      *((uint8_t*)slipBuffer + 0) = ID_PROFNUM;
+      *((int8_t*)(slipBuffer + 1 + 0)) = profileNum;
+      *((uint8_t*)slipBuffer + 1 + 1) = 0;
+      SlipPacketSend(3, (char*)slipBuffer, &Serial3);
+
+      //Send profileName through SLIP
+      *((uint8_t*)slipBuffer + 0) = ID_PROFNAME;
+      memcpy(((int8_t*)(slipBuffer + 1 + 0)), profileName, 16);
+      *((uint8_t*)slipBuffer + 1 + 16) = 0;
+      SlipPacketSend(18, (char*)slipBuffer, &Serial3);
+      
+      targetSpeed = calcSpeed(distance, coeff);
+      //Send target speed through SLIP
+      *((uint8_t*)slipBuffer + 0) = ID_TSPEED;
+      *((int32_t*)(slipBuffer + 1 + 0)) = targetSpeed;
+      *((uint8_t*)slipBuffer + 1 + 4) = 0;
+      SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+
+      // Send Speed through SLIP
+      *((uint8_t*)slipBuffer + 0) = ID_SPEED;
+      *((int32_t*)(slipBuffer + 1 + 0)) = velocity * 100; // Will be converted to km / h in OSD_SLIP
+      *((uint8_t*)slipBuffer + 1 + 4) = 0;
+      SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+      
+      Serial.println("Velocity: ");
+      Serial.println(velocity);
+
+      //Send Distance through SLIP
+      *((uint8_t*)slipBuffer + 0) = ID_DISTANCE;
+      *((uint32_t*)(slipBuffer + 1 + 0)) = distance * 1000;
+      *((uint8_t*)slipBuffer + 1 + 4) = 0;
+      SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+
+      //Send Displacement through SLIP
+      *((uint8_t*)slipBuffer + 0) = ID_DISPLACEMENT;
+      *((uint32_t*)(slipBuffer + 1 + 0)) = distance * 1000; // Assume same as distance
+      *((uint8_t*)slipBuffer + 1 + 4) = 0;
+      SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+    }*/
   }
   TIME += PERIOD;
 }
@@ -629,11 +672,11 @@ int32_t average(int32_t *beg, const int len) {
 
 int16_t average(int16_t *beg, const int len) {
   float total = 0;
-  
+
   for (int i = 0; i < len; ++i) {
     total += *(beg + i);
   }
-  
+
   total /= len;
 
   return (int16_t) (total + 0.5f);

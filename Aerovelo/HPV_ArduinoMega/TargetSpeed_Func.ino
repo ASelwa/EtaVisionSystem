@@ -11,18 +11,22 @@ void toggle() {
   Toggle = !digitalRead(8);
   //If button was pressed, update "profile"
   if (Toggle != lastToggle) {
-    Serial.println('Toggle!');
-
+    Serial.println("Toggle!");
     lastToggle = Toggle;
 
     // Update profileNum
     profileNum++;
 
-    if (profileNum > (MAX_PROFILE_NUM + 1))
+    if (profileNum > (MAX_PROFILE_NUM+1))
     {
       profileNum = 0;
     }
 
+    // Reset the state
+    distance = 0;
+    velocity = 0;
+    GPS_totalDistance = 0;
+    
     if (profileNum <= MAX_PROFILE_NUM) {
       simulation_mode = false;
       Serial.print("Updated Profile #: ");
@@ -58,7 +62,7 @@ void toggle() {
 
         // Check accuracy first?
         
-        //GPS_setStart();
+        GPS_setStart();
 
         /*
         dataFile = SD.open("gpsRef.txt", FILE_READ);
@@ -91,7 +95,7 @@ void toggle() {
           dataFile.close();
         }
         
-        //GPS_setStart();
+        GPS_setStart();
 
 
         /*

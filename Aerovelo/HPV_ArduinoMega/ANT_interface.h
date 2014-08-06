@@ -13,7 +13,7 @@
 
 void ANT_SendMessage(uint8_t *buf, uint8_t n);
 
-void ANT_SetupChannel(uint8_t *buf, uint8_t channel, uint8_t Dev_T, uint8_t Trans_T, uint16_t period);
+void ANT_SetupChannel(uint8_t *buf, uint8_t channel, uint8_t Dev_T, uint8_t Trans_T, uint16_t period, uint16_t Dev_Num);
 
 void receiveInterrupt();
 

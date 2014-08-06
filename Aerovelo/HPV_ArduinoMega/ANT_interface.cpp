@@ -16,7 +16,7 @@ void ANT_SendMessage(uint8_t *buf, uint8_t n){
   Serial1.write(buf, n+3);
 }
 
-void ANT_SetupChannel(uint8_t *buf, uint8_t channel, uint8_t Dev_T, uint8_t Trans_T, uint16_t period){
+void ANT_SetupChannel(uint8_t *buf, uint8_t channel, uint8_t Dev_T, uint8_t Trans_T, uint16_t period, uint16_t Dev_Num){
 
   const char key[] = NET_KEY_ANTP;
 
@@ -51,11 +51,16 @@ void ANT_SetupChannel(uint8_t *buf, uint8_t channel, uint8_t Dev_T, uint8_t Tran
   buf[2] = MESG_CHANNEL_ID_ID;
   buf[3] = channel;
   
-  *((uint16_t*)(buf+5)) = 0;      // Device number, 0 is wildcard.
+  *((uint16_t*)(buf+4)) = Dev_Num;      // Device number, 0 is wildcard.
   
   buf[6] = 0b00000000 + Dev_T;     //121; // Pairing bit + device type. 0 is wildcard
   buf[7] = Trans_T;//0x01;      // Transmission type. 0 is wildcard to receive any type.
 
+  for(int i = 0; i < 8; i++) {
+    Serial.print(buf[i], HEX);
+    Serial.print("\t");
+  } Serial.println();
+  
   ANT_SendMessage(buf, 8);
   delayMicroseconds(1000);
 
@@ -79,6 +84,16 @@ void ANT_SetupChannel(uint8_t *buf, uint8_t channel, uint8_t Dev_T, uint8_t Tran
 
   ANT_SendMessage(buf, 5);
   delayMicroseconds(1000);
+  
+  // Set channel search timeout
+  buf[0] = MESG_TX_SYNC;
+  buf[1] = MESG_CHANNEL_SEARCH_TIMEOUT_SIZE;
+  buf[2] = MESG_CHANNEL_SEARCH_TIMEOUT_ID;
+  buf[3] = channel;
+  buf[4] = 255;
+
+  ANT_SendMessage(buf, 5);
+  delayMicroseconds(1000);
 
   // Open channel.
   buf[0] = MESG_TX_SYNC;
@@ -91,13 +106,13 @@ void ANT_SetupChannel(uint8_t *buf, uint8_t channel, uint8_t Dev_T, uint8_t Tran
 
 
   // Open RX Scan Mode.
-  buf[0] = MESG_TX_SYNC;
-  buf[1] = 1;
-  buf[2] = 0x5B;
-  buf[3] = 0;
-
-  ANT_SendMessage(buf, 4);
-  delayMicroseconds(1000);
+//  buf[0] = MESG_TX_SYNC;
+//  buf[1] = 1;
+//  buf[2] = 0x5B;
+//  buf[3] = 0;
+//
+//  ANT_SendMessage(buf, 4);
+//  delayMicroseconds(1000);
 
 
   // Request data.
@@ -138,6 +153,13 @@ uint8_t receiveANT(uint8_t *rxBuf){
 
     break;
   case 1:  // 0xA4 received
+    if (temp > 9) {
+      Serial.println("Message length > 10");
+      rxState = 0;
+      msgLen = 0;
+      break;
+    }
+    
     index = 0;
     msgLen = temp;
     rxBuf[index++] = temp;

@@ -197,8 +197,8 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
   t1 = millis();
   if (power == 0 && time_interval == 0) return;
 
-  static float velocity = 0;
-  static float distance = 0;
+  float velocity = *velo;
+  float distance = *dist;
 
   if (isnan(velocity)) {
     Serial.print("static variable velocity in function simulate2 is NAN. velocity passed in as a parameter is ");
@@ -280,7 +280,7 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
     //bool calc_dist = true;
     uint8_t count = 0;
     float elev_calc[10] = {0};
-    //while (calc_dist) {
+    while (calc_dist) {
       Pelev = M*(-g)*change_elev/power_interval;
 
       power_left = power_in 	/*rolling friction*/ - Proll
@@ -313,10 +313,10 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
       elev_calc[count] = Pelev;
       count++;
 
-    //  if (abs(Pelev - prev_Pelev) <= 1) calc_dist = false;
-    //  else if (count > 10) calc_dist = false;
+      if (abs(Pelev - prev_Pelev) <= 1) calc_dist = false;
+      else if (count > 1) calc_dist = false;
 
-    //}
+    }
     /*for (uint8_t i=0;i<10;i++) {
     	Serial.print(elev_calc[i]);
     	Serial.print("W.\t");
