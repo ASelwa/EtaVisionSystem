@@ -11,6 +11,7 @@ extern int8_t profile_Num;
 extern char profileName[16];
 extern uint8_t calibrationState;
 extern int16_t offset;
+extern float batteryLevel;
 
 
 void OSD_SlipParse(char *slipBuffer) {
@@ -19,8 +20,7 @@ void OSD_SlipParse(char *slipBuffer) {
   Serial.print("MsgID = ");
   Serial.println(MsgID);
 
-  switch(MsgID)
-  {
+  switch(MsgID) {
   case ID_CADENCE:
     Serial.print("Cadence:\n    N = ");
     Serial.print(*((uint8_t*) slipBuffer+3));
@@ -28,12 +28,7 @@ void OSD_SlipParse(char *slipBuffer) {
     Serial.println(*((uint16_t*)((uint8_t*)slipBuffer+1)));
     cadence = (*((uint8_t*) slipBuffer+3)*1000.0)/ (1.0* (*((uint16_t*)((uint8_t*)slipBuffer+1))));
     Serial.println(cadence);
-    /*
-		INSERT CODE HERE
-     		*/
-
     break;
-
   case ID_HEART:
     Serial.print("Hrt:\n    N = ");
     Serial.print(*((uint8_t*) slipBuffer+3));
@@ -42,22 +37,11 @@ void OSD_SlipParse(char *slipBuffer) {
     //heartRate = (*((uint8_t*) slipBuffer+3)*1000.0)/ (1.0* (*((uint16_t*)((uint8_t*)slipBuffer+1))));
     Serial.println(heartRate);
     heartRate = *((uint8_t*) (slipBuffer+1));
-    /*
-		INSERT CODE HERE
-     		*/
-
     break;
-    
   case ID_POWER:
     power = *((uint16_t*)((uint8_t*)slipBuffer+1));
     cadence = *((uint8_t*)(slipBuffer+3));
-    /*
-		INSERT CODE HERE
-     		*/
-  
     break;
-
-
   case ID_DISTANCE:
     GPS_Distance = (*((uint32_t*)(slipBuffer+1)))/1000;
     break;
@@ -97,6 +81,8 @@ void OSD_SlipParse(char *slipBuffer) {
   case ID_CALIBRATION:
     calibrationState = *((uint8_t*) (slipBuffer+1));
     offset = *((int16_t*) (slipBuffer+1+1));
+  case ID_BATTERY:
+    batteryLevel = *((uint16_t*)((uint8_t*)slipBuffer+1)) * 1.0 / 100;
   default:;
   }
 }

@@ -91,6 +91,14 @@ void toggle() {
             coeff[i] = atof(_word);
             Serial.println(coeff[i]);
           }
+          
+          coeff[0] = 0;
+          coeff[1] = -0.3705;
+          coeff[2] = 4.104;
+          coeff[3] = -16.399;
+          coeff[4] = 17.941;
+          coeff[5] = -121.1;
+          coeff[6] = 3557.8;
 
           dataFile.close();
         }
@@ -122,14 +130,18 @@ Calculate target speed from a 6-degree polynomial given distance
  */
 int32_t calcSpeed(double distance, double *coeff) {
   double _speed = 0;
-  distance = distance / 1000000.0;
+  distance = distance / 1000000.0; // Convert to km
   if (distance > 5 * 1.6) distance = 5 * 1.6;
 
-
+  Serial.print("Distance: "); Serial.println(distance);
+  
   for (int i = 0; i < 7; ++i) {
     _speed += pow(distance, 6 - i) * coeff[i];
+    Serial.print(pow(distance, 6 - i) * coeff[i]); Serial.print("\t");
   }
-
+  
+  Serial.print("Speed: "); Serial.println(_speed);
+  
   if (_speed > 200 / .036) _speed = 200 / .036;
 
   return _speed;

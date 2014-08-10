@@ -76,6 +76,7 @@ UTC_t UTC;
 char profileName[16];
 uint8_t calibrationState;
 int16_t offset;
+float batteryLevel;
 
 /* **********************************************/
 /* ***************** SETUP() *******************/

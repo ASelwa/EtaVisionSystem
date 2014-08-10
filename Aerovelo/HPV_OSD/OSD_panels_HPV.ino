@@ -22,13 +22,14 @@ void writePanels(){
   if (osd_set == 0) { // setup panel is called in the else at the end
     //panUTC(6, 0);
     panCalibration(1, 1);
-    panGPS(1  , 6);
+    panGPS(1, 6);
     //panHeading(8, 10);
     panCadence(15, 11);
     panDist(15,12);
     panHeart(16, 2);
     panPower(15, 10);
     panDisplace(1, 12);
+    panBattery(1, 2);
     //panProfile(10,0);
     //panSats(1,0);
   }
@@ -304,6 +305,19 @@ void panCalibration(int first_col, int first_line) {
       osd.printf("Invalid  ");
   }
   
+  osd.closePanel();
+}
+
+/* **************************************************************** */
+// Panel  : panBattery
+// Needs  : X, Y locations
+// Output : a voltage
+// Size   : (rows x chars)
+// Staus  : done
+void panBattery(int first_col, int first_line){
+  osd.setPanel(first_col, first_line);
+  osd.openPanel();
+  osd.printf("Bat: %4.1f V ", batteryLevel);
   osd.closePanel();
 }
 

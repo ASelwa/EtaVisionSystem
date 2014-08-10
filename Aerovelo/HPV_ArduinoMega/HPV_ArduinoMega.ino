@@ -30,7 +30,8 @@
 #define ID_TSPEED       13
 #define ID_PROFNAME     14
 #define ID_POWER        15
-#define ID_CALIBRATION  17 // 1 = Waiting for first calibration message, 2 = Waiting for subsequent calibration messages, 3 = done, 0 = don't display
+#define ID_CALIBRATION  17
+#define ID_BATTERY      18
 
 #define MAX_PROFILE_NUM   1
 
@@ -57,7 +58,7 @@ char logFilename[32] = "GPSlog.txt"; // "LGdflt.txt"
 char profileName[16];
 double coeff[7] = {0};
 
-bool simulation_mode = true;
+bool simulation_mode = false;
 
 void setup() {
 
@@ -69,7 +70,9 @@ void setup() {
   Serial.println("Program start!");
   //delay(1000);
 
-
+  // For checking the battery voltage
+  analogReference(INTERNAL1V1);
+  
   // Set up CTS interrupt.
   //pinMode(2, INPUT);
   //attachInterrupt(0, receiveInterrupt, RISING);
@@ -115,6 +118,14 @@ void setup() {
   Serial.println("ANT+ setup complete.");
 
   TIME = millis() + PERIOD;
+  
+  coeff[6] = 0;
+  coeff[5] = -0.3705;
+  coeff[4] = 4.104;
+  coeff[3] = -16.399;
+  coeff[2] = 17.941;
+  coeff[1] = -121.1;
+  coeff[0] = 3557.8;
 
   calibrate();
 
@@ -235,7 +246,6 @@ void loop() { // Original loop
       if (slipBuffer[0] == '!') START = 1;
       else if (slipBuffer[0] == '*') START = 0;
     }
-
 
     // Read ANT+ Data
     if (Serial1.available()) {
@@ -460,7 +470,7 @@ void loop() { // Original loop
       *((uint8_t*)slipBuffer + 0) = ID_PROFNAME;
       memcpy(((int8_t*)(slipBuffer + 1 + 0)), profileName, 16);
       *((uint8_t*)slipBuffer + 1 + 16) = 0;
-      SlipPacketSend(18, (char*)slipBuffer, &Serial3);
+      SlipPacketSend(18, (char*)slipBuffer, &Serial3);    
       //Serial.println(profileName);
       //Serial.println(slipBuffer);
 
@@ -473,7 +483,7 @@ void loop() { // Original loop
       if (simulation_mode) {
         targetSpeed = calcSpeed(distance, coeff);
       } else {
-        targetSpeed = calcSpeed(currDistance, coeff);
+        targetSpeed = calcSpeed(GPS_totalDistance, coeff);
       }
       //Send target speed through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_TSPEED;
@@ -519,6 +529,12 @@ void loop() { // Original loop
       }
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+      
+      // Send battery information
+      *((uint8_t*)slipBuffer + 0) = ID_BATTERY;
+      *((uint16_t*)(slipBuffer + 1 + 0)) = getBatteryLevel() * 100;
+      *((uint8_t*)slipBuffer + 1 + 2) = 0;
+      SlipPacketSend(3, (char*)slipBuffer, &Serial3);
 
       //}
       //}
