@@ -12,6 +12,7 @@ extern char profileName[16];
 extern uint8_t calibrationState;
 extern int16_t offset;
 extern float batteryLevel;
+extern uint8_t GPSComm;
 
 
 void OSD_SlipParse(char *slipBuffer) {
@@ -81,8 +82,13 @@ void OSD_SlipParse(char *slipBuffer) {
   case ID_CALIBRATION:
     calibrationState = *((uint8_t*) (slipBuffer+1));
     offset = *((int16_t*) (slipBuffer+1+1));
+    break;
   case ID_BATTERY:
     batteryLevel = *((uint16_t*)((uint8_t*)slipBuffer+1)) * 1.0 / 100;
+    break;
+  case ID_GPSCOMM:
+    GPSComm = *((uint8_t*) (slipBuffer+1));
+    break;
   default:;
   }
 }

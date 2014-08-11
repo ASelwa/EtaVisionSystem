@@ -32,6 +32,7 @@
 #define ID_POWER        15
 #define ID_CALIBRATION  17
 #define ID_BATTERY      18
+#define ID_GPSCOMM      19
 
 #define MAX_PROFILE_NUM   1
 
@@ -224,6 +225,8 @@ float power, cadence, velocity, distance = 0;
 bool coast = false;
 uint16_t time_int = 0;
 uint16_t t2 = 0;
+uint32_t lastGPSUpdate = millis();
+bool GPSLost = false;
 void loop() { // Original loop
   int8_t slipLen;
   //oscIn.packetAvailable(); //SLIP
@@ -251,12 +254,11 @@ void loop() { // Original loop
       if ((m = receiveANT(antBuffer)) > 0) {
         if (m > 64)
           Serial.print("\n\nANT Overflow\n\n");
-        Serial.print("ANT+ Packet Received: ");
+        /*Serial.print("ANT+ Packet Received: ");
         for (i = 0; i < m + 3; ++i) {
           Serial.print(antBuffer[i], HEX);
           Serial.print(' ');
-        }
-        Serial.print('\n');
+        } Serial.print('\n');*/
 
         if (m == 9) {
           switch (antBuffer[2]) { // Channel
@@ -344,6 +346,14 @@ void loop() { // Original loop
 
     if (GPS.NewData) {
       GPS.NewData = 0;
+      lastGPSUpdate = millis();
+      GPSLost = false;
+      
+      *((uint8_t*)slipBuffer + 0) = ID_GPSCOMM;
+      *((uint8_t*)(slipBuffer + 1 + 0)) = 1; // Received from GPS
+      *((uint8_t*)slipBuffer + 1 + 1) = 0;
+      SlipPacketSend(2, (char*)slipBuffer, &Serial3);
+      Serial.println("GPS update."); Serial.println(*((uint8_t*) (slipBuffer+1)));
 
       //View GPS data
       //char gps_str[120];
@@ -620,7 +630,11 @@ void loop() { // Original loop
        Serial.print("\r\n\n");
        */
 
-    } /*else if (simulation_mode) {
+    } else if (GPSLost && millis() - lastGPSUpdate > 1000) {
+      Serial.println("No GPS update for last 1000 ms.");
+      Serial.print(lastGPSUpdate); Serial.print("\t"); Serial.println(millis());
+      lastGPSUpdate = millis();
+      
       //Get target speed
       int32_t targetSpeed = 0;
       
@@ -650,9 +664,6 @@ void loop() { // Original loop
       *((int32_t*)(slipBuffer + 1 + 0)) = velocity * 100; // Will be converted to km / h in OSD_SLIP
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
-      
-      Serial.println("Velocity: ");
-      Serial.println(velocity);
 
       //Send Distance through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_DISTANCE;
@@ -665,7 +676,21 @@ void loop() { // Original loop
       *((uint32_t*)(slipBuffer + 1 + 0)) = distance * 1000; // Assume same as distance
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
-    }*/
+      
+      // Send battery information
+      *((uint8_t*)slipBuffer + 0) = ID_BATTERY;
+      *((uint16_t*)(slipBuffer + 1 + 0)) = getBatteryLevel() * 100;
+      *((uint8_t*)slipBuffer + 1 + 2) = 0;
+      SlipPacketSend(3, (char*)slipBuffer, &Serial3);
+      
+    } else if (millis() - lastGPSUpdate > 5000) {
+      GPSLost = true;
+      *((uint8_t*)slipBuffer + 0) = ID_GPSCOMM;
+      *((uint8_t*)(slipBuffer + 1 + 0)) = 0; // No RX from GPS
+      *((uint8_t*)slipBuffer + 1 + 1) = 0;
+      SlipPacketSend(2, (char*)slipBuffer, &Serial3);
+      Serial.println("No message for 5 seconds.");
+    }
   }
   TIME += PERIOD;
 }

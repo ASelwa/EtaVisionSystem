@@ -20,6 +20,7 @@ void panLogo(){
 void writePanels(){
   //Test
   if (osd_set == 0) { // setup panel is called in the else at the end
+    panGPSComm(7, 4);
     //panUTC(6, 0);
     panCalibration(1, 1);
     panGPS(1, 6);
@@ -95,13 +96,6 @@ void panTest2(int first_col, int first_line){
   osd.printf("Heading: %3li%c;",GPS_Heading/100, 0xb0);
   osd.closePanel();
 }
-
-
-
-
-
-
-
 
 
 /* **************************************************************** */
@@ -318,6 +312,30 @@ void panBattery(int first_col, int first_line){
   osd.setPanel(first_col, first_line);
   osd.openPanel();
   osd.printf("Bat: %4.1f V ", batteryLevel);
+  osd.closePanel();
+}
+
+/* **************************************************************** */
+// Panel  : panGPSComm
+// Needs  : X, Y locations
+// Output : Nothing if the GPS is communicating normally, error message if not receiving from GPS
+// Size   : (rows x chars)
+// Staus  : done
+void panGPSComm(int first_col, int first_line){
+  osd.setPanel(first_col, first_line);
+  osd.openPanel();
+  
+  switch(GPSComm) {
+    case 0:
+      osd.printf("No GPS Transmit");
+      break;
+    case 1:
+      osd.printf("               ");
+      break;
+    default:
+      osd.printf("Defaulted      ");
+  }
+  
   osd.closePanel();
 }
 

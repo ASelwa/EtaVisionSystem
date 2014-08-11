@@ -77,6 +77,7 @@ char profileName[16];
 uint8_t calibrationState;
 int16_t offset;
 float batteryLevel;
+uint8_t GPSComm;
 
 /* **********************************************/
 /* ***************** SETUP() *******************/

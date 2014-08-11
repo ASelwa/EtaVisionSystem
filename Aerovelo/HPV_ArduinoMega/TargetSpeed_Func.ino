@@ -133,15 +133,10 @@ int32_t calcSpeed(double distance, double *coeff) {
   distance = distance / 1000000.0; // Convert to km
   distance = 8 - distance; // Function expects distance from end
   if (distance > 5 * 1.6) distance = 5 * 1.6;
-
-  Serial.print("Distance: "); Serial.println(distance);
   
   for (int i = 0; i < 7; ++i) {
     _speed += pow(distance, 6 - i) * coeff[i];
-    Serial.print(pow(distance, 6 - i) * coeff[i]); Serial.print("\t");
   }
-  
-  Serial.print("Speed: "); Serial.println(_speed);
   
   if (_speed > 200 / .036) _speed = 200 / .036;
 

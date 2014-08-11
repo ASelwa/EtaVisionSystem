@@ -19,6 +19,7 @@
 #define ID_POWER        15
 #define ID_CALIBRATION  17
 #define ID_BATTERY      18
+#define ID_GPSCOMM      19
 
 typedef struct {
           uint16_t year;
