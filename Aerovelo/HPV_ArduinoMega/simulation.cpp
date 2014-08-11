@@ -287,7 +287,7 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
                    /*elevation change*/ + Pelev;
 
       // Method 2
-      float net_energy = power_left * power_interval + 0.5 * (M+2) * pow(*velo, 2);
+      float net_energy = power_left * power_interval + 0.5 * (M+2) * pow(prev_velo, 2); // Don't use _velocity_ variable: this double counts the energy increase from each iteration
       if (net_energy < 0) velocity = 0;
       else velocity = sqrt(2 * net_energy / (M+2));
 

@@ -131,6 +131,7 @@ Calculate target speed from a 6-degree polynomial given distance
 int32_t calcSpeed(double distance, double *coeff) {
   double _speed = 0;
   distance = distance / 1000000.0; // Convert to km
+  distance = 8 - distance; // Function expects distance from end
   if (distance > 5 * 1.6) distance = 5 * 1.6;
 
   Serial.print("Distance: "); Serial.println(distance);

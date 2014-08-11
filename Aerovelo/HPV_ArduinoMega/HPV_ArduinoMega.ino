@@ -87,10 +87,6 @@ void setup() {
   pinMode(8, INPUT);
   digitalWrite(8, HIGH);
 
-  // LED to check if receiving from GPS
-  pinMode(9, OUTPUT);
-  digitalWrite(9, HIGH);
-
 
   // Initialize GPS
   GPS.Init();
@@ -119,15 +115,15 @@ void setup() {
 
   TIME = millis() + PERIOD;
   
-  coeff[6] = 0;
-  coeff[5] = -0.3705;
-  coeff[4] = 4.104;
+  coeff[0] = 0;
+  coeff[1] = -0.3705;
+  coeff[2] = 4.104;
   coeff[3] = -16.399;
-  coeff[2] = 17.941;
-  coeff[1] = -121.1;
-  coeff[0] = 3557.8;
+  coeff[4] = 17.941;
+  coeff[5] = -121.1;
+  coeff[6] = 3557.8;
 
-  calibrate();
+  //calibrate();
 
   return;
 }
@@ -348,7 +344,6 @@ void loop() { // Original loop
 
     if (GPS.NewData) {
       GPS.NewData = 0;
-      digitalWrite(9, LOW);
 
       //View GPS data
       //char gps_str[120];
@@ -625,7 +620,6 @@ void loop() { // Original loop
        Serial.print("\r\n\n");
        */
 
-      digitalWrite(9, HIGH);
     } /*else if (simulation_mode) {
       //Get target speed
       int32_t targetSpeed = 0;
