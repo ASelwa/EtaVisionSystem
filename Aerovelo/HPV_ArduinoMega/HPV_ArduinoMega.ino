@@ -353,7 +353,6 @@ void loop() { // Original loop
       *((uint8_t*)(slipBuffer + 1 + 0)) = 1; // Received from GPS
       *((uint8_t*)slipBuffer + 1 + 1) = 0;
       SlipPacketSend(2, (char*)slipBuffer, &Serial3);
-      Serial.println("GPS update."); Serial.println(*((uint8_t*) (slipBuffer+1)));
 
       //View GPS data
       //char gps_str[120];
@@ -631,8 +630,6 @@ void loop() { // Original loop
        */
 
     } else if (GPSLost && millis() - lastGPSUpdate > 1000) {
-      Serial.println("No GPS update for last 1000 ms.");
-      Serial.print(lastGPSUpdate); Serial.print("\t"); Serial.println(millis());
       lastGPSUpdate = millis();
       
       //Get target speed
