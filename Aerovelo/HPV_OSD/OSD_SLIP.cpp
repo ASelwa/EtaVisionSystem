@@ -4,12 +4,12 @@ extern float cadence, power;
 extern uint32_t GPS_Time, GPS_Distance, GPS_Displacement;
 extern uint8_t GPS_NumSats;
 extern int32_t GPS_Altitude, GPS_Heading;
-extern double  GPS_Speed, targetSpeed;
+extern double  GPS_Speed, simulatedSpeed, targetSpeed;
 extern UTC_t UTC;
 extern uint8_t START, heartRate;
 extern int8_t profile_Num;
 extern char profileName[16];
-extern uint8_t calibrationState;
+extern uint8_t calibrationState, mode;
 extern int16_t offset;
 extern float batteryLevel;
 extern uint8_t GPSComm;
@@ -61,6 +61,9 @@ void OSD_SlipParse(char *slipBuffer) {
   case ID_SPEED:
     GPS_Speed = ((double)(*((int32_t*)(slipBuffer+1))))*0.036; // km/hr
     break;
+  case ID_SIM_SPEED:
+    simulatedSpeed = ((double)(*((int32_t*)(slipBuffer+1))))*0.036; // km/hr
+    break;
   case ID_HEADING:
     GPS_Heading = *((int32_t*)(slipBuffer+1));
     break;
@@ -88,6 +91,9 @@ void OSD_SlipParse(char *slipBuffer) {
     break;
   case ID_GPSCOMM:
     GPSComm = *((uint8_t*) (slipBuffer+1));
+    break;
+  case ID_MODE:
+    mode = *((uint8_t*) (slipBuffer+1));
     break;
   default:;
   }

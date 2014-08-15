@@ -5,6 +5,7 @@
 #define ID_DISTANCE	2
 #define ID_DISPLACEMENT 16
 #define ID_SPEED	3
+#define ID_SIM_SPEED    20
 #define ID_GPSTIME      4
 #define ID_NUMSATS      5
 #define ID_FIX          6
@@ -20,6 +21,7 @@
 #define ID_CALIBRATION  17
 #define ID_BATTERY      18
 #define ID_GPSCOMM      19
+#define ID_MODE         21
 
 typedef struct {
           uint16_t year;

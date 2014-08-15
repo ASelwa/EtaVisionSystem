@@ -65,7 +65,7 @@ void GPS_UBLOX_Class::Init(void)
 #endif
 }
 
-// optimization : This code don�t wait for data, only proccess the data available
+// optimization : This code doesn't wait for data, only proccesses the data available
 // We can call this function on the main loop (50Hz loop)
 // If we get a complete packet this function calls parse_ubx_gps() to parse and update the GPS info.
 void GPS_UBLOX_Class::Read(void)
@@ -82,10 +82,9 @@ void GPS_UBLOX_Class::Read(void)
 
 	//Serial.print("Bytes available: ");
 	//Serial.println(numc);
-
+	
 	if (numc > 0)
-		for (int i=0;i<numc;i++)  // Process bytes received
-		{
+		for (int i=0;i<numc;i++)  {// Process bytes received
 #if defined(GPS_SERIAL2)
 			data = Serial2.read();
 #else
@@ -110,7 +109,7 @@ void GPS_UBLOX_Class::Read(void)
 				if(data==0x62) { // UBX sync char 2
 					UBX_step++;   //ooh! The second data packet is correct, jump to the step 2
 				} else 
-					UBX_step=0;   //Nop, is not correct so restart to step zero and try again.     
+					UBX_step=0;   //Nope, is not correct so restart to step zero and try again.     
 				break;
 			case 2:
 				UBX_class=data;
@@ -126,7 +125,7 @@ void GPS_UBLOX_Class::Read(void)
 				UBX_payload_length_hi=data;
 				ubx_checksum(UBX_payload_length_hi);
 				UBX_step++;
-				// We check if the payload lenght is valid...
+				// We check if the payload length is valid...
 				if (UBX_payload_length_hi>=UBX_MAXPAYLOAD)
 				{
 					if (PrintErrors)
@@ -175,22 +174,25 @@ void GPS_UBLOX_Class::Read(void)
 				break;
 			} // End switch
 		}    // End for...
-		// If we don�t receive GPS packets in 2 seconds => Bad FIX state
-		if ((millis() - GPS_Timer)>2000)
-		{
-			Fix = 0;
-			if (PrintErrors)
-				Serial.println("ERR:GPS_TimeOUT!!");
-		}
+
+	// If we don't receive GPS packets in 2 seconds => Bad FIX state
+	if ((millis() - GPS_Timer)>2000)
+	{
+		Fix = 0;
+		if (PrintErrors)
+			Serial.println("ERR:GPS_TimeOUT!!");
+	}
 }
 
 void GPS_UBLOX_Class::printBuffer() {
-	for (int i = 0; i < 10; i++) {
-		Serial.print(UBX_buffer[i]);
-		Serial.print("\t");
-	}
+	if (Fix == 0) {
+		for (int i = 0; i < 10; i++) {
+			Serial.print(UBX_buffer[i]);
+			Serial.print("\t");
+		}
 
-	Serial.println();
+		Serial.println();
+	}
 }
 
 /****************************************************************

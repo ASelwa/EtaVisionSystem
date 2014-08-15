@@ -39,6 +39,35 @@ void sd_Write(char *data, char *filename){
   return;
 }
 
+File file;
+
+/* Functions to write while manually opening and closing file */
+void sd_Open(char *filename) {
+  file = SD.open(filename, FILE_WRITE);
+}
+
+void sd_Print(char *data) {
+  if (file) {
+      file.print(data);
+  }
+}
+
+void sd_Print(uint32_t data) {
+  if (file) {
+      file.print(data);
+  }
+}
+
+void sd_Print(float data) {
+  if (file) {
+      file.print(data);
+  }
+}
+
+void sd_Close() {
+  file.close();
+}
+
 int32_t sd_ReadWord(File dataFile, char *_word){
 	char temp;
 	int n = 0;

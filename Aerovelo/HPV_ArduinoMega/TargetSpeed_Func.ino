@@ -3,7 +3,6 @@
 Updates profileNum, profileFilename, logFilename and starting GPS location if the yellow button is pressed
  */
 void toggle() {
-
   File dataFile;
 
   static char _word[32] = {0};
@@ -14,20 +13,18 @@ void toggle() {
     Serial.println("Toggle!");
     lastToggle = Toggle;
 
-    // Update profileNum
-    profileNum++;
-
-    if (profileNum > (MAX_PROFILE_NUM+1))
-    {
-      profileNum = 0;
-    }
-
     // Reset the state
     distance = 0;
     velocity = 0;
     GPS_totalDistance = 0;
     
-    if (profileNum <= MAX_PROFILE_NUM) {
+    if (simulation_mode) {
+      profileNum++;
+  
+      if (profileNum > (MAX_PROFILE_NUM)) {
+        profileNum = 1;
+      }
+      
       simulation_mode = false;
       Serial.print("Updated Profile #: ");
       Serial.println(profileNum);
@@ -39,7 +36,7 @@ void toggle() {
         //sprintf(profileFilename, "LALALA");
         Serial.println(profileFilename);
         Serial.println(logFilename);
-
+  
         dataFile = SD.open(profileFilename, FILE_READ);
         if (dataFile) {
           Serial.println("File opened");
@@ -47,26 +44,26 @@ void toggle() {
           memcpy(profileName, _word, n);
           profileName[n] = 0;
           Serial.println(profileName);
-
+  
           Serial.print("Coefficients: ");
           for (int i = 0; i < 7; ++i) {
             sd_ReadWord(dataFile, _word);
             coeff[i] = atof(_word);
             Serial.println(coeff[i]);
           }
-
+  
           dataFile.close();
         } else {
           Serial.println("SD Read Error (Coeffs)");
         }
-
+  
         // Check accuracy first?
         
         GPS_setStart();
-
+  
         /*
         dataFile = SD.open("gpsRef.txt", FILE_READ);
-
+  
         sd_ReadWord(dataFile, _word);
         LattitudeStart = atof(_word) * 10000000;
         sd_ReadWord(dataFile, _word);
@@ -75,16 +72,16 @@ void toggle() {
         dataFile.close();
         */
       } else {
-
+  
         sprintf(logFilename, "LGdflt.txt");
-
+  
         dataFile = SD.open("PFdflt.txt", FILE_READ);
         if (dataFile) {
           Serial.println("File opened");
           int n = sd_ReadWord(dataFile, _word);
           memcpy(profileName, _word, n);
           Serial.println(profileName);
-
+  
           Serial.print("Coefficients: ");
           for (int i = 0; i < 7; ++i) {
             sd_ReadWord(dataFile, _word);
@@ -92,20 +89,19 @@ void toggle() {
             Serial.println(coeff[i]);
           }
           
-          coeff[0] = 0;
-          coeff[1] = -0.3705;
-          coeff[2] = 4.104;
-          coeff[3] = -16.399;
-          coeff[4] = 17.941;
-          coeff[5] = -121.1;
-          coeff[6] = 3557.8;
-
+  //          coeff[0] = 0;
+  //          coeff[1] = -0.3705;
+  //          coeff[2] = 4.104;
+  //          coeff[3] = -16.399;
+  //          coeff[4] = 17.941;
+  //          coeff[5] = -121.1;
+  //          coeff[6] = 3557.8;
+  
           dataFile.close();
         }
         
         GPS_setStart();
-
-
+  
         /*
         dataFile = SD.open("gpsTest.txt", FILE_READ);
         if (dataFile) {
@@ -118,8 +114,7 @@ void toggle() {
         }
         */
       }
-    } else { // profileNum == MAX_PROFILE_NUM+1 (simulate mode)
-      Serial.println("Simulation Mode Entered");
+    } else {
       simulation_mode = true;
     }
   }

@@ -55,11 +55,6 @@ void ANT_SetupChannel(uint8_t *buf, uint8_t channel, uint8_t Dev_T, uint8_t Tran
   
   buf[6] = 0b00000000 + Dev_T;     //121; // Pairing bit + device type. 0 is wildcard
   buf[7] = Trans_T;//0x01;      // Transmission type. 0 is wildcard to receive any type.
-
-  for(int i = 0; i < 8; i++) {
-    Serial.print(buf[i], HEX);
-    Serial.print("\t");
-  } Serial.println();
   
   ANT_SendMessage(buf, 8);
   delayMicroseconds(1000);

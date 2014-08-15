@@ -18,6 +18,7 @@
 #define ID_DISTANCE	2
 #define ID_DISPLACEMENT 16
 #define ID_SPEED	3
+#define ID_SIM_SPEED    20
 #define ID_GPSTIME      4
 #define ID_NUMSATS      5
 #define ID_FIX          6
@@ -33,8 +34,9 @@
 #define ID_CALIBRATION  17
 #define ID_BATTERY      18
 #define ID_GPSCOMM      19
+#define ID_MODE         21
 
-#define MAX_PROFILE_NUM   1
+#define MAX_PROFILE_NUM   2
 
 char slipBuffer[128]; //SLIP
 uint8_t antBuffer[64]; // ANT+
@@ -55,7 +57,7 @@ int8_t profileNum = 0;
 char profileFilename[32] = {
   0
 };
-char logFilename[32] = "GPSlog.txt"; // "LGdflt.txt"
+char logFilename[32] = "LogTest.txt"; // "LGdflt.txt"
 char profileName[16];
 double coeff[7] = {0};
 
@@ -92,19 +94,16 @@ void setup() {
   // Initialize GPS
   GPS.Init();
 
-
   // Set up SD
   sd_Init();
 
   // Figure out SD card log iteration.
-
-  //for (int i = 0; i < 16; ++i){
-  //  sprintf(gpsFilename, "gpslog%02d.txt", i);
-  //  if (!SD.exists(gpsFilename)){
-  //    sprintf(antFilename, "antlog%02d.txt", i);
-  //    break;
-  //  }
-  //}
+  for (int i = 1; i < 100; ++i){
+    sprintf(logFilename, "LogFile%d.csv", i);
+    if (!SD.exists(logFilename)){
+      break;
+    }
+  }
 
   // Crank Torque Frequency
   ANT_SetupChannel(antBuffer, 0, 11, 0, 8182, 12131);
@@ -181,21 +180,12 @@ void calibrate() {
   int16_t calibrationValue;
 
   Serial.println("Begin calibration... Waiting for calibration messages.");
-  *((uint8_t*)slipBuffer + 0) = ID_CALIBRATION;
-  *((uint8_t*)(slipBuffer + 1 + 0)) = 1; // Waiting for first calibration message
-  *((int16_t*)(slipBuffer + 1 + 1)) = 0; // Calibration value
-  *((uint8_t*)slipBuffer + 1 + 3) = 0;
-  SlipPacketSend(4, (char*)slipBuffer, &Serial3);
+  calibrateMessageOSD(1, 0);
 
   while (i < 6) {
     if (Serial1.available() && (m = receiveANT(antBuffer)) == 9 && antBuffer[1] == 0x4E && antBuffer[4] == 0x10) {
       cal_values[i++] = antBuffer[9] * 256 + antBuffer[10];
-
-      *((uint8_t*)slipBuffer + 0) = ID_CALIBRATION;
-      *((uint8_t*)(slipBuffer + 1 + 0)) = 2; // Waiting for subsequent calibration messages
-      *((int16_t*)(slipBuffer + 1 + 1)) = 0; // Calibration value
-      *((uint8_t*)slipBuffer + 1 + 3) = 0;
-      SlipPacketSend(4, (char*)slipBuffer, &Serial3);
+      calibrateMessageOSD(2, 0);
     }
   }
 
@@ -206,16 +196,14 @@ void calibrate() {
   Serial.print(calibrationValue);
   Serial.println(" Hz");
 
-  *((uint8_t*)slipBuffer + 0) = ID_CALIBRATION;
-  *((uint8_t*)(slipBuffer + 1 + 0)) = 3; // Done calibrating
-  *((int16_t*)(slipBuffer + 1 + 1)) = calibrationValue;
-  *((uint8_t*)slipBuffer + 1 + 3) = 0;
-  SlipPacketSend(4, (char*)slipBuffer, &Serial3);
-
+  calibrateMessageOSD(3, calibrationValue);
   delay(2000);
+  calibrateMessageOSD(0, calibrationValue);
+}
 
+void calibrateMessageOSD(uint8_t messageNum, int16_t calibrationValue) {
   *((uint8_t*)slipBuffer + 0) = ID_CALIBRATION;
-  *((uint8_t*)(slipBuffer + 1 + 0)) = 0; // Clear message
+  *((uint8_t*)(slipBuffer + 1 + 0)) = messageNum; // Clear message
   *((int16_t*)(slipBuffer + 1 + 1)) = calibrationValue;
   *((uint8_t*)slipBuffer + 1 + 3) = 0;
   SlipPacketSend(4, (char*)slipBuffer, &Serial3);
@@ -226,6 +214,7 @@ bool coast = false;
 uint16_t time_int = 0;
 uint16_t t2 = 0;
 uint32_t lastGPSUpdate = millis();
+uint32_t displacement, targetSpeed;
 bool GPSLost = false;
 void loop() { // Original loop
   int8_t slipLen;
@@ -348,6 +337,7 @@ void loop() { // Original loop
       GPS.NewData = 0;
       lastGPSUpdate = millis();
       GPSLost = false;
+      Serial.println("New GPS Data");
       
       *((uint8_t*)slipBuffer + 0) = ID_GPSCOMM;
       *((uint8_t*)(slipBuffer + 1 + 0)) = 1; // Received from GPS
@@ -434,7 +424,7 @@ void loop() { // Original loop
       //            Serial.print("\t");
       //            Serial.println(AltitudeStart);
 
-      uint32_t displacement = GPS_getDistance(LattitudeStart, LongitudeStart, AltitudeStart, lat, lon, alt);
+      displacement = GPS_getDistance(LattitudeStart, LongitudeStart, AltitudeStart, lat, lon, alt);
       uint32_t currDistance = GPS_getDistance(LattitudePrev, LongitudePrev, AltitudePrev, lat, lon, alt);
 
       //      Serial.print("Current Distance: ");
@@ -480,9 +470,12 @@ void loop() { // Original loop
 
       //Serial.print("Profile #: ");
       //Serial.println(profileNum);
-
-      //Get target speed
-      int32_t targetSpeed = 0;
+      
+      // Send real time or simulation mode through SLIP
+      *((uint8_t*)slipBuffer + 0) = ID_MODE;
+      *((uint8_t*)(slipBuffer + 1 + 0)) = simulation_mode;
+      *((uint8_t*)slipBuffer + 1 + 2) = 0;
+      SlipPacketSend(2, (char*)slipBuffer, &Serial3);
 
       if (simulation_mode) {
         targetSpeed = calcSpeed(distance, coeff);
@@ -500,11 +493,13 @@ void loop() { // Original loop
 
       // Send Speed through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_SPEED;
-      if (simulation_mode) {
-        *((int32_t*)(slipBuffer + 1 + 0)) = velocity * 100; // Will be converted to km / h in OSD_SLIP
-      } else {
-        *((int32_t*)(slipBuffer + 1 + 0)) = GPS.Ground_Speed;
-      }
+      *((int32_t*)(slipBuffer + 1 + 0)) = GPS.Ground_Speed;
+      *((uint8_t*)slipBuffer + 1 + 4) = 0;
+      SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+      
+      // Send Simulated Speed through SLIP
+      *((uint8_t*)slipBuffer + 0) = ID_SIM_SPEED;
+      *((int32_t*)(slipBuffer + 1 + 0)) = velocity * 100; // Will be converted to km / h in OSD_SLIP
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
 
@@ -616,9 +611,9 @@ void loop() { // Original loop
       //sprintf(sdBuffer, "Test0 %lu %li %li %li %li Test1\r\nTest2", GPS.GPSTime, GPS.Lattitude, GPS.Longitude, GPS.Altitude, GPS_totalDistance);
 
 
-      sprintf(sdBuffer, "%li, %li, %li, %li, %li\r\n", lat, lon, alt, GPS.Ground_Speed, GPS_totalDistance);
+      //sprintf(sdBuffer, "%li, %li, %li, %li, %li\r\n", lat, lon, alt, GPS.Ground_Speed, GPS_totalDistance);
       //Serial.println(sdBuffer);
-      sd_Write(sdBuffer, logFilename);
+      //sd_Write(sdBuffer, logFilename);
 
       /*
       Serial.print((char*)sdBuffer);
@@ -631,9 +626,8 @@ void loop() { // Original loop
 
     } else if (GPSLost && millis() - lastGPSUpdate > 1000) {
       lastGPSUpdate = millis();
-      
-      //Get target speed
-      int32_t targetSpeed = 0;
+      Serial2.end();
+      GPS.Init();
       
       //Updates profileNum, profileFilename, logFilename and starting GPS location if the yellow button is pressed
       toggle();
@@ -686,10 +680,38 @@ void loop() { // Original loop
       *((uint8_t*)(slipBuffer + 1 + 0)) = 0; // No RX from GPS
       *((uint8_t*)slipBuffer + 1 + 1) = 0;
       SlipPacketSend(2, (char*)slipBuffer, &Serial3);
+      
+      sd_Open(logFilename);
+      sd_Print("GPS lost connection. ");
+      sd_Close();
       Serial.println("No message for 5 seconds.");
     }
   }
   TIME += PERIOD;
+  
+  Serial.println("Recorded.");
+  
+  //Store in SD
+  sd_Open(logFilename);
+  
+  sd_Print("\r\n");
+  sprintf((char*)sdBuffer, "%u:%u:%u, ", GPS.UTC.hour, GPS.UTC.minute, GPS.UTC.second);
+  sd_Print(sdBuffer);
+  sd_Print(dtoa(sdBuffer, GPS.Lattitude*1.0 / 10000000)); sd_Print(", ");
+  sd_Print(dtoa(sdBuffer, GPS.Longitude*1.0 / 10000000)); sd_Print(", ");
+  sd_Print(dtoa(sdBuffer, GPS.Altitude*1.0 / 1000)); sd_Print(", ");
+  sd_Print(GPS_totalDistance); sd_Print(", ");
+  sd_Print(displacement); sd_Print(", ");
+  sd_Print(dtoa(sdBuffer, GPS.Ground_Speed*0.036)); sd_Print(", ");
+  sd_Print(dtoa(sdBuffer, targetSpeed*0.036)); sd_Print(", ");
+  sd_Print(dtoa(sdBuffer, power)); sd_Print(", ");
+  sd_Print(dtoa(sdBuffer, cadence)); sd_Print(", ");
+  sd_Print(dtoa(sdBuffer, velocity)); sd_Print(", ");
+  sd_Print(distance); sd_Print(", ");
+  sd_Print((uint32_t) Hrt); sd_Print(", ");
+  sd_Print(getBatteryLevel()); sd_Print(", ");
+  
+  sd_Close();
 }
 
 int32_t average(int32_t *beg, const int len) {
@@ -712,4 +734,47 @@ int16_t average(int16_t *beg, const int len) {
   total /= len;
 
   return (int16_t) (total + 0.5f);
+}
+
+/**
+ * Double to string
+ */
+char * dtoa(char *s, double n) {
+  const double PRECISION = 0.0000001;  
+  
+  // handle special cases
+  if (isnan(n)) {
+      strcpy(s, "nan");
+  } else if (isinf(n)) {
+      strcpy(s, "inf");
+  } else if (n == 0.0) {
+      strcpy(s, "0");
+  } else {
+    int digit, m;
+    char *c = s;
+    int neg = (n < 0);
+    if (neg)
+      n = -n;
+    // calculate magnitude
+    m = log10(n);
+    if (neg)
+      *(c++) = '-';
+    if (m < 1.0) {
+      m = 0;
+    }
+    // convert the number
+    while (n > PRECISION || m >= 0) {
+      double weight = pow(10.0, m);
+      if (weight > 0 && !isinf(weight)) {
+          digit = floor(n / weight);
+          n -= (digit * weight);
+          *(c++) = '0' + digit;
+      }
+      if (m == 0 && n > 0)
+          *(c++) = '.';
+      m--;
+    }
+    *(c) = '\0';
+  }
+  return s;
 }

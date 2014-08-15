@@ -20,18 +20,18 @@ void panLogo(){
 void writePanels(){
   //Test
   if (osd_set == 0) { // setup panel is called in the else at the end
-    panGPSComm(7, 4);
+    panGPSComm(7, 10);
     //panUTC(6, 0);
     panCalibration(1, 1);
-    panGPS(1, 6);
+    panSpeeds(1, 6);
     //panHeading(8, 10);
-    panCadence(15, 11);
-    panDist(15,12);
-    panHeart(16, 2);
-    panPower(15, 10);
-    panDisplace(1, 12);
-    panBattery(1, 2);
-    //panProfile(10,0);
+    panCadence(28-6, 7);
+    panDist(11,4);
+    panDisplace(11, 3);
+    panHeart(28-6, 8);
+    panPower(28-6, 6);
+    panBattery(28-5, 12);
+    panProfile(1, 12);
     //panSats(1,0);
   }
   else { // if (osd_on > 0)
@@ -112,7 +112,17 @@ void panProfile(int first_col, int first_line){
   
   //char *rider = getRider(profile_Num);
   
-  osd.printf("%02d-%s       ", profile_Num, profileName);
+  switch(mode) {
+    case 0: // Real-time
+      osd.printf("R-%s       ", profileName);
+      break;
+    case 1: // Simulation
+      osd.printf("S-%s       ", profileName);
+      break;
+    default:
+      osd.printf("Invalid mode!");
+  }
+  
   osd.closePanel();
 }
 
@@ -137,7 +147,7 @@ void panUTC(int first_col, int first_line){
 // Panel  : panGPS
 // Needs  : X, Y locations
 // Output : Distance, Speed, Altitude
-// Size   : (1 x 11) + (1 x 11) + (1 x 7) (rows x chars)
+// Size   : (rows x chars)
 // Status  : 
 
 void panSats(int first_col, int first_line){
@@ -150,19 +160,23 @@ void panSats(int first_col, int first_line){
 void panDist(int first_col, int first_line){
   osd.setPanel(first_col, first_line);
   osd.openPanel();
-  osd.printf("Dist: %5lu m ", GPS_Distance);
+  
+  if (GPS_Distance < 1000) // Display in metres
+    osd.printf("%5lu m ", GPS_Distance);
+  else // Display in miles
+    osd.printf("%5.2f mi ", GPS_Distance / 1600);
+  
   osd.closePanel();
 }
 
 void panDisplace(int first_col, int first_line){
   osd.setPanel(first_col, first_line);
   osd.openPanel();
-  osd.printf("Disp: %5lu m ", GPS_Displacement);
+  osd.printf("%5lu m ", GPS_Displacement);
   osd.closePanel();
 }
 
-void panGPS(int first_col, int first_line){
-  
+void panSpeeds(int first_col, int first_line){
   //osd.setPanel(first_col-1, first_line-1);
   //osd.openPanel();
   //if (START){
@@ -172,44 +186,45 @@ void panGPS(int first_col, int first_line){
   //  osd.printf("PAUSED ");
   //}
   //osd.closePanel();
-    
-
 
   osd.setPanel(first_col, first_line);
   osd.openPanel();
-  osd.printf("%c: %5.1f     ",'T', targetSpeed);
+  osd.printf("Vt:%5.1f     ", targetSpeed);
   osd.closePanel();
 
+  osd.setPanel(first_col, first_line + 1);
+  osd.openPanel();
+  osd.printf("Vg:%5.1f     ", GPS_Speed); // GS = 0xE9 char
+  osd.closePanel();
+  
   osd.setPanel(first_col, first_line + 2);
   osd.openPanel();
-  osd.printf("%c: %5.1f     ",0xE9,GPS_Speed);
+  osd.printf("Vs:%5.1f     ", simulatedSpeed);
   osd.closePanel();
   
-  
-  
-  osd.setPanel(first_col+8, first_line+1);
-  osd.openPanel();
-  osd.printf(">");
-  osd.closePanel();
-  
-  osd.setPanel(first_col+9, first_line-1);
-  osd.openPanel();
-  double diff = GPS_Speed - targetSpeed;
-  if (diff > 10){
-    osd.printf("o");
-    
-  } else if (diff > 3){
-    osd.printf(" |<| | | ");
-    
-  } else if (diff < -10) {
-    osd.printf(" | | | |<");
-  } else if (diff < -3) {
-    osd.printf(" | | |<| ");
-  } else {
-    osd.printf(" | |<| | ");
-  }
-  
-  osd.closePanel();
+//  osd.setPanel(first_col+8, first_line+1);
+//  osd.openPanel();
+//  osd.printf(">");
+//  osd.closePanel();
+//  
+//  osd.setPanel(first_col+9, first_line-1);
+//  osd.openPanel();
+//  double diff = GPS_Speed - targetSpeed;
+//  if (diff > 10){
+//    osd.printf("o");
+//    
+//  } else if (diff > 3){
+//    osd.printf(" |<| | | ");
+//    
+//  } else if (diff < -10) {
+//    osd.printf(" | | | |<");
+//  } else if (diff < -3) {
+//    osd.printf(" | | |<| ");
+//  } else {
+//    osd.printf(" | |<| | ");
+//  }
+//  
+//  osd.closePanel();
 
   //osd.setPanel(first_col, first_line + 2);
   //osd.openPanel();
@@ -252,7 +267,7 @@ void panCadence(int first_col, int first_line){
 
   osd.setPanel(first_col, first_line);
   osd.openPanel();
-  osd.printf(" Cad: %3.1f rpm ", cadence);
+  osd.printf("%3.1f rpm", cadence);
   osd.closePanel();
 }
 
@@ -260,14 +275,14 @@ void panHeart(int first_col, int first_line){
 
   osd.setPanel(first_col, first_line);
   osd.openPanel();
-  osd.printf("Hrt: %u bpm ", heartRate);
+  osd.printf("%3u bpm", heartRate);
   osd.closePanel();
 }
 
 void panPower(int first_col, int first_line) {
   osd.setPanel(first_col, first_line);
   osd.openPanel();
-  osd.printf(" Pow: %5.1f W ", power);
+  osd.printf("%5.1f W", power);
   osd.closePanel();
 }
 
@@ -311,7 +326,7 @@ void panCalibration(int first_col, int first_line) {
 void panBattery(int first_col, int first_line){
   osd.setPanel(first_col, first_line);
   osd.openPanel();
-  osd.printf("Bat: %4.1f V ", batteryLevel);
+  osd.printf("%4.1f V", batteryLevel);
   osd.closePanel();
 }
 
