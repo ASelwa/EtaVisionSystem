@@ -146,7 +146,7 @@ void panUTC(int first_col, int first_line){
 /* **************************************************************** */
 // Panel  : panGPS
 // Needs  : X, Y locations
-// Output : Distance, Speed, Altitude
+// Output : Distance, Speed
 // Size   : (rows x chars)
 // Status  : 
 
@@ -164,7 +164,7 @@ void panDist(int first_col, int first_line){
   if (GPS_Distance < 1000) // Display in metres
     osd.printf("%5lu m ", GPS_Distance);
   else // Display in miles
-    osd.printf("%5.2f mi ", GPS_Distance / 1600);
+    osd.printf("%5.2f mi ", GPS_Distance * 1.0 / 1600000);
   
   osd.closePanel();
 }
@@ -172,7 +172,12 @@ void panDist(int first_col, int first_line){
 void panDisplace(int first_col, int first_line){
   osd.setPanel(first_col, first_line);
   osd.openPanel();
-  osd.printf("%5lu m ", GPS_Displacement);
+  
+  if (GPS_Displacement < 1000) // Display in metres
+    osd.printf("%5lu m ", GPS_Displacement);
+  else // Display in miles
+    osd.printf("%5.2f mi ", GPS_Displacement * 1.0 / 1600000);
+  
   osd.closePanel();
 }
 

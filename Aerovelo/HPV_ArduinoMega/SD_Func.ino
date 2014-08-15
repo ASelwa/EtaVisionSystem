@@ -18,7 +18,7 @@ void sd_Init(){
 
 }
 
-void sd_Write(char *data, char *filename){
+void sd_Write(char *data, char *filename) {
 //  if (START){
     //Write to SD card
     File dataFile = SD.open(filename, FILE_WRITE);
@@ -39,7 +39,18 @@ void sd_Write(char *data, char *filename){
   return;
 }
 
-File file;
+void sd_Log(char *data) {
+  //Write to SD card
+  File dataFile = SD.open(logFilename, FILE_WRITE);
+
+  // if the file is available, write to it:
+  if (dataFile) {
+    dataFile.print(data);
+    dataFile.close();
+  }
+}
+
+static File file;
 
 /* Functions to write while manually opening and closing file */
 void sd_Open(char *filename) {
@@ -47,18 +58,6 @@ void sd_Open(char *filename) {
 }
 
 void sd_Print(char *data) {
-  if (file) {
-      file.print(data);
-  }
-}
-
-void sd_Print(uint32_t data) {
-  if (file) {
-      file.print(data);
-  }
-}
-
-void sd_Print(float data) {
   if (file) {
       file.print(data);
   }

@@ -10,6 +10,7 @@ void toggle() {
   Toggle = !digitalRead(8);
   //If button was pressed, update "profile"
   if (Toggle != lastToggle) {
+    sd_Write("Profile changed. ", logFilename);
     Serial.println("Toggle!");
     lastToggle = Toggle;
 
@@ -22,7 +23,7 @@ void toggle() {
       profileNum++;
   
       if (profileNum > (MAX_PROFILE_NUM)) {
-        profileNum = 1;
+        profileNum = 0;
       }
       
       simulation_mode = false;
@@ -31,9 +32,8 @@ void toggle() {
       // Update profileFilename based on profileNum; 0 -> PAUSED
       if (profileNum != 0) {
         // Figure out SD card log iteration.
-        sprintf(logFilename, "LG%02u%02u%02u.txt", GPS.UTC.hour, GPS.UTC.day, GPS.UTC.month);//, GPS.UTC.hour, GPS.UTC.minute, GPS.UTC.second);
+        //sprintf(logFilename, "LG%02u%02u%02u.txt", GPS.UTC.hour, GPS.UTC.day, GPS.UTC.month);//, GPS.UTC.hour, GPS.UTC.minute, GPS.UTC.second);
         sprintf(profileFilename, "PF%02d.txt", profileNum);
-        //sprintf(profileFilename, "LALALA");
         Serial.println(profileFilename);
         Serial.println(logFilename);
   
@@ -54,26 +54,15 @@ void toggle() {
   
           dataFile.close();
         } else {
+          sd_Log("Could not open profile with name \"");
+          sd_Log(profileFilename);
+          sd_Log("\". ");
           Serial.println("SD Read Error (Coeffs)");
         }
-  
-        // Check accuracy first?
         
         GPS_setStart();
-  
-        /*
-        dataFile = SD.open("gpsRef.txt", FILE_READ);
-  
-        sd_ReadWord(dataFile, _word);
-        LattitudeStart = atof(_word) * 10000000;
-        sd_ReadWord(dataFile, _word);
-        LongitudeStart = atof(_word) * 10000000;
-        //AltidudeStart = GPS.Altitude;
-        dataFile.close();
-        */
       } else {
-  
-        sprintf(logFilename, "LGdflt.txt");
+        //sprintf(logFilename, "LGdflt.txt");
   
         dataFile = SD.open("PFdflt.txt", FILE_READ);
         if (dataFile) {
@@ -88,16 +77,13 @@ void toggle() {
             coeff[i] = atof(_word);
             Serial.println(coeff[i]);
           }
-          
-  //          coeff[0] = 0;
-  //          coeff[1] = -0.3705;
-  //          coeff[2] = 4.104;
-  //          coeff[3] = -16.399;
-  //          coeff[4] = 17.941;
-  //          coeff[5] = -121.1;
-  //          coeff[6] = 3557.8;
   
           dataFile.close();
+        } else {
+          sd_Log("Could not open profile with name \"");
+          sd_Log(profileFilename);
+          sd_Log("\". ");
+          Serial.println("SD Read Error (Coeffs)");
         }
         
         GPS_setStart();
@@ -121,12 +107,33 @@ void toggle() {
 }
 
 /*
-Calculate target speed from a 6-degree polynomial given distance
+ * Returns true if successful, false if not
+*/
+bool loadFinishCoordinates() {
+  static char _word[32] = {0};
+  File dataFile = SD.open("FinCoord.txt", FILE_READ);
+  
+  if (!dataFile) {
+    sd_Log("Could not open FinCoord.txt. ");
+    return false;
+  }
+  
+  sd_ReadWord(dataFile, _word);
+  LattitudeFinish = atof(_word) * 10000000;
+  sd_ReadWord(dataFile, _word);
+  LongitudeFinish = atof(_word) * 10000000;
+  sd_ReadWord(dataFile, _word);
+  AltitudeFinish = atof(_word) * 1000;
+  dataFile.close();
+}
+
+/*
+ * Calculate target speed from a 6-degree polynomial given distance
  */
 int32_t calcSpeed(double distance, double *coeff) {
   double _speed = 0;
   distance = distance / 1000000.0; // Convert to km
-  distance = 8 - distance; // Function expects distance from end
+  distance = distance; // Function expects distance from end
   if (distance > 5 * 1.6) distance = 5 * 1.6;
   
   for (int i = 0; i < 7; ++i) {
