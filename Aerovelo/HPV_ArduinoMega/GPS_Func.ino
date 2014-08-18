@@ -23,7 +23,7 @@ void GPS_setStart(){
   return;
 }
 /*
-Calculates the 3D distance in meters between two points using 
+Calculates the 3D distance in mm between two points using 
  Pythagoras Theorem on an equirectangular projection
  */
 uint32_t GPS_getDistance(const int32_t lat1, const int32_t lon1, const int32_t alt1, const int32_t lat2, const int32_t lon2, const int32_t alt2){

@@ -33,8 +33,7 @@ void writePanels(){
     panBattery(28-5, 12);
     panProfile(1, 12);
     //panSats(1,0);
-  }
-  else { // if (osd_on > 0)
+  } else { // if (osd_on > 0)
     panSetup();
   }
 }
@@ -161,10 +160,10 @@ void panDist(int first_col, int first_line){
   osd.setPanel(first_col, first_line);
   osd.openPanel();
   
-  if (GPS_Distance < 1000) // Display in metres
+  if (GPS_Distance < 1609) // Display in metres
     osd.printf("%5lu m ", GPS_Distance);
   else // Display in miles
-    osd.printf("%5.2f mi ", GPS_Distance * 1.0 / 1600000);
+    osd.printf("%5.2f mi ", GPS_Distance * 1.0 / 1609);
   
   osd.closePanel();
 }
@@ -173,10 +172,10 @@ void panDisplace(int first_col, int first_line){
   osd.setPanel(first_col, first_line);
   osd.openPanel();
   
-  if (GPS_Displacement < 1000) // Display in metres
+  if (GPS_Displacement < 1609) // Display in metres
     osd.printf("%5lu m ", GPS_Displacement);
   else // Display in miles
-    osd.printf("%5.2f mi ", GPS_Displacement * 1.0 / 1600000);
+    osd.printf("%5.2f mi ", GPS_Displacement * 1.0 / 1609);
   
   osd.closePanel();
 }

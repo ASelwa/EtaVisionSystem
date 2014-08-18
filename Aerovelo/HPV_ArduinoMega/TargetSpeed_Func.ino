@@ -28,12 +28,12 @@ void toggle() {
       
       simulation_mode = false;
       Serial.print("Updated Profile #: ");
-      Serial.println(profileNum);
+      Serial.println(profileNum+1);
       // Update profileFilename based on profileNum; 0 -> PAUSED
-      if (profileNum != 0) {
+      if (profileNum >= 0) {
         // Figure out SD card log iteration.
         //sprintf(logFilename, "LG%02u%02u%02u.txt", GPS.UTC.hour, GPS.UTC.day, GPS.UTC.month);//, GPS.UTC.hour, GPS.UTC.minute, GPS.UTC.second);
-        sprintf(profileFilename, "PF%02d.txt", profileNum);
+        sprintf(profileFilename, "PF%02d.txt", profileNum+1);
         Serial.println(profileFilename);
         Serial.println(logFilename);
   
@@ -61,7 +61,7 @@ void toggle() {
         }
         
         GPS_setStart();
-      } else {
+      } /*else {
         //sprintf(logFilename, "LGdflt.txt");
   
         dataFile = SD.open("PFdflt.txt", FILE_READ);
@@ -87,19 +87,7 @@ void toggle() {
         }
         
         GPS_setStart();
-  
-        /*
-        dataFile = SD.open("gpsTest.txt", FILE_READ);
-        if (dataFile) {
-          sd_ReadWord(dataFile, _word);
-          LattitudeStart = atof(_word) * 10000000;
-          sd_ReadWord(dataFile, _word);
-          LongitudeStart = atof(_word) * 10000000;
-          //AltidudeStart = GPS.Altitude;
-          dataFile.close();
-        }
-        */
-      }
+      }*/
     } else {
       simulation_mode = true;
     }
@@ -125,6 +113,10 @@ bool loadFinishCoordinates() {
   sd_ReadWord(dataFile, _word);
   AltitudeFinish = atof(_word) * 1000;
   dataFile.close();
+  
+  Serial.println(LattitudeFinish);
+  Serial.println(LongitudeFinish);
+  Serial.println(AltitudeFinish);
 }
 
 /*
@@ -132,7 +124,7 @@ bool loadFinishCoordinates() {
  */
 int32_t calcSpeed(double distance, double *coeff) {
   double _speed = 0;
-  distance = distance / 1000000.0; // Convert to km
+  distance = distance / 1000.0; // Convert to km
   distance = distance; // Function expects distance from end
   if (distance > 5 * 1.6) distance = 5 * 1.6;
   
@@ -141,6 +133,7 @@ int32_t calcSpeed(double distance, double *coeff) {
   }
   
   if (_speed > 200 / .036) _speed = 200 / .036;
+  if (_speed < 0) _speed = -1337;
 
   return _speed;
 }

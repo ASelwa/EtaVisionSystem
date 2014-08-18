@@ -37,15 +37,14 @@
 #define ID_MODE         21
 
 #define MAX_PROFILE_NUM   2
-#define COURSE_LENGTH   5 // miles
-#define DISTANCE_MODE    2 // For calculating distance remaining
+#define COURSE_LENGTH   8045 // metres
 
 char slipBuffer[128]; //SLIP
-uint8_t antBuffer[64]; // ANT+
+static uint8_t antBuffer[64]; // ANT+
 char sdBuffer[128]; //SD
 char gpsFilename[32];
 char antFilename[32];
-uint8_t Hrt;
+static uint8_t Hrt;
 uint32_t TIME;
 
 int32_t LattitudeStart = 436585166, LongitudeStart = -793934912, AltitudeStart = 117689;
@@ -53,8 +52,6 @@ int32_t LattitudeFinish, LongitudeFinish, AltitudeFinish;
 int32_t LattitudePrev, LongitudePrev, AltitudePrev;
 int8_t startSet = 0;
 uint32_t GPS_totalDistance = 0;
-
-static uint8_t distanceMode; // Distance mode
 
 int8_t lastToggle;
 int8_t Toggle;
@@ -105,6 +102,10 @@ void setup() {
       break;
     }
   }
+  
+  loadFinishCoordinates();
+  
+  sd_Log("Time, Latitude, Longitude, Altitude, Distance, Displacement to Go, Ground Speed, Target Speed, Power, Cadence, Velocity, Simulated Distance to Go, Heart Rate, Battery\r\n");
 
   // Crank Torque Frequency
   ANT_SetupChannel(antBuffer, 0, 11, 0, 8182, 12131);
@@ -115,24 +116,7 @@ void setup() {
   Serial.println("ANT+ setup complete.");
 
   TIME = millis() + PERIOD;
-
-  setupDistanceMode(DISTANCE_MODE);
   //calibrate();
-}
-
-/*
- * Choose between calculations based on distance from specified finish line coordinates or distance from
- * distance travelled from start
- */
-void setupDistanceMode(uint8_t mode) {
-  distanceMode = mode;
-  
-  if (mode == 1) {
-    GPS_totalDistance = COURSE_LENGTH * 1000;
-    Serial.println(GPS_totalDistance);
-  } else if (mode == 2) {
-    loadFinishCoordinates();
-  }
 }
 
 int8_t START = 0;
@@ -178,7 +162,7 @@ void calibrateMessageOSD(uint8_t messageNum, int16_t calibrationValue) {
   SlipPacketSend(4, (char*)slipBuffer, &Serial3);
 }
 
-float power, cadence, velocity, distance = 0;
+static float power, cadence, velocity, distance = 0;
 static bool coast = false;
 static uint16_t time_int = 0;
 static uint16_t t2 = 0;
@@ -221,15 +205,15 @@ void loop() { // Original loop
           switch (antBuffer[2]) { // Channel
             case 0: // Power meter
               readPowerMeter(antBuffer, 0, &time_int, &power, &cadence, &coast);
-              if (!coast && power != 0 && time_int != 0) {
+              if (/*!coast && */power != 0 && time_int != 0) {
                 Serial.print("Time interval: ");
                 Serial.println(time_int);
-                simulate(power, time_int, 0, &velocity, &distance);
+                simulate(power, time_int, 2, &velocity, &distance);
                 t2 = millis();	// last power meter data message received
-              } else if (coast) {
+              } /*else if (coast) {
                 simulate(0, 2 * (millis() - t2) , 0, &velocity, &distance);
                 t2 = millis();
-              }
+              }*/
 
               *((uint8_t*)slipBuffer + 0) = ID_POWER;
               *((uint16_t*)(slipBuffer + 1 + 0)) = power;
@@ -345,13 +329,8 @@ void loop() { // Original loop
 //      Serial.print("\t");
 //      Serial.println(AltitudeStart);
 
-      if (distanceMode == 1) {
-        displacement = COURSE_LENGTH * 1609 - GPS_getDistance(LattitudeStart, LongitudeStart, AltitudeStart, lat, lon, alt);
-      } else if (distanceMode == 2) {
-        displacement = GPS_getDistance(LattitudeFinish, LongitudeFinish, AltitudeFinish, lat, lon, alt);
-        Serial.println(displacement);
-      }
       
+      displacement = GPS_getDistance(LattitudeFinish, LongitudeFinish, AltitudeFinish, lat, lon, alt);
       uint32_t currDistance = GPS_getDistance(LattitudePrev, LongitudePrev, AltitudePrev, lat, lon, alt);
 
       //      Serial.print("Current Distance: ");
@@ -361,7 +340,7 @@ void loop() { // Original loop
 
 
       if (currDistance >= 0) {
-        GPS_totalDistance -= currDistance;
+        GPS_totalDistance += currDistance;
 
         LattitudePrev = lat;
         LongitudePrev = lon;
@@ -394,9 +373,10 @@ void loop() { // Original loop
       SlipPacketSend(2, (char*)slipBuffer, &Serial3);
 
       if (simulation_mode) {
-        targetSpeed = calcSpeed(distance, coeff);
+        //Serial.print("Simulated distance: "); Serial.println(COURSE_LENGTH - distance);
+        targetSpeed = calcSpeed(COURSE_LENGTH - distance, coeff);
       } else {
-        targetSpeed = calcSpeed(GPS_totalDistance, coeff);
+        targetSpeed = calcSpeed(displacement / 1000.0, coeff);
       }
       //Send target speed through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_TSPEED;
@@ -418,6 +398,8 @@ void loop() { // Original loop
       *((int32_t*)(slipBuffer + 1 + 0)) = velocity * 100; // Will be converted to km / h in OSD_SLIP
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+      
+      Serial.print("Sim speed: "); Serial.println(velocity);
 
       //Serial.print("Speed: ");
       //Serial.println(GPS.Ground_Speed);
@@ -435,7 +417,7 @@ void loop() { // Original loop
       //Send Displacement through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_DISPLACEMENT;
       if (simulation_mode) {
-        *((uint32_t*)(slipBuffer + 1 + 0)) = distance * 1000; // Assume same as distance
+        *((uint32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; // Assume same as distance
       } else {
         *((uint32_t*)(slipBuffer + 1 + 0)) = displacement;
       }
@@ -553,15 +535,24 @@ void loop() { // Original loop
       *((uint8_t*)slipBuffer + 1 + 16) = 0;
       SlipPacketSend(18, (char*)slipBuffer, &Serial3);
       
-      targetSpeed = calcSpeed(distance, coeff);
+      targetSpeed = calcSpeed(COURSE_LENGTH - distance, coeff);
       //Send target speed through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_TSPEED;
       *((int32_t*)(slipBuffer + 1 + 0)) = targetSpeed;
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
 
+      //Serial.print("Target Speed: ");
+      //Serial.println(targetSpeed);
+
       // Send Speed through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_SPEED;
+      *((int32_t*)(slipBuffer + 1 + 0)) = velocity * 100;
+      *((uint8_t*)slipBuffer + 1 + 4) = 0;
+      SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+      
+      // Send Simulated Speed through SLIP
+      *((uint8_t*)slipBuffer + 0) = ID_SIM_SPEED;
       *((int32_t*)(slipBuffer + 1 + 0)) = velocity * 100; // Will be converted to km / h in OSD_SLIP
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
@@ -574,7 +565,7 @@ void loop() { // Original loop
 
       //Send Displacement through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_DISPLACEMENT;
-      *((uint32_t*)(slipBuffer + 1 + 0)) = distance * 1000; // Assume same as distance
+      *((uint32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; // Assume same as distance
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
       
@@ -610,16 +601,16 @@ void loop() { // Original loop
   sd_Print(dtoa(sdBuffer, lat*1.0 / 10000000)); sd_Print(", ");
   sd_Print(dtoa(sdBuffer, lon*1.0 / 10000000)); sd_Print(", ");
   sd_Print(dtoa(sdBuffer, alt*1.0 / 1000)); sd_Print(", ");
-  sprintf((char*)sdBuffer, "%zu, ", GPS_totalDistance);
+  sprintf((char*)sdBuffer, "%u, ", GPS_totalDistance/ 1000);
   sd_Print(sdBuffer);
-  sprintf((char*)sdBuffer, "%zu, ", displacement);
+  sprintf((char*)sdBuffer, "%u, ", displacement / 1000);
   sd_Print(sdBuffer);
   sd_Print(dtoa(sdBuffer, GPS.Ground_Speed*0.036)); sd_Print(", ");
   sd_Print(dtoa(sdBuffer, targetSpeed*0.036)); sd_Print(", ");
   sd_Print(dtoa(sdBuffer, power)); sd_Print(", ");
   sd_Print(dtoa(sdBuffer, cadence)); sd_Print(", ");
   sd_Print(dtoa(sdBuffer, velocity)); sd_Print(", ");
-  sprintf(sdBuffer, "%zu, ", distance);
+  sprintf(sdBuffer, "%u, ", distance);
   sd_Print(sdBuffer);
   sprintf(sdBuffer, "%u, ", Hrt);
   sd_Print(sdBuffer);

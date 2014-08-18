@@ -201,7 +201,7 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
   float distance = *dist;
 
   if (isnan(velocity)) {
-    Serial.print("static variable velocity in function simulate2 is NAN. velocity passed in as a parameter is ");
+    Serial.print("static variable velocity in function simulate is NAN. velocity passed in as a parameter is ");
     Serial.println(*velo);
     velocity = *velo;
   }
