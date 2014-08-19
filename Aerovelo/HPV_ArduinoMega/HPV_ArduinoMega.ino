@@ -57,9 +57,7 @@ uint32_t GPS_totalDistance = 0;
 int8_t lastToggle;
 int8_t Toggle;
 int8_t profileNum = 0;
-char profileFilename[32] = {
-  0
-};
+char profileFilename[32] = {0};
 char logFilename[32] = "LogTest.txt"; // "LGdflt.txt"
 char profileName[16];
 double coeff[7] = {0};
@@ -106,10 +104,11 @@ void setup() {
   
   loadFinishCoordinates();
   
-  sd_Log("Time, Latitude, Longitude, Altitude, Distance, Displacement to Go, Ground Speed, Target Speed, Power, Cadence, Velocity, Simulated Distance to Go, Heart Rate, Battery\r\n");
+  sd_Log("Time, Latitude, Longitude, Altitude, Distance, Displacement, Ground Speed, Target Speed, Power, Cadence, Velocity, Simulated Distance, Heart Rate, Battery\r\n");
 
   // Crank Torque Frequency
-  ANT_SetupChannel(antBuffer, 0, 11, 0, 8182, 12131);
+  ANT_SetupChannel(antBuffer, 0, 0, 0, 8182, 0);
+  //ANT_SetupChannel(antBuffer, 0, 11, 0, 8182, 12131);
   // Heart rate channel.
   //ANT_SetupChannel(antBuffer, 1, 0x78, 1, 8086); // 8070
   ANT_SetupChannel(antBuffer, 1, 120, 0, 16140, 45063);
@@ -117,7 +116,7 @@ void setup() {
   Serial.println("ANT+ setup complete.");
 
   TIME = millis() + PERIOD;
-  //calibrate();
+  calibrate();
 }
 
 int8_t START = 0;
@@ -180,15 +179,15 @@ void loop() { // Original loop
 
   // put main code here, to run repeatedly:
   while (TIME > millis()) {
-    START = !digitalRead(8);
-
-    slipLen = SlipReceive(slipBuffer, &Serial);
-    if (slipLen > 0) {
-      slipBuffer[slipLen] = 0;
-      Serial.println(slipBuffer);
-      if (slipBuffer[0] == '!') START = 1;
-      else if (slipBuffer[0] == '*') START = 0;
-    }
+//    START = !digitalRead(8);
+//
+//    slipLen = SlipReceive(slipBuffer, &Serial);
+//    if (slipLen > 0) {
+//      slipBuffer[slipLen] = 0;
+//      Serial.println(slipBuffer);
+//      if (slipBuffer[0] == '!') START = 1;
+//      else if (slipBuffer[0] == '*') START = 0;
+//    }
 
     // Read ANT+ Data
     if (Serial1.available()) {
@@ -196,16 +195,17 @@ void loop() { // Original loop
       //Serial.print(temp, HEX);
       //Serial.print(' ');
       if ((m = receiveANT(antBuffer)) > 0) {
-        /*Serial.print("ANT+ Packet Received: ");
+        Serial.print("ANT+ Packet Received: ");
         for (i = 0; i < m + 3; ++i) {
           Serial.print(antBuffer[i], HEX);
           Serial.print(' ');
-        } Serial.print('\n');*/
+        } Serial.print('\n');
 
         if (m == 9) {
           switch (antBuffer[2]) { // Channel
             case 0: // Power meter
               readPowerMeter(antBuffer, 0, &time_int, &power, &cadence, &coast);
+              
               if (!coast && power != 0 && time_int != 0) {
                 Serial.print("Before velo: "); Serial.println(velocity);
                 simulate(power, time_int, 2, &velocity, &distance);
@@ -359,7 +359,7 @@ void loop() { // Original loop
       *((uint8_t*)slipBuffer + 0) = ID_PROFNAME;
       memcpy(((int8_t*)(slipBuffer + 1 + 0)), profileName, 16);
       *((uint8_t*)slipBuffer + 1 + 16) = 0;
-      SlipPacketSend(18, (char*)slipBuffer, &Serial3);    
+      SlipPacketSend(18, (char*)slipBuffer, &Serial3);
       //Serial.println(profileName);
       //Serial.println(slipBuffer);
 
@@ -417,7 +417,7 @@ void loop() { // Original loop
       //Send Displacement through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_DISPLACEMENT;
       if (simulation_mode) {
-        *((uint32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; // Assume same as distance
+        *((int32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; // Assume same as distance
       } else {
         *((uint32_t*)(slipBuffer + 1 + 0)) = displacement;
       }
@@ -519,7 +519,8 @@ void loop() { // Original loop
     } else if (GPSLost && millis() - lastGPSUpdate > 1000) {
       lastGPSUpdate = millis();
       Serial2.end();
-      GPS.Init();
+      if (!simulation_mode)
+        GPS.Init();
       
       //Updates profileNum, profileFilename, logFilename and starting GPS location if the yellow button is pressed
       toggle();
@@ -534,6 +535,12 @@ void loop() { // Original loop
       memcpy(((int8_t*)(slipBuffer + 1 + 0)), profileName, 16);
       *((uint8_t*)slipBuffer + 1 + 16) = 0;
       SlipPacketSend(18, (char*)slipBuffer, &Serial3);
+      
+      // Send real time or simulation mode through SLIP
+      *((uint8_t*)slipBuffer + 0) = ID_MODE;
+      *((uint8_t*)(slipBuffer + 1 + 0)) = simulation_mode;
+      *((uint8_t*)slipBuffer + 1 + 2) = 0;
+      SlipPacketSend(2, (char*)slipBuffer, &Serial3);
       
       targetSpeed = calcSpeed(COURSE_LENGTH - distance, coeff);
       //Send target speed through SLIP

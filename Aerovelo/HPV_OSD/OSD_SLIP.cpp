@@ -1,7 +1,8 @@
 #include "OSD_SLIP.h"
 
 extern float cadence, power;
-extern uint32_t GPS_Time, GPS_Distance, GPS_Displacement;
+extern uint32_t GPS_Time, GPS_Distance;
+extern int32_t GPS_Displacement;
 extern uint8_t GPS_NumSats;
 extern int32_t GPS_Altitude, GPS_Heading;
 extern double  GPS_Speed, simulatedSpeed, targetSpeed;
@@ -47,7 +48,7 @@ void OSD_SlipParse(char *slipBuffer) {
     GPS_Distance = (*((uint32_t*)(slipBuffer+1)))/1000;
     break;
   case ID_DISPLACEMENT:
-    GPS_Displacement = (*((uint32_t*)(slipBuffer+1)))/1000;
+    GPS_Displacement = (*((int32_t*)(slipBuffer+1)))/1000;
     break;
   case ID_GPSTIME:
     GPS_Time = *((uint32_t*)(slipBuffer+1));

@@ -138,8 +138,8 @@ bool loadFinishCoordinates() {
  */
 int32_t calcSpeed(double distance, double *coeff) {
   double _speed = 0;
+  distance -= 45;
   distance = distance / 1000.0; // Convert to km
-  distance = distance; // Function expects distance from end
   if (distance > 5 * 1.6) distance = 5 * 1.6;
   
   for (int i = 0; i < 7; ++i) {

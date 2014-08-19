@@ -1,6 +1,6 @@
 #include "simulation.h"
 
-float elevations[19][2] = {
+float elevations[20][2] = {
   {0, 1470.75144},
   {182.88, 1468.8312},
   {563.88, 1463.25336},
@@ -19,7 +19,8 @@ float elevations[19][2] = {
   {6141.72, 1424.20848},
   {7025.64, 1418.6916},
   {7467.6, 1416.80184},
-  {8046.72, 1412.93088}
+  {8046.72, 1412.93088},
+  {200000, 1412.93088}
 };
 
 // Finds a linear approximation of the elevation based on key points
@@ -43,7 +44,7 @@ float getElevation(float distance) {
     elev = elevations[0][1];
   else
     elev = elevations[distIndex - 1][1] + (distance - elevations[distIndex - 1][0]) * (elevations[distIndex][1] - elevations[distIndex - 1][1]) / (elevations[distIndex][0] - elevations[distIndex - 1][0]);
-
+  
   return elev;
 }
 
@@ -82,7 +83,13 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
   }
 
   switch (pwrRx[3]) {
-
+    case 0x10:
+      if (pwrRx[6] != 0xFF)
+        cadence = pwrRx[6];
+      // else cadence doesn't change 
+      *power = cB(pwrRx[10], pwrRx[9]);
+      *time_interval = 0;
+      break;
     case 0x20: // broadcast pwr data page
 
       // check for duplicate messages (equal time stamps)
@@ -256,8 +263,6 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
   if (velocity == 0) Paero = 0;
   else Paero = q * CdA * velocity;
   
-  Serial.print("CdA: "); Serial.println(CdA);
-  
   if (isnan(CdA)) {
     Paero = 0;
     Serial.println("CdA is NaN.");
@@ -305,10 +310,16 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
       // end Method 2
 
       change_elev = getElevation(distance) - getElevation(prev_dist); // guess elevation change using previous velocity and time travelled
-      prev_Pelev = Pelev;
-      Pelev = M * (-g) * change_elev / power_interval; //kgm2/s3  kg*m/s2 * m / s
-
-      elev_calc[count] = Pelev;
+      if (change_elev > 100) {
+        Serial.println("Elevation greater than 100");
+        Serial.println(change_elev);
+      } else {
+        prev_Pelev = Pelev;
+        Pelev = M * (-g) * change_elev / power_interval; //kgm2/s3  kg*m/s2 * m / s
+  
+        elev_calc[count] = Pelev;
+      }
+      
       count++;
       
 //      if (isinf(Pelev)) {
@@ -378,6 +389,12 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
       Serial.print(velocity * 3.6);
       Serial.print(" km/h\n");
     }
+  }
+  
+  if (isnan(distance) || isinf(distance) || isnan(velocity) || isinf(velocity)) {
+    Serial.println("Warning: distance or velocity not a number. Breaking from simulate.");
+    sd_Log("Warning: distance or velocity not a number. Breaking from simulate.");
+    return; // If something goes really, really wrong and none of the other checks can save it
   }
 
   *dist = distance;

@@ -67,7 +67,8 @@ int slipLen;
 
 char display_string[128];
 float cadence, power;
-uint32_t GPS_Time, GPS_Distance, GPS_Displacement;
+uint32_t GPS_Time, GPS_Distance;
+int32_t GPS_Displacement;
 uint8_t GPS_NumSats;
 int32_t GPS_Altitude, GPS_Heading;
 double GPS_Speed, simulatedSpeed, targetSpeed;
@@ -77,7 +78,7 @@ char profileName[16];
 uint8_t calibrationState, mode;
 int16_t offset;
 float batteryLevel;
-uint8_t GPSComm, SDComm;
+uint8_t GPSComm, SDComm = 1; // SDComm should default to not display
 
 /* **********************************************/
 /* ***************** SETUP() *******************/
