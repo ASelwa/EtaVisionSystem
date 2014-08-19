@@ -21,11 +21,12 @@ void writePanels(){
   //Test
   if (osd_set == 0) { // setup panel is called in the else at the end
     panGPSComm(7, 10);
+    panSDComm(7, 11);
     //panUTC(6, 0);
     panCalibration(1, 1);
     panSpeeds(1, 6);
     //panHeading(8, 10);
-    panCadence(28-6, 7);
+    panCadence(28-8, 7);
     panDist(11,4);
     panDisplace(11, 3);
     panHeart(28-6, 8);
@@ -271,7 +272,7 @@ void panCadence(int first_col, int first_line){
 
   osd.setPanel(first_col, first_line);
   osd.openPanel();
-  osd.printf("%3.1f rpm", cadence);
+  osd.printf("%5.1f rpm", cadence);
   osd.closePanel();
 }
 
@@ -346,13 +347,37 @@ void panGPSComm(int first_col, int first_line){
   
   switch(GPSComm) {
     case 0:
-      osd.printf("No GPS Transmit");
+      osd.printf("No GPS Transmit ");
+      break;
+    case 1:
+      osd.printf("                ");
+      break;
+    default:
+      osd.printf("GPS Default Case");
+  }
+  
+  osd.closePanel();
+}
+
+/* **************************************************************** */
+// Panel  : panSDComm
+// Needs  : X, Y locations
+// Output : Nothing if the SD is communicating normally, error message if not able to access SD files
+// Size   : 1 x 14 (rows x chars)
+// Staus  : done
+void panSDComm(int first_col, int first_line) {
+  osd.setPanel(first_col, first_line);
+  osd.openPanel();
+  
+  switch(SDComm) {
+    case 0:
+      osd.printf("Cannot read SD ");
       break;
     case 1:
       osd.printf("               ");
       break;
     default:
-      osd.printf("Defaulted      ");
+      osd.printf("SD Default Case");
   }
   
   osd.closePanel();

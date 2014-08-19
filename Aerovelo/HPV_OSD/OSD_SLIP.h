@@ -22,6 +22,7 @@
 #define ID_BATTERY      18
 #define ID_GPSCOMM      19
 #define ID_MODE         21
+#define ID_SDCOMM       22
 
 typedef struct {
           uint16_t year;

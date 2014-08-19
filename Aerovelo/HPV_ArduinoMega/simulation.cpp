@@ -214,7 +214,7 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
   // rolling parameters
   uint16_t M = /*pilot*/ 80 + /*hpv*/ 20 + /*wheels*/ 2; // total mass, kg
   float Crr_one = 0.0015;
-  float Crr_two = 2 / 3 * 0.000041 * 3.6; // s/m
+  float Crr_two = 2.0 / 3 * 0.000041 * 3.6; // s/m
 
   // aerodynamic parameters
   float L = 2.88; // m
@@ -235,12 +235,14 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
   else Proll = velocity * M * g * (Crr_one + Crr_two * velocity);
 
   /**** aerodynamic drag ****/
+  float Paero;
   float q = 0.5 * rho * pow(velocity, 2); // dynamic pressure
+  
   // flat plate resistance
   float Dflam = 1.328 * h * q * sqrt(mu / velocity / rho) * sqrt(xt);	// laminar drag
   float deltalamxt = 5 * sqrt(mu / velocity / rho) * sqrt(xt);	// lam BL thickness at xt
   float deltaturbxt = 0.13 / 0.097 * deltalamxt;	// turb BL thickness at xt
-  float xdel = deltaturbxt / 0.375 * pow(pow(velocity * rho / mu, 2), 1 / 0.8);
+  float xdel = deltaturbxt / 0.375 * pow(pow(velocity * rho / mu, 0.2), 1 / 0.8);
   float xzero = xt - xdel;	// imaginary turb start
   float Dfturb = 0.0576 / 0.8 * h * q * pow(mu / velocity / rho, 0.2) * (pow(L - xzero, 0.8) - pow(xdel, 0.8));
   float Cfflat = (Dflam + Dfturb) / (q * h * L);
@@ -251,9 +253,17 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
 
   // total aerodynamic drag
   float CdA = CdAbody + /*CdAfwheel*/ 0.002 + /*CdArwheel*/ 0.003 + /*CdAunclean*/ 0.001;
-  float Paero;
   if (velocity == 0) Paero = 0;
   else Paero = q * CdA * velocity;
+  
+  Serial.print("CdA: "); Serial.println(CdA);
+  
+  if (isnan(CdA)) {
+    Paero = 0;
+    Serial.println("CdA is NaN.");
+    Serial.print("q: "); Serial.println(q); Serial.print("CdA: "); Serial.println(CdA); Serial.print("velocity: "); Serial.println(velocity);
+  }
+
 
   if (isnan(velocity)) {
     Serial.print("static variable velocity in function simulate2 is NAN. (check #2) velocity passed in as a parameter is ");
@@ -300,6 +310,20 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
 
       elev_calc[count] = Pelev;
       count++;
+      
+//      if (isinf(Pelev)) {
+//        Serial.println("Pelev is infinity");
+//        Serial.print("Change_elev: "); Serial.println(change_elev);
+//        Serial.print("Power interval: "); Serial.println(power_interval);
+//        
+//        char sdBuffer[32];
+//        sd_Log("Pelev is infinity. ");
+//        sd_Log("Change_elev: "); sd_Log(dtoa(sdBuffer, change_elev));
+//        sd_Log(" Power interval: "); sd_Log(dtoa(sdBuffer, power_interval));
+//        
+//        // Stop iterating
+//        Pelev = prev_Pelev;
+//      }
 
       if (abs(Pelev - prev_Pelev) <= 1) calc_dist = false;
       else if (count > 9) calc_dist = false;

@@ -20,5 +20,7 @@ extern char slipBuffer[N_SLIP];
 
 void sd_Init();
 void sd_Write(char *data);
+void sd_Log(char *data);
+char *dtoa(char *s, double n);
 
 #endif

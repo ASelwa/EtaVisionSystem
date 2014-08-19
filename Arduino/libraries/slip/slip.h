@@ -11,7 +11,7 @@
 
 #include <inttypes.h>
 #include <Arduino.h>
-#define N_SLIP 32
+#define N_SLIP 128
 
 int8_t SlipReceive(char *slipBuffer, HardwareSerial *serial);
 void SlipPacketSend(uint8_t len, char *buffer, HardwareSerial *serial);

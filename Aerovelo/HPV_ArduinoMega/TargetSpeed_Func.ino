@@ -40,6 +40,12 @@ void toggle() {
         dataFile = SD.open(profileFilename, FILE_READ);
         if (dataFile) {
           Serial.println("File opened");
+          // Display no OSD message if successful
+          *((uint8_t*)slipBuffer + 0) = ID_SDCOMM;
+          *((uint8_t*)(slipBuffer + 1 + 0)) = 1;
+          *((uint8_t*)slipBuffer + 1 + 1) = 0;
+          SlipPacketSend(2, (char*)slipBuffer, &Serial3);
+          
           int n = sd_ReadWord(dataFile, _word);
           memcpy(profileName, _word, n);
           profileName[n] = 0;
@@ -57,6 +63,14 @@ void toggle() {
           sd_Log("Could not open profile with name \"");
           sd_Log(profileFilename);
           sd_Log("\". ");
+          
+          
+          // Display error message
+          *((uint8_t*)slipBuffer + 0) = ID_SDCOMM;
+          *((uint8_t*)(slipBuffer + 1 + 0)) = 0;
+          *((uint8_t*)slipBuffer + 1 + 1) = 0;
+          SlipPacketSend(2, (char*)slipBuffer, &Serial3);
+    SlipPacketSend(2, (char*)slipBuffer, &Serial3);
           Serial.println("SD Read Error (Coeffs)");
         }
         

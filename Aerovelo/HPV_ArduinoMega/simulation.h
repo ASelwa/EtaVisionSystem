@@ -4,6 +4,7 @@
 #include <math.h>
 #include <inttypes.h>
 #include "Arduino.h"
+#include "HPV_ArduinoMega.h" // Only for logging function
 
 float getElevation(float distance);
 
