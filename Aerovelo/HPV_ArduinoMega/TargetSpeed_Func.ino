@@ -7,7 +7,7 @@ void toggle() {
 
   static char _word[32] = {0};
   //Read button
-  Toggle = !digitalRead(8);
+  Toggle = !digitalRead(TOGGLE_PIN);
   //If button was pressed, update "profile"
   if (Toggle != lastToggle) {
     sd_Write("Profile changed. ", logFilename);

@@ -40,6 +40,8 @@
 #define MAX_PROFILE_NUM   2
 #define COURSE_LENGTH   8045 // metres
 
+const uint8_t TOGGLE_PIN = 29;
+
 char slipBuffer[N_SLIP]; //SLIP.h
 static uint8_t antBuffer[64]; // ANT+
 char sdBuffer[128]; //SD
@@ -87,8 +89,9 @@ void setup() {
   digitalWrite(3, HIGH);
   delayMicroseconds(1000);
 
-  pinMode(8, INPUT);
-  digitalWrite(8, HIGH);
+  // Toggle
+  pinMode(TOGGLE_PIN, INPUT);
+  digitalWrite(TOGGLE_PIN, HIGH);
 
   // Initialize GPS and SD
   GPS.Init();
@@ -104,19 +107,26 @@ void setup() {
   
   loadFinishCoordinates();
   
-  sd_Log("Time, Latitude, Longitude, Altitude, Distance, Displacement, Ground Speed, Target Speed, Power, Cadence, Velocity, Simulated Distance, Heart Rate, Battery\r\n");
+  sd_Log("Time (hh:mm:ss), Latitude (deg), Longitude (deg), Altitude (m), Distance (m), Displacement (m), Ground Speed (km/h), Target Speed (km/h), Power (W), Cadence (rpm), Velocity (m/s), Simulated Distance (m), Heart Rate (bpm), Battery (V)\r\n");
 
   // Crank Torque Frequency
-  ANT_SetupChannel(antBuffer, 0, 0, 0, 8182, 0);
-  //ANT_SetupChannel(antBuffer, 0, 11, 0, 8182, 12131);
+  //ANT_SetupChannel(antBuffer, 0, 0, 0, 8182, 0);
+  ANT_SetupChannel(antBuffer, 0, 11, 0, 8182, 12131);
   // Heart rate channel.
   //ANT_SetupChannel(antBuffer, 1, 0x78, 1, 8086); // 8070
   ANT_SetupChannel(antBuffer, 1, 120, 0, 16140, 45063);
 
   Serial.println("ANT+ setup complete.");
+  
+  // Send battery information
+  *((uint8_t*)slipBuffer + 0) = ID_BATTERY;
+  *((uint16_t*)(slipBuffer + 1 + 0)) = getBatteryLevel() * 100;
+  *((uint8_t*)slipBuffer + 1 + 2) = 0;
+  SlipPacketSend(3, (char*)slipBuffer, &Serial3);
 
-  TIME = millis() + PERIOD;
   calibrate();
+  
+  TIME = millis() + PERIOD;
 }
 
 int8_t START = 0;
@@ -136,6 +146,7 @@ void calibrate() {
     if (Serial1.available() && (m = receiveANT(antBuffer)) == 9 && antBuffer[1] == 0x4E && antBuffer[4] == 0x10) {
       cal_values[i++] = antBuffer[9] * 256 + antBuffer[10];
       calibrateMessageOSD(2, 0);
+      Serial.print("Receiving... ");
       sprintf(sdBuffer, "Received message %d. ", i);
       sd_Log(sdBuffer);
     }
@@ -179,7 +190,7 @@ void loop() { // Original loop
 
   // put main code here, to run repeatedly:
   while (TIME > millis()) {
-//    START = !digitalRead(8);
+//    START = !digitalRead(TOGGLE_PIN);
 //
 //    slipLen = SlipReceive(slipBuffer, &Serial);
 //    if (slipLen > 0) {
@@ -612,8 +623,7 @@ void loop() { // Original loop
   sd_Print(dtoa(sdBuffer, power)); sd_Print(", ");
   sd_Print(dtoa(sdBuffer, cadence)); sd_Print(", ");
   sd_Print(dtoa(sdBuffer, velocity)); sd_Print(", ");
-  sprintf(sdBuffer, "%u, ", distance);
-  sd_Print(sdBuffer);
+  sd_Print(dtoa(sdBuffer, distance)); sd_Print(", ");
   sprintf(sdBuffer, "%u, ", Hrt);
   sd_Print(sdBuffer);
   sd_Print(dtoa(sdBuffer, getBatteryLevel())); sd_Print(", ");
