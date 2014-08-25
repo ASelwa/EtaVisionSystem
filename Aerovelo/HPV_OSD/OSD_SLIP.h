@@ -18,6 +18,8 @@
 #define ID_TSPEED       13
 #define ID_PROFNAME     14
 #define ID_POWER        15
+#define ID_TPOWER       23
+#define ID_10S_POWER    24
 #define ID_CALIBRATION  17
 #define ID_BATTERY      18
 #define ID_GPSCOMM      19
