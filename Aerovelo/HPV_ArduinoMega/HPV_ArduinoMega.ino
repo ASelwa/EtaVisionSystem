@@ -33,14 +33,17 @@
 #define ID_POWER        15
 #define ID_TPOWER       23
 #define ID_10S_POWER    24
+#define ID_AVG_POWER    25
 #define ID_CALIBRATION  17
 #define ID_BATTERY      18
 #define ID_GPSCOMM      19
 #define ID_SDCOMM       22
 #define ID_MODE         21
 
-#define MAX_PROFILE_NUM   2
+#define MAX_PROFILE_NUM    2
 #define COURSE_LENGTH   8045 // 8045 metres
+#define POWER_START      300
+#define POWER_PRE_SPRINT 337
 
 const uint8_t TOGGLE_PIN = A1;
 
@@ -220,6 +223,8 @@ void loop() { // Original loop
           Serial.print("A6: "); Serial.print(digitalRead(A6)); Serial.print("\t"); Serial.println(analogRead(A6));
           Serial.print("A7: "); Serial.print(digitalRead(A7)); Serial.print("\t"); Serial.println(analogRead(A7));
           
+          float averagePower, power10s, targetPower;
+          
           switch (antBuffer[2]) { // Channel
             case 0: // Power meter
               readPowerMeter(antBuffer, 0, &time_int, &power, &cadence, &coast);
@@ -231,13 +236,31 @@ void loop() { // Original loop
                 simulate(0, 2 * (millis() - t2) , 0, &velocity, &distance);
                 t2 = millis();
               }
+              
+              averagePower = pwrAvg(power);
+              power10s = tenSecPower(power);
+              targetPower = calcPower(distance, POWER_START, POWER_PRE_SPRINT);
 
               *((uint8_t*)slipBuffer + 0) = ID_POWER;
               *((uint16_t*)(slipBuffer + 1 + 0)) = power;
               *((uint8_t*)slipBuffer + 1 + 2) = cadence;
               *((uint8_t*)slipBuffer + 1 + 3) = 0;
-
               SlipPacketSend(4, (char*)slipBuffer, &Serial3);
+              
+              *((uint8_t*)slipBuffer + 0) = ID_AVG_POWER;
+              *((uint16_t*)(slipBuffer + 1 + 0)) = averagePower;
+              *((uint8_t*)slipBuffer + 1 + 2) = 0;
+              SlipPacketSend(3, (char*)slipBuffer, &Serial3);
+              
+              *((uint8_t*)slipBuffer + 0) = ID_10S_POWER;
+              *((uint16_t*)(slipBuffer + 1 + 0)) = power10s;
+              *((uint8_t*)slipBuffer + 1 + 2) = 0;
+              SlipPacketSend(3, (char*)slipBuffer, &Serial3);
+              
+              *((uint8_t*)slipBuffer + 0) = ID_TPOWER;
+              *((uint16_t*)(slipBuffer + 1 + 0)) = targetPower;
+              *((uint8_t*)slipBuffer + 1 + 2) = 0;
+              SlipPacketSend(3, (char*)slipBuffer, &Serial3);
 
               break;
 

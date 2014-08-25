@@ -157,3 +157,21 @@ int32_t calcSpeed(double distance, double *coeff) {
 
   return _speed;
 }
+
+/*
+ * Calculate target power given distance
+ */
+float calcPower(double distance, float startPower, float preSprintPower) {
+  double target = 0;
+  
+  if (distance < 6436) { // More than 1 mile to go
+    //target = startPower + distance * 0.0083;
+    target = startPower + ((preSprintPower - startPower) / 6436.0) * distance; // y = b + mx
+    Serial.print("Target: "); Serial.println(target);
+  } else { // If sprint profile is desired
+    target = startPower + ((preSprintPower - startPower) / 6436.0) * distance; // y = b + mx
+    Serial.print("Target: "); Serial.println(target);
+  }
+
+  return target;
+}

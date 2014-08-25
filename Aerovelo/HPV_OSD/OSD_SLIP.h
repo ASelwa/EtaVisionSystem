@@ -20,6 +20,7 @@
 #define ID_POWER        15
 #define ID_TPOWER       23
 #define ID_10S_POWER    24
+#define ID_AVG_POWER    25
 #define ID_CALIBRATION  17
 #define ID_BATTERY      18
 #define ID_GPSCOMM      19

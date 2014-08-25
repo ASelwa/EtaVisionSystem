@@ -27,10 +27,10 @@ void writePanels(){
     panSpeeds(1, 6);
     //panHeading(8, 10);
     panCadence(28-8, 7);
-    panDist(11,4);
-    panDisplace(11, 3);
+    panDist(8,4); // 11, 4
+    panDisplace(8, 3); // 11, 3
     panHeart(28-6, 8);
-    panPower(28-9, 4);
+    panPower(28-7, 3);
     panBattery(28-5, 12);
     panProfile(1, 12);
     //panSats(1,0);
@@ -287,17 +287,22 @@ void panHeart(int first_col, int first_line){
 void panPower(int first_col, int first_line) {
   osd.setPanel(first_col, first_line);
   osd.openPanel();
-  osd.printf("T: %5.1f W", targetPower);
+  osd.printf("T: %3u W", targetPower);
   osd.closePanel();
   
   osd.setPanel(first_col, first_line+1);
   osd.openPanel();
-  osd.printf("R: %5.1f W", power_10s);
+  osd.printf("A: %3u W", avgPower);
   osd.closePanel();
   
   osd.setPanel(first_col, first_line+2);
   osd.openPanel();
-  osd.printf("A: %5.1f W", power);
+  osd.printf("S: %3u W", power_10s);
+  osd.closePanel();
+  
+  osd.setPanel(first_col, first_line+3);
+  osd.openPanel();
+  osd.printf("R: %3u W", power);
   osd.closePanel();
 }
 

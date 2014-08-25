@@ -405,16 +405,15 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
 // Calculates cumulative average power
 // call function every time a power message is received (0.25s)
 float pwrAvg(float pwrIn) {
-
-	static unsigned int numData = 0;
-	static float cumulativePower = 0;
-	
-	// Calculate average power over whole run
-	numData++;
-	cumulativePower += pwrIn;
-	float avgTotalPower = cumulativePower/numData;
-	
-	return avgTotalPower;
+  static unsigned int numData = 0;
+  static float cumulativePower = 0;
+  
+  // Calculate average power over whole run
+  numData++;
+  cumulativePower += pwrIn;
+  float avgTotalPower = cumulativePower/numData;
+  
+  return avgTotalPower;
 }
 
 float tenSecPower(float pwrIn) {
