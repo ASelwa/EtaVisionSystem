@@ -7,28 +7,32 @@ void setup() {
 
 
 void loop() {
-  readTemp(A0, 5);
+  readTemp(A0);
   delay(500);
 }
 
-void readTemp (int aPin, float refVolt) {
+
+
+void readTemp (int aPin) {
  
- int res1 = 11000;
+ // Input voltage for temperature block is 3.3V
+ // Configure arduino mega to use 2.56V internal reference 
+ // lowest temperature reading possible is -4C (when temperature block outputs 2.56V on terminal 
+ 
+ float res1 = 10000;
+ float refVolt = 5;
+ float B = 3435;
+ float refTemp = 25;
+ 
  float Vin = analogRead(aPin)*refVolt/1024;
- float res2 = res1*(1/(refVolt/Vin));
- //res = 33880*exp(-0.036*temp);
- //float temp = log(res2/32379)/(-0.036);
- 
- float steinhart;
- steinhart = res2 / 10000;     // (R/Ro)
- steinhart = log(steinhart);                  // ln(R/Ro)
- steinhart /= 3435;                   // 1/B * ln(R/Ro)
- steinhart += 1.0 / (25 + 273.15); // + (1/To)
- steinhart = 1.0 / steinhart;                 // Invert
- steinhart -= 273.15;                         // convert to C
+ float res2 = res1*(1/(refVolt/Vin - 1));
+ float temperature = 1/((log(res2/res1)/B) + (1/(refTemp+273.15))) - 273.15;
  
  Serial.print("Vin = ");Serial.print(Vin);Serial.print(" V");
  Serial.print("\tR2 = ");Serial.print(res2);Serial.print(" ohms");
- Serial.print("\tTemp = ");Serial.print(steinhart);Serial.println(" C");
+ Serial.print("\tTemp = ");Serial.print(temperature);Serial.println(" C");
  
 }
+
+
+
