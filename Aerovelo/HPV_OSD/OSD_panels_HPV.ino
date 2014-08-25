@@ -174,7 +174,7 @@ void panDisplace(int first_col, int first_line){
   osd.openPanel();
   
   if (GPS_Displacement < 1609) // Display in metres
-    osd.printf("%5lu m ", GPS_Displacement);
+    osd.printf("%5li m ", GPS_Displacement);
   else // Display in miles
     osd.printf("%5.2f mi ", GPS_Displacement * 1.0 / 1609);
   

@@ -1,6 +1,8 @@
 #include "simulation.h"
 
-float elevations[20][2] = {
+static const uint8_t ELEVATIONS_LENGTH = 20;
+
+float elevations[ELEVATIONS_LENGTH][2] = {
   {0, 1470.75144},
   {182.88, 1468.8312},
   {563.88, 1463.25336},
@@ -26,13 +28,12 @@ float elevations[20][2] = {
 // Finds a linear approximation of the elevation based on key points
 float getElevation(float distance) {
   int distIndex = 0;
-  const uint8_t elevationsLength = 19;
   const float endSlope = -0.00715;
   float elev;
 
   // Simple extrapolation
-  if (distance > elevations[elevationsLength - 1][0]) {
-    return elevations[elevationsLength - 1][1] + (distance - elevations[elevationsLength - 1][1]) * endSlope;
+  if (distance > elevations[ELEVATIONS_LENGTH - 1][0]) {
+    return elevations[ELEVATIONS_LENGTH - 1][1] + (distance - elevations[ELEVATIONS_LENGTH - 1][1]) * endSlope;
   }
 
   // Find correct index
@@ -340,8 +341,8 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
       else if (count > 9) calc_dist = false;
 
     }
-
-	/*for (uint8_t i=0;i<10;i++) {
+    
+    /*for (uint8_t i=0;i<10;i++) {
     	Serial.print(elev_calc[i]);
     	Serial.print("W.\t");
     }	Serial.println;*/

@@ -21,10 +21,15 @@ void toggle() {
     
     if (simulation_mode) {
       profileNum++;
-  
-      if (profileNum > (MAX_PROFILE_NUM)) {
+      
+      sprintf(profileFilename, "PF%02d.txt", profileNum+1);
+      if (!SD.exists(profileFilename)) {
         profileNum = 0;
       }
+  
+//      if (profileNum > (MAX_PROFILE_NUM)) {
+//        profileNum = 0;
+//      }
       
       simulation_mode = false;
       Serial.print("Updated Profile #: ");
@@ -50,6 +55,7 @@ void toggle() {
           memcpy(profileName, _word, n);
           profileName[n] = 0;
           Serial.println(profileName);
+          sd_Log(profileName);
   
           Serial.print("Coefficients: ");
           for (int i = 0; i < 7; ++i) {

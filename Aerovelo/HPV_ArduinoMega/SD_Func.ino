@@ -24,8 +24,6 @@ void sd_Init() {
     *((uint8_t*)slipBuffer + 1 + 1) = 0;
     SlipPacketSend(2, (char*)slipBuffer, &Serial3);
   }
-  return;
-
 }
 
 void sd_Write(char *data, char *filename) {
@@ -46,7 +44,6 @@ void sd_Write(char *data, char *filename) {
     //Serial.println(filename);
   }
   //  }
-  return;
 }
 
 void sd_Log(char *data) {
@@ -100,5 +97,4 @@ UNDONE
 */
 void storeData() {
   sprintf(sdBuffer, "%li, %li, %li, %li, %li");
-  return;
 }

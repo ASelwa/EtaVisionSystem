@@ -38,9 +38,9 @@
 #define ID_MODE         21
 
 #define MAX_PROFILE_NUM   2
-#define COURSE_LENGTH   8045 // metres
+#define COURSE_LENGTH   8045 // 8045 metres
 
-const uint8_t TOGGLE_PIN = 29;
+const uint8_t TOGGLE_PIN = A1;
 
 char slipBuffer[N_SLIP]; //SLIP.h
 static uint8_t antBuffer[64]; // ANT+
@@ -107,7 +107,7 @@ void setup() {
   
   loadFinishCoordinates();
   
-  sd_Log("Time (hh:mm:ss), Latitude (deg), Longitude (deg), Altitude (m), Distance (m), Displacement (m), Ground Speed (km/h), Target Speed (km/h), Power (W), Cadence (rpm), Velocity (m/s), Simulated Distance (m), Heart Rate (bpm), Battery (V)\r\n");
+  sd_Log("Time (hh:mm:ss), Latitude (deg), Longitude (deg), Altitude (m), Distance (m), Displacement (m), Ground Speed (km/h), Target Speed (km/h), Power (W), Cadence (rpm), Velocity (km/h), Simulated Distance (m), Heart Rate (bpm), Battery (V)\r\n");
 
   // Crank Torque Frequency
   //ANT_SetupChannel(antBuffer, 0, 0, 0, 8182, 0);
@@ -124,7 +124,7 @@ void setup() {
   *((uint8_t*)slipBuffer + 1 + 2) = 0;
   SlipPacketSend(3, (char*)slipBuffer, &Serial3);
 
-  calibrate();
+  //calibrate();
   
   TIME = millis() + PERIOD;
 }
@@ -159,6 +159,7 @@ void calibrate() {
   Serial.print(calibrationValue);
   Serial.println(" Hz");
   sprintf(sdBuffer, "Calibration complete! Offset is: %d Hz. ", calibrationValue);
+  sd_Log(sdBuffer);
 
   calibrateMessageOSD(3, calibrationValue);
   delay(2000);
@@ -178,7 +179,8 @@ static bool coast = false;
 static uint16_t time_int = 0;
 static uint16_t t2 = 0;
 static uint32_t lastGPSUpdate = millis();
-static uint32_t displacement, targetSpeed;
+static uint32_t targetSpeed;
+static int32_t displacement;
 static int32_t lat, lon, alt;
 static bool GPSLost = false;
 void loop() { // Original loop
@@ -213,17 +215,18 @@ void loop() { // Original loop
         } Serial.print('\n');
 
         if (m == 9) {
+          Serial.print("A6: "); Serial.print(digitalRead(A6)); Serial.print("\t"); Serial.println(analogRead(A6));
+          Serial.print("A7: "); Serial.print(digitalRead(A7)); Serial.print("\t"); Serial.println(analogRead(A7));
+          
           switch (antBuffer[2]) { // Channel
             case 0: // Power meter
               readPowerMeter(antBuffer, 0, &time_int, &power, &cadence, &coast);
               
               if (!coast && power != 0 && time_int != 0) {
-                Serial.print("Before velo: "); Serial.println(velocity);
                 simulate(power, time_int, 2, &velocity, &distance);
-                Serial.print("After velo: "); Serial.println(velocity);
                 t2 = millis();	// last power meter data message received
               } else if (coast) {
-                simulate(0, 2 * (millis() - t2) , 2, &velocity, &distance);
+                simulate(0, 2 * (millis() - t2) , 0, &velocity, &distance);
                 t2 = millis();
               }
 
@@ -580,7 +583,7 @@ void loop() { // Original loop
 
       //Send Displacement through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_DISPLACEMENT;
-      *((uint32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; // Assume same as distance
+      *((int32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; // Assume same as distance
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
       
@@ -622,7 +625,7 @@ void loop() { // Original loop
   sd_Print(dtoa(sdBuffer, targetSpeed*0.036)); sd_Print(", ");
   sd_Print(dtoa(sdBuffer, power)); sd_Print(", ");
   sd_Print(dtoa(sdBuffer, cadence)); sd_Print(", ");
-  sd_Print(dtoa(sdBuffer, velocity)); sd_Print(", ");
+  sd_Print(dtoa(sdBuffer, velocity * 3.6)); sd_Print(", ");
   sd_Print(dtoa(sdBuffer, distance)); sd_Print(", ");
   sprintf(sdBuffer, "%u, ", Hrt);
   sd_Print(sdBuffer);
