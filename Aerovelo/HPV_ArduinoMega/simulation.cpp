@@ -401,3 +401,35 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
   *dist = distance;
   *velo = velocity;
 }
+
+// Calculates cumulative average power
+// call function every time a power message is received (0.25s)
+float pwrAvg(float pwrIn) {
+
+	static unsigned int numData = 0;
+	static float cumulativePower = 0;
+	
+	// Calculate average power over whole run
+	numData++;
+	cumulativePower += pwrIn;
+	float avgTotalPower = cumulativePower/numData;
+	
+	return avgTotalPower;
+}
+
+float tenSecPower(float pwrIn) {
+  float avgPwr = 0;
+  static float pwrData[15] = {0};
+  static uint8_t index = 0;
+
+  if (index >= 15) index = 0; // loop index around if larger than array size
+  pwrData[index] = pwrIn;
+  
+  for (uint8_t i = 0; i < 15; i++) {
+	avgPwr += pwrData[i];
+  } avgPwr /= 15;
+  
+  index++;
+  
+  return avgPwr;
+}

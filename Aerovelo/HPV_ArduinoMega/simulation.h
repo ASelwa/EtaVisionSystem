@@ -16,4 +16,8 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
 
 void setOffset(int off);
 
+float pwrAvg(float pwrIn);
+
+float tenSecPower(float pwrIn);
+
 #endif // SIMULATION_H
