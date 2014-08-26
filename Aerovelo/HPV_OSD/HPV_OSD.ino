@@ -79,6 +79,7 @@ char profileName[16];
 uint8_t calibrationState, mode;
 int16_t offset;
 float batteryLevel;
+int8_t temperature;
 uint8_t GPSComm, SDComm = 1; // SDComm should default to not display
 
 /* **********************************************/

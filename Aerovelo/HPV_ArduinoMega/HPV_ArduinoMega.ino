@@ -36,6 +36,7 @@
 #define ID_AVG_POWER    25
 #define ID_CALIBRATION  17
 #define ID_BATTERY      18
+#define ID_TEMPERATURE  26
 #define ID_GPSCOMM      19
 #define ID_SDCOMM       22
 #define ID_MODE         21
@@ -46,6 +47,7 @@
 #define POWER_PRE_SPRINT 337
 
 const uint8_t TOGGLE_PIN = A1;
+
 
 char slipBuffer[N_SLIP]; //SLIP.h
 static uint8_t antBuffer[64]; // ANT+
@@ -81,7 +83,7 @@ void setup() {
   Serial.println("Program start!");
 
   // For checking the battery voltage
-  analogReference(INTERNAL1V1);
+  analogReference(INTERNAL2V56);
   
   // Set up CTS interrupt.
   //pinMode(2, INPUT);
@@ -129,7 +131,7 @@ void setup() {
   *((uint8_t*)slipBuffer + 1 + 2) = 0;
   SlipPacketSend(3, (char*)slipBuffer, &Serial3);
 
-  //calibrate();
+  calibrate();
   
   TIME = millis() + PERIOD;
 }
@@ -180,6 +182,7 @@ void calibrateMessageOSD(uint8_t messageNum, int16_t calibrationValue) {
 }
 
 static float power, cadence, velocity, distance = 0;
+float averagePower, power10s, targetPower;
 static bool coast = false;
 static uint16_t time_int = 0;
 static uint16_t t2 = 0;
@@ -223,8 +226,6 @@ void loop() { // Original loop
           Serial.print("A6: "); Serial.print(digitalRead(A6)); Serial.print("\t"); Serial.println(analogRead(A6));
           Serial.print("A7: "); Serial.print(digitalRead(A7)); Serial.print("\t"); Serial.println(analogRead(A7));
           
-          float averagePower, power10s, targetPower;
-          
           switch (antBuffer[2]) { // Channel
             case 0: // Power meter
               readPowerMeter(antBuffer, 0, &time_int, &power, &cadence, &coast);
@@ -237,8 +238,10 @@ void loop() { // Original loop
                 t2 = millis();
               }
               
-              averagePower = pwrAvg(power);
-              power10s = tenSecPower(power);
+              if (power > 0.1) { // Ignore power values of 0
+                averagePower = pwrAvg(power);
+                power10s = tenSecPower(power);
+              }
               targetPower = calcPower(distance, POWER_START, POWER_PRE_SPRINT);
 
               *((uint8_t*)slipBuffer + 0) = ID_POWER;
@@ -437,8 +440,6 @@ void loop() { // Original loop
       *((int32_t*)(slipBuffer + 1 + 0)) = velocity * 100; // Will be converted to km / h in OSD_SLIP
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
-      
-      Serial.print("Sim speed: "); Serial.println(velocity);
 
       //Serial.print("Speed: ");
       //Serial.println(GPS.Ground_Speed);
@@ -468,6 +469,11 @@ void loop() { // Original loop
       *((uint16_t*)(slipBuffer + 1 + 0)) = getBatteryLevel() * 100;
       *((uint8_t*)slipBuffer + 1 + 2) = 0;
       SlipPacketSend(3, (char*)slipBuffer, &Serial3);
+      
+      *((uint8_t*)slipBuffer + 0) = ID_TEMPERATURE;
+      *((int8_t*)(slipBuffer + 1 + 0)) = readTemp();
+      *((uint8_t*)slipBuffer + 1 + 1) = 0;
+      SlipPacketSend(2, (char*)slipBuffer, &Serial3);
 
       /*
       else{
@@ -617,6 +623,11 @@ void loop() { // Original loop
       *((uint16_t*)(slipBuffer + 1 + 0)) = getBatteryLevel() * 100;
       *((uint8_t*)slipBuffer + 1 + 2) = 0;
       SlipPacketSend(3, (char*)slipBuffer, &Serial3);
+      
+      *((uint8_t*)slipBuffer + 0) = ID_TEMPERATURE;
+      *((int8_t*)(slipBuffer + 1 + 0)) = readTemp();
+      *((uint8_t*)slipBuffer + 1 + 1) = 0;
+      SlipPacketSend(2, (char*)slipBuffer, &Serial3);
       
     } else if (millis() - lastGPSUpdate > 5000) {
       GPSLost = true;

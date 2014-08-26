@@ -18,6 +18,8 @@ void toggle() {
     distance = 0;
     velocity = 0;
     GPS_totalDistance = 0;
+    averagePower = 0;
+    power10s = 0;
     
     if (simulation_mode) {
       profileNum++;

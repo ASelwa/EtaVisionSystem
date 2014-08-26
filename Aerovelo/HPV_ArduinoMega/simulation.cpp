@@ -411,8 +411,11 @@ float pwrAvg(float pwrIn) {
   // Calculate average power over whole run
   numData++;
   cumulativePower += pwrIn;
-  float avgTotalPower = cumulativePower/numData;
   
+  if (numData == 0)
+    return 0;
+  
+  float avgTotalPower = cumulativePower/numData;
   return avgTotalPower;
 }
 
@@ -425,7 +428,7 @@ float tenSecPower(float pwrIn) {
   pwrData[index] = pwrIn;
   
   for (uint8_t i = 0; i < 15; i++) {
-	avgPwr += pwrData[i];
+    avgPwr += pwrData[i];
   } avgPwr /= 15;
   
   index++;

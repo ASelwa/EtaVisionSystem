@@ -2,7 +2,7 @@
 
 void setup() {
   Serial.begin(9600);
-  analogReference(DEFAULT);
+  analogReference(INTERNAL2V56);
 }
 
 
@@ -20,7 +20,7 @@ void readTemp (int aPin) {
  // lowest temperature reading possible is -4C (when temperature block outputs 2.56V on terminal 
  
  float res1 = 10000;
- float refVolt = 5;
+ float refVolt = 3.3;
  float B = 3435;
  float refTemp = 25;
  

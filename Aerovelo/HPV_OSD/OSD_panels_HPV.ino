@@ -31,7 +31,7 @@ void writePanels(){
     panDisplace(8, 3); // 11, 3
     panHeart(28-6, 8);
     panPower(28-7, 3);
-    panBattery(28-5, 12);
+    panBattery(28-11, 12);
     panProfile(1, 12);
     //panSats(1,0);
   } else { // if (osd_on > 0)
@@ -346,7 +346,7 @@ void panCalibration(int first_col, int first_line) {
 void panBattery(int first_col, int first_line){
   osd.setPanel(first_col, first_line);
   osd.openPanel();
-  osd.printf("%4.1f V", batteryLevel);
+  osd.printf("%4.1f V %2d oC", batteryLevel, temperature);
   osd.closePanel();
 }
 

@@ -23,6 +23,7 @@
 #define ID_AVG_POWER    25
 #define ID_CALIBRATION  17
 #define ID_BATTERY      18
+#define ID_TEMPERATURE  26
 #define ID_GPSCOMM      19
 #define ID_MODE         21
 #define ID_SDCOMM       22
