@@ -79,7 +79,7 @@ void setup() {
   // Serial2 is GPS
   Serial.begin(115200);	// COM port
   Serial3.begin(115200); // OSD
-  Serial1.begin(9600);	// ANT+
+  Serial1.begin(57600);	// ANT+
   Serial.println("Program start!");
 
   // For checking the battery voltage
@@ -131,7 +131,7 @@ void setup() {
   *((uint8_t*)slipBuffer + 1 + 2) = 0;
   SlipPacketSend(3, (char*)slipBuffer, &Serial3);
 
-  calibrate();
+  //calibrate();
   
   TIME = millis() + PERIOD;
 }
@@ -198,7 +198,7 @@ void loop() { // Original loop
   uint8_t temp;
   int8_t i, m;
 
-  // put main code here, to run repeatedly:
+  // Anything outside this loop is executed every PERIOD milliseconds
   while (TIME > millis()) {
 //    START = !digitalRead(TOGGLE_PIN);
 //
@@ -223,9 +223,6 @@ void loop() { // Original loop
         } Serial.print('\n');
 
         if (m == 9) {
-          Serial.print("A6: "); Serial.print(digitalRead(A6)); Serial.print("\t"); Serial.println(analogRead(A6));
-          Serial.print("A7: "); Serial.print(digitalRead(A7)); Serial.print("\t"); Serial.println(analogRead(A7));
-          
           switch (antBuffer[2]) { // Channel
             case 0: // Power meter
               readPowerMeter(antBuffer, 0, &time_int, &power, &cadence, &coast);
@@ -391,6 +388,7 @@ void loop() { // Original loop
 
       //Updates profileNum, profileFilename, logFilename and starting GPS location if the yellow button is pressed
       toggle();
+      
       //Send profileNum through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_PROFNUM;
       *((int8_t*)(slipBuffer + 1 + 0)) = profileNum;
@@ -569,6 +567,7 @@ void loop() { // Original loop
       
       //Updates profileNum, profileFilename, logFilename and starting GPS location if the yellow button is pressed
       toggle();
+      
       //Send profileNum through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_PROFNUM;
       *((int8_t*)(slipBuffer + 1 + 0)) = profileNum;

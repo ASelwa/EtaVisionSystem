@@ -4,7 +4,7 @@ const float R2 = 20400; // 22000
 // determine by voltage divider resistors, see text
 const float resistorFactor = 1023.0 * (R2/(R1 + R2));  // 1023*0.348
 const int BATTERY_PIN = 0;         // +V from battery is connected to analog pin 2
-const int TEMPERATURE_PIN = A4;
+const int TEMPERATURE_PIN = A5;
 
 float potential() {
   int val = analogRead(BATTERY_PIN);  // read the value from the sensor
@@ -37,5 +37,4 @@ float readTemp () {
  Serial.print("\tTemp = ");Serial.print(temperature);Serial.println(" C");
  
  return temperature;
- 
 }

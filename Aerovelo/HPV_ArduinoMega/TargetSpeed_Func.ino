@@ -63,7 +63,7 @@ void toggle() {
           for (int i = 0; i < 7; ++i) {
             sd_ReadWord(dataFile, _word);
             coeff[i] = atof(_word);
-            Serial.println(coeff[i]);
+            //Serial.println(coeff[i]);
           }
   
           dataFile.close();
@@ -78,7 +78,7 @@ void toggle() {
           *((uint8_t*)(slipBuffer + 1 + 0)) = 0;
           *((uint8_t*)slipBuffer + 1 + 1) = 0;
           SlipPacketSend(2, (char*)slipBuffer, &Serial3);
-    SlipPacketSend(2, (char*)slipBuffer, &Serial3);
+          SlipPacketSend(2, (char*)slipBuffer, &Serial3);
           Serial.println("SD Read Error (Coeffs)");
         }
         
@@ -135,10 +135,6 @@ bool loadFinishCoordinates() {
   sd_ReadWord(dataFile, _word);
   AltitudeFinish = atof(_word) * 1000;
   dataFile.close();
-  
-  Serial.println(LattitudeFinish);
-  Serial.println(LongitudeFinish);
-  Serial.println(AltitudeFinish);
 }
 
 /*
