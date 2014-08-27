@@ -59,3 +59,10 @@ float readTemp () {
  
  return Vin;
 }
+
+bool highTemp(float temp) {
+  if (temp < 1.53)
+    return true;
+    
+  return false;
+}
