@@ -130,6 +130,11 @@ void setup() {
   *((uint16_t*)(slipBuffer + 1 + 0)) = getBatteryLevel() * 100;
   *((uint8_t*)slipBuffer + 1 + 2) = 0;
   SlipPacketSend(3, (char*)slipBuffer, &Serial3);
+  
+  *((uint8_t*)slipBuffer + 0) = ID_TEMPERATURE;
+  *((int16_t*)(slipBuffer + 1 + 0)) = readTemp() * 100;
+  *((uint8_t*)slipBuffer + 1 + 2) = 0;
+  SlipPacketSend(3, (char*)slipBuffer, &Serial3);
 
   //calibrate();
   
@@ -469,7 +474,7 @@ void loop() { // Original loop
       SlipPacketSend(3, (char*)slipBuffer, &Serial3);
       
       *((uint8_t*)slipBuffer + 0) = ID_TEMPERATURE;
-      *((int8_t*)(slipBuffer + 1 + 0)) = readTemp();
+      *((int8_t*)(slipBuffer + 1 + 0)) = readTemp() * 100;
       *((uint8_t*)slipBuffer + 1 + 1) = 0;
       SlipPacketSend(2, (char*)slipBuffer, &Serial3);
 
@@ -624,9 +629,9 @@ void loop() { // Original loop
       SlipPacketSend(3, (char*)slipBuffer, &Serial3);
       
       *((uint8_t*)slipBuffer + 0) = ID_TEMPERATURE;
-      *((int8_t*)(slipBuffer + 1 + 0)) = readTemp();
-      *((uint8_t*)slipBuffer + 1 + 1) = 0;
-      SlipPacketSend(2, (char*)slipBuffer, &Serial3);
+      *((int16_t*)(slipBuffer + 1 + 0)) = readTemp() * 100;
+      *((uint8_t*)slipBuffer + 1 + 2) = 0;
+      SlipPacketSend(3, (char*)slipBuffer, &Serial3);
       
     } else if (millis() - lastGPSUpdate > 5000) {
       GPSLost = true;

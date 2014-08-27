@@ -17,6 +17,27 @@ float getBatteryLevel() {
   return potential();
 }
 
+/*
+ * Low battery only if value read is consistently lower than threshold
+ */
+bool lowBattery(float potential) {
+  static int lastPotentials[5] = {0};
+  static int index = 0;
+  bool low = true;
+  
+  lastPotentials[index++] = potential * 100;
+  
+  if (index >= 5)
+    index = 0;
+  
+  for (int i = 0; i < 5; i++) {
+    if (lastPotentials[index] > 11.25)
+      low = false;
+  }
+  
+  return low;
+}
+
 float readTemp () {
  
  // Input voltage for temperature block is 3.3V
@@ -36,5 +57,5 @@ float readTemp () {
  Serial.print("\tR2 = ");Serial.print(res2);Serial.print(" ohms");
  Serial.print("\tTemp = ");Serial.print(temperature);Serial.println(" C");
  
- return temperature;
+ return Vin;
 }
