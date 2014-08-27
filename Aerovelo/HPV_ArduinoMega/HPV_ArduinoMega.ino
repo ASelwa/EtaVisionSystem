@@ -125,19 +125,19 @@ void setup() {
   Serial.println("ANT+ setup complete.");
   
   // Send battery information
-  uint16_t batteryLevel = getBatteryLevel();
-  *((uint8_t*)slipBuffer + 0) = ID_BATTERY;
-  *((uint16_t*)(slipBuffer + 1 + 0)) = batteryLevel * 100;
-  *((uint8_t*)slipBuffer + 1 + 2) = lowBattery(batteryLevel);
-  *((uint8_t*)slipBuffer + 1 + 3) = 0;
-  SlipPacketSend(4, (char*)slipBuffer, &Serial3);
-  
-  uint16_t temperature = readTemp();
-  *((uint8_t*)slipBuffer + 0) = ID_TEMPERATURE;
-  *((int16_t*)(slipBuffer + 1 + 0)) = temperature * 100;
-  *((uint8_t*)slipBuffer + 1 + 2) = highTemp(temperature);
-  *((uint8_t*)slipBuffer + 1 + 3) = 0;
-  SlipPacketSend(4, (char*)slipBuffer, &Serial3);
+//  float batteryLevel = getBatteryLevel();
+//  *((uint8_t*)slipBuffer + 0) = ID_BATTERY;
+//  *((uint16_t*)(slipBuffer + 1 + 0)) = batteryLevel * 100;
+//  *((uint8_t*)slipBuffer + 1 + 2) = lowBattery(batteryLevel);
+//  *((uint8_t*)slipBuffer + 1 + 3) = 0;
+//  SlipPacketSend(4, (char*)slipBuffer, &Serial3);
+//  
+//  uint16_t temperature = readTemp();
+//  *((uint8_t*)slipBuffer + 0) = ID_TEMPERATURE;
+//  *((int16_t*)(slipBuffer + 1 + 0)) = temperature;
+//  *((uint8_t*)slipBuffer + 1 + 2) = highTemp(temperature);
+//  *((uint8_t*)slipBuffer + 1 + 3) = 0;
+//  SlipPacketSend(4, (char*)slipBuffer, &Serial3);
 
   //calibrate();
   
@@ -471,7 +471,7 @@ void loop() { // Original loop
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
       
         // Send battery information
-      uint16_t batteryLevel = getBatteryLevel();
+      float batteryLevel = getBatteryLevel();
       *((uint8_t*)slipBuffer + 0) = ID_BATTERY;
       *((uint16_t*)(slipBuffer + 1 + 0)) = batteryLevel * 100;
       *((uint8_t*)slipBuffer + 1 + 2) = lowBattery(batteryLevel);
@@ -480,7 +480,7 @@ void loop() { // Original loop
       
       uint16_t temperature = readTemp();
       *((uint8_t*)slipBuffer + 0) = ID_TEMPERATURE;
-      *((int16_t*)(slipBuffer + 1 + 0)) = temperature * 100;
+      *((int16_t*)(slipBuffer + 1 + 0)) = temperature;
       *((uint8_t*)slipBuffer + 1 + 2) = highTemp(temperature);
       *((uint8_t*)slipBuffer + 1 + 3) = 0;
       SlipPacketSend(4, (char*)slipBuffer, &Serial3);
@@ -630,7 +630,7 @@ void loop() { // Original loop
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
       
       // Send battery information
-      uint16_t batteryLevel = getBatteryLevel();
+      float batteryLevel = getBatteryLevel();
       *((uint8_t*)slipBuffer + 0) = ID_BATTERY;
       *((uint16_t*)(slipBuffer + 1 + 0)) = batteryLevel * 100;
       *((uint8_t*)slipBuffer + 1 + 2) = lowBattery(batteryLevel);
@@ -639,7 +639,7 @@ void loop() { // Original loop
       
       uint16_t temperature = readTemp();
       *((uint8_t*)slipBuffer + 0) = ID_TEMPERATURE;
-      *((int16_t*)(slipBuffer + 1 + 0)) = temperature * 100;
+      *((int16_t*)(slipBuffer + 1 + 0)) = temperature;
       *((uint8_t*)slipBuffer + 1 + 2) = highTemp(temperature);
       *((uint8_t*)slipBuffer + 1 + 3) = 0;
       SlipPacketSend(4, (char*)slipBuffer, &Serial3);

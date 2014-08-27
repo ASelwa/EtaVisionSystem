@@ -2,8 +2,6 @@
 #include "Arduino.h"
 //#include <HardwareSerial.h>
 
-
-
 void ANT_SendMessage(uint8_t *buf, uint8_t n){
   uint8_t i;
 
@@ -121,12 +119,10 @@ void ANT_SetupChannel(uint8_t *buf, uint8_t channel, uint8_t Dev_T, uint8_t Tran
   delayMicroseconds(1000);
 
   Serial.print("Set up Channel. \n");
-
-
 }
 
 
-
+// Deprecated
 void receiveInterrupt(){
   Serial.println("RS");
 }

@@ -31,7 +31,7 @@ void writePanels(){
     panDisplace(8, 3); // 11, 3
     panHeart(28-6, 8);
     panPower(28-7, 3);
-    panBattery(28-15, 12, 7, 1);
+    panBattery(28-14, 12, 7, 1);
     panProfile(1, 12);
     //panSats(1,0);
   } else { // if (osd_on > 0)
@@ -346,23 +346,25 @@ void panCalibration(int first_col, int first_line) {
 void panBattery(int first_col, int first_line, int first_col_warn, int first_line_warn){
   osd.setPanel(first_col, first_line);
   osd.openPanel();
-  osd.printf("%4.1f V", batteryLevel);
   
   if (lowBattery) {
-    osd.printf(" LOW BATT");
+    osd.printf("LOW BATT ");
+  } else {
+    osd.printf("         ");
   }
+  osd.printf("%4.1f V", batteryLevel);
   
   osd.closePanel();
   
   if (highTemp) {
     osd.setPanel(first_col_warn, first_line_warn);
     osd.openPanel();
-    osd.printf("%5.2f V TEMP ALERT", temperature / 100.0);
+    osd.printf("%3d C TEMP ALERT", temperature);
     osd.closePanel();
   } else {
     osd.setPanel(first_col_warn, first_line_warn);
     osd.openPanel();
-    osd.printf("                  ");
+    osd.printf("                ");
     osd.closePanel();
   }
 }
