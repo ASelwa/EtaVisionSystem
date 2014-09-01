@@ -75,7 +75,7 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
   uint16_t tc = 0;
   static bool first_data = true;
 
-  // exit function if not a power meter broadcast message on channel 0
+  // Exit function if not a power meter broadcast message on channel 0
   if (pwrRx[0] != 0x9 || pwrRx[1] != 0x4E || pwrRx[2] != 0x0) {
     *power = 0;
     *time_interval = 0;
@@ -104,28 +104,26 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
         if (!first_data && prev_data[0] == 0x09 && prev_data[1] == 0x4E && prev_data[3] == 0x20) {
           if (*coast) {
             temp_time = (millis() - last_msg_time) * 2;
-          } else if ( cB(pwrRx[7], pwrRx[8]) < cB(prev_data[7], prev_data[8])) {
+          } else if ( cB(pwrRx[7], pwrRx[8]) < cB(prev_data[7], prev_data[8])) { // Time stamp rollover
             temp_time = (65536 - cB(prev_data[7], prev_data[8])) + cB(pwrRx[7], pwrRx[8]);
-            //Serial.print("\ntemp_time Rollover!\n");
           } else {
             temp_time = (cB(pwrRx[7], pwrRx[8]) - cB(prev_data[7], prev_data[8]));
           }
 
-          if (pwrRx[4] < prev_data[4]) {
+          if (pwrRx[4] < prev_data[4]) { // Cadence rollover
             cadence = (60 / 0.0005f) * ((256 - prev_data[4]) + pwrRx[4]) / (temp_time);
-            //Serial.print("\ncadence Rollover!\n\n");
           } else {
             cadence = (60 / 0.0005f) * (pwrRx[4] - prev_data[4]) / (temp_time);
           }
 
           uint16_t torque_tick = 0;
-          if ( cB(pwrRx[9], pwrRx[10]) < cB(prev_data[9], prev_data[10])) {
+          if ( cB(pwrRx[9], pwrRx[10]) < cB(prev_data[9], prev_data[10])) { // Torque tick rollover
             torque_tick = (65536 - cB(prev_data[9], prev_data[10])) + cB(pwrRx[9], pwrRx[10]);
-            //Serial.print("\ntorque_tick Rollover!\n");
           } else {
             torque_tick = (cB(pwrRx[9], pwrRx[10]) - cB(prev_data[9], prev_data[10]));
           }
 
+          // Calculations based on those specified in the "ANT Bicycle Profile" documentation
           torque_freq = ((1.0f * torque_tick) / (temp_time * .0005)) - offset;
           torque = (torque_freq * 10) / cB(pwrRx[5], pwrRx[6]);
           pwr = torque * cadence * 3.14159f / 30;
@@ -157,7 +155,7 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
         for (i = 0; i < 12; i++) {
           prev_data[i] = pwrRx[i];
         }
-        // received new power data message, so must not be coasting anymore
+        // received new power data message, so we must not be coasting anymore
         *coast = false;
 
         *power = pwr;
@@ -170,9 +168,7 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
       }
       break;
 
-    case 0x1: //broadcast calibration data page
-
-      //offset = cB(pwrRx[9], pwrRx[10]);
+    case 0x1: // Broadcast calibration data page
       if (print == 2) {
         Serial.print("Calibration offset: ");
         Serial.print(cB(pwrRx[9], pwrRx[10]));
@@ -188,18 +184,19 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
       break;
 
     default:
-
       last_msg_time = millis();
       *coast = true;
       *power = pwr;
       *cadence_out = cadence;
       break;
 
-      // end of case statement
   } // else do nothing
   *time_interval = temp_time;
 }
 
+/*
+ * Run a step of the simulation
+ */
 void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, float* dist) {
   uint16_t t1, t2 = 0;
   t1 = millis();
@@ -286,12 +283,11 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
   float change_elev, Pelev, prev_Pelev = 0;
 
   float delta_v, delta_d;
-  /***************** subtract the powers added in the previous iteration first *******************/
+  
   // check for bad input (power can't be negative)
   if (power >= 0) {
 
     float power_in = power * etaD;	// watts (J/s)
-    //energy_in = power_in * power_interval;	// energy (joules) input since previous measurement
 
     bool calc_dist = true;
     uint8_t count = 0;
@@ -302,15 +298,14 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
                    /*air drag*/ - Paero
                    /*elevation change*/ + Pelev;
 
-      // Method 2
-      float net_energy = power_left * power_interval + 0.5 * (M+2) * pow(prev_velo, 2); // Don't use _velocity_ variable: this double counts the energy increase from each iteration
+      float net_energy = power_left * power_interval + 0.5 * (M+2) * pow(prev_velo, 2);
       if (net_energy < 0) velocity = 0;
       else velocity = sqrt(2 * net_energy / (M+2));
 
       distance = prev_dist + 0.5 * (prev_velo + velocity) * power_interval;
-      // end Method 2
 
-      change_elev = getElevation(distance) - getElevation(prev_dist); // guess elevation change using previous velocity and time travelled
+      // Guess elevation change using previous velocity and time travelled
+      change_elev = getElevation(distance) - getElevation(prev_dist);
       if (change_elev > 100) {
         Serial.println("Elevation greater than 100");
         Serial.println(change_elev);
@@ -323,6 +318,7 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
       
       count++;
       
+      // IF ELEVATION IS GOING TO INFINITY (HAVEN'T SEEN IT HAPPEN IN A LONG TIME), PUT THIS CODE BACK IN.
 //      if (isinf(Pelev)) {
 //        Serial.println("Pelev is infinity");
 //        Serial.print("Change_elev: "); Serial.println(change_elev);
@@ -341,15 +337,8 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
       else if (count > 9) calc_dist = false;
 
     }
-    
-    /*for (uint8_t i=0;i<10;i++) {
-    	Serial.print(elev_calc[i]);
-    	Serial.print("W.\t");
-    }	Serial.println;*/
 
     if (velocity < 0) velocity = 0;
-
-    //t2 = millis();
 
     if (print == 1) {
       Serial.print("Power: ");
@@ -395,7 +384,7 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
   if (isnan(distance) || isinf(distance) || isnan(velocity) || isinf(velocity)) {
     Serial.println("Warning: distance or velocity not a number. Breaking from simulate.");
     sd_Log("Warning: distance or velocity not a number. Breaking from simulate.");
-    return; // If something goes really, really wrong and none of the other checks can save it
+    return; // If something goes really, really wrong and none of the other checks can save it, return without updating distance or velocity
   }
 
   *dist = distance;
@@ -403,7 +392,7 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
 }
 
 // Calculates cumulative average power
-// call function every time a power message is received (0.25s)
+// Call function every time a power message is received (0.25s)
 float pwrAvg(float pwrIn) {
   static unsigned int numData = 0;
   static float cumulativePower = 0;
@@ -419,6 +408,9 @@ float pwrAvg(float pwrIn) {
   return avgTotalPower;
 }
 
+/*
+ * Calculates power averaged over the last 10 seconds
+ */
 float tenSecPower(float pwrIn) {
   float avgPwr = 0;
   static float pwrData[15] = {0};

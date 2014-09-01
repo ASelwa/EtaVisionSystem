@@ -1,6 +1,6 @@
 /* Target Speed Functions */
 /*
-Updates profileNum, profileFilename, logFilename and starting GPS location if the yellow button is pressed
+ * Updates profileNum, profileFilename, logFilename and starting GPS location if the yellow button is pressed
  */
 void toggle() {
   File dataFile;
@@ -20,6 +20,12 @@ void toggle() {
     GPS_totalDistance = 0;
     averagePower = 0;
     power10s = 0;
+    // Change target power display to 0
+    targetPower = 0;
+    *((uint8_t*)slipBuffer + 0) = ID_TPOWER;
+    *((uint16_t*)(slipBuffer + 1 + 0)) = targetPower;
+    *((uint8_t*)slipBuffer + 1 + 2) = 0;
+    SlipPacketSend(3, (char*)slipBuffer, &Serial3);
     
     if (simulation_mode) {
       profileNum++;
@@ -28,88 +34,51 @@ void toggle() {
       if (!SD.exists(profileFilename)) {
         profileNum = 0;
       }
-  
-//      if (profileNum > (MAX_PROFILE_NUM)) {
-//        profileNum = 0;
-//      }
       
       simulation_mode = false;
       Serial.print("Updated Profile #: ");
       Serial.println(profileNum+1);
-      // Update profileFilename based on profileNum; 0 -> PAUSED
-      if (profileNum >= 0) {
-        // Figure out SD card log iteration.
-        //sprintf(logFilename, "LG%02u%02u%02u.txt", GPS.UTC.hour, GPS.UTC.day, GPS.UTC.month);//, GPS.UTC.hour, GPS.UTC.minute, GPS.UTC.second);
-        sprintf(profileFilename, "PF%02d.txt", profileNum+1);
-        Serial.println(profileFilename);
-        Serial.println(logFilename);
-  
-        dataFile = SD.open(profileFilename, FILE_READ);
-        if (dataFile) {
-          Serial.println("File opened");
-          // Display no OSD message if successful
-          *((uint8_t*)slipBuffer + 0) = ID_SDCOMM;
-          *((uint8_t*)(slipBuffer + 1 + 0)) = 1;
-          *((uint8_t*)slipBuffer + 1 + 1) = 0;
-          SlipPacketSend(2, (char*)slipBuffer, &Serial3);
-          
-          int n = sd_ReadWord(dataFile, _word);
-          memcpy(profileName, _word, n);
-          profileName[n] = 0;
-          Serial.println(profileName);
-          sd_Log(profileName);
-  
-          Serial.print("Coefficients: ");
-          for (int i = 0; i < 7; ++i) {
-            sd_ReadWord(dataFile, _word);
-            coeff[i] = atof(_word);
-            //Serial.println(coeff[i]);
-          }
-  
-          dataFile.close();
-        } else {
-          sd_Log("Could not open profile with name \"");
-          sd_Log(profileFilename);
-          sd_Log("\". ");
-          
-          
-          // Display error message
-          *((uint8_t*)slipBuffer + 0) = ID_SDCOMM;
-          *((uint8_t*)(slipBuffer + 1 + 0)) = 0;
-          *((uint8_t*)slipBuffer + 1 + 1) = 0;
-          SlipPacketSend(2, (char*)slipBuffer, &Serial3);
-          SlipPacketSend(2, (char*)slipBuffer, &Serial3);
-          Serial.println("SD Read Error (Coeffs)");
-        }
+      sprintf(profileFilename, "PF%02d.txt", profileNum+1);
+      Serial.println(profileFilename);
+      Serial.println(logFilename);
+
+      dataFile = SD.open(profileFilename, FILE_READ);
+      if (dataFile) {
+        Serial.println("File opened");
+        // Display no OSD message if successful
+        *((uint8_t*)slipBuffer + 0) = ID_SDCOMM;
+        *((uint8_t*)(slipBuffer + 1 + 0)) = 1;
+        *((uint8_t*)slipBuffer + 1 + 1) = 0;
+        SlipPacketSend(2, (char*)slipBuffer, &Serial3);
         
-        GPS_setStart();
-      } /*else {
-        //sprintf(logFilename, "LGdflt.txt");
-  
-        dataFile = SD.open("PFdflt.txt", FILE_READ);
-        if (dataFile) {
-          Serial.println("File opened");
-          int n = sd_ReadWord(dataFile, _word);
-          memcpy(profileName, _word, n);
-          Serial.println(profileName);
-  
-          Serial.print("Coefficients: ");
-          for (int i = 0; i < 7; ++i) {
-            sd_ReadWord(dataFile, _word);
-            coeff[i] = atof(_word);
-            Serial.println(coeff[i]);
-          }
-  
-          dataFile.close();
-        } else {
-          sd_Log("Could not open profile with name \"");
-          sd_Log(profileFilename);
-          sd_Log("\". ");
-          Serial.println("SD Read Error (Coeffs)");
+        int n = sd_ReadWord(dataFile, _word);
+        memcpy(profileName, _word, n);
+        profileName[n] = 0;
+        Serial.println(profileName);
+        sd_Log(profileName);
+
+        Serial.print("Coefficients: ");
+        for (int i = 0; i < 7; ++i) {
+          sd_ReadWord(dataFile, _word);
+          coeff[i] = atof(_word);
         }
+
+        dataFile.close();
+      } else {
+        sd_Log("Could not open profile with name \"");
+        sd_Log(profileFilename);
+        sd_Log("\". ");
         
-        GPS_setStart();
-      }*/
+        // Display error message
+        *((uint8_t*)slipBuffer + 0) = ID_SDCOMM;
+        *((uint8_t*)(slipBuffer + 1 + 0)) = 0;
+        *((uint8_t*)slipBuffer + 1 + 1) = 0;
+        SlipPacketSend(2, (char*)slipBuffer, &Serial3);
+        SlipPacketSend(2, (char*)slipBuffer, &Serial3);
+      }
+      
+      GPS_setStart();
+      
     } else {
       simulation_mode = true;
     }
@@ -117,7 +86,8 @@ void toggle() {
 }
 
 /*
- * Returns true if successful, false if not
+ * Loads the coordinates specified for the finish line.
+ * Returns true if successful, false if not.
 */
 bool loadFinishCoordinates() {
   static char _word[32] = {0};
@@ -163,11 +133,31 @@ float calcPower(double distance, float startPower, float preSprintPower) {
   double target = 0;
   
   if (distance < 6436) { // More than 1 mile to go
-    //target = startPower + distance * 0.0083;
     target = startPower + ((preSprintPower - startPower) / 6436.0) * distance; // y = b + mx
     Serial.print("Target: "); Serial.println(target);
-  } else { // If sprint profile is desired
+  } else { // Change to something else if sprint profile is desired
     target = startPower + ((preSprintPower - startPower) / 6436.0) * distance; // y = b + mx
+    Serial.print("Target: "); Serial.println(target);
+  }
+
+  return target;
+}
+
+/*
+ * Calculate target power given displacement
+ */
+float calcDisplacePower(double displacement, float startPower, float preSprintPower) {
+  double target = 0;
+  
+  displacement /= 1000.0;
+  
+  Serial.print("Displacement: "); Serial.println(displacement);
+  
+  if (displacement > 1609) { // More than 1 mile to go
+    target = preSprintPower - ((preSprintPower - startPower) / 6436.0) * displacement; // y = b + mx
+    Serial.print("Target: "); Serial.println(target);
+  } else { // Change to something else if real sprint profile is desired
+    target = preSprintPower + ((preSprintPower - startPower) / 6436.0) * (1609 - displacement); // y = b + mx
     Serial.print("Target: "); Serial.println(target);
   }
 

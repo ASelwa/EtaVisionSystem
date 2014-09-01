@@ -27,23 +27,14 @@ void sd_Init() {
 }
 
 void sd_Write(char *data, char *filename) {
-  //  if (START){
-  //Write to SD card
+  // Write to SD card
   File dataFile = SD.open(filename, FILE_WRITE);
 
   // if the file is available, write to it:
   if (dataFile) {
     dataFile.print(data);
     dataFile.close();
-    //Serial.print("SD good. ");
-    //Serial.println(filename);
   }
-  // if the file isn't open, pop up an error:
-  else {
-    //Serial.print("SD Write error. ");
-    //Serial.println(filename);
-  }
-  //  }
 }
 
 void sd_Log(char *data) {
@@ -60,6 +51,7 @@ void sd_Log(char *data) {
 static File file;
 
 /* Functions to write while manually opening and closing file */
+////////////////////////////////////////////////////////////////
 void sd_Open(char *filename) {
   file = SD.open(filename, FILE_WRITE);
 }
@@ -74,6 +66,8 @@ void sd_Close() {
   file.close();
 }
 
+////////////////////////////////////////////////////////////////
+
 int32_t sd_ReadWord(File dataFile, char *_word) {
   char temp;
   int n = 0;
@@ -83,18 +77,10 @@ int32_t sd_ReadWord(File dataFile, char *_word) {
 
   while ((temp != ' ') && (temp != '/n')) {
     _word[n] = temp;
-    //Serial.print(_word[n]);
     temp = dataFile.read();
     ++n;
     if (n > 16) break;
   }
   _word[n] = 0;
   return n;
-}
-/*
-Saves data in the SD card
-UNDONE
-*/
-void storeData() {
-  sprintf(sdBuffer, "%li, %li, %li, %li, %li");
 }

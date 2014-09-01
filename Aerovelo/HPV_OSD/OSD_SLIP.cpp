@@ -19,6 +19,9 @@ extern int16_t temperature;
 extern uint8_t GPSComm, SDComm;
 
 
+/*
+ * Check the message and assign the data to the correct variables
+ */
 void OSD_SlipParse(char *slipBuffer) {
   int MsgID = slipBuffer[0];
 
@@ -27,20 +30,9 @@ void OSD_SlipParse(char *slipBuffer) {
 
   switch(MsgID) {
   case ID_CADENCE:
-    Serial.print("Cadence:\n    N = ");
-    Serial.print(*((uint8_t*) slipBuffer+3));
-    Serial.print(" T = ");
-    Serial.println(*((uint16_t*)((uint8_t*)slipBuffer+1)));
     cadence = (*((uint8_t*) slipBuffer+3)*1000.0)/ (1.0* (*((uint16_t*)((uint8_t*)slipBuffer+1))));
-    Serial.println(cadence);
     break;
   case ID_HEART:
-    Serial.print("Hrt:\n    N = ");
-    Serial.print(*((uint8_t*) slipBuffer+3));
-    Serial.print(" T = ");
-    Serial.println(*((uint16_t*)((uint8_t*)slipBuffer+1)));
-    //heartRate = (*((uint8_t*) slipBuffer+3)*1000.0)/ (1.0* (*((uint16_t*)((uint8_t*)slipBuffer+1))));
-    Serial.println(heartRate);
     heartRate = *((uint8_t*) (slipBuffer+1));
     break;
   case ID_POWER:

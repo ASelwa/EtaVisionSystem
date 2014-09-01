@@ -1,6 +1,6 @@
 #include "ANT_interface.h"
 #include "Arduino.h"
-//#include <HardwareSerial.h>
+#include <HardwareSerial.h>
 
 void ANT_SendMessage(uint8_t *buf, uint8_t n){
   uint8_t i;
@@ -19,7 +19,7 @@ void ANT_SetupChannel(uint8_t *buf, uint8_t channel, uint8_t Dev_T, uint8_t Tran
   const char key[] = NET_KEY_ANTP;
 
   uint8_t chType = 0x00;  // Bidirectional slave.
-  //uint8_t chType = 0x40;  // Receive only slave.
+  //uint8_t chType = 0x40;  // Receive only slave. NEVER USED
 
 
   // Set Network Key
@@ -49,10 +49,10 @@ void ANT_SetupChannel(uint8_t *buf, uint8_t channel, uint8_t Dev_T, uint8_t Tran
   buf[2] = MESG_CHANNEL_ID_ID;
   buf[3] = channel;
   
-  *((uint16_t*)(buf+4)) = Dev_Num;      // Device number, 0 is wildcard.
+  *((uint16_t*)(buf+4)) = Dev_Num; // Device number, 0 is wildcard.
   
-  buf[6] = 0b00000000 + Dev_T;     //121; // Pairing bit + device type. 0 is wildcard
-  buf[7] = Trans_T;//0x01;      // Transmission type. 0 is wildcard to receive any type.
+  buf[6] = 0b00000000 + Dev_T;     // Pairing bit + device type. 0 is wildcard
+  buf[7] = Trans_T;                // Transmission type. 0 is wildcard to receive any type.
   
   ANT_SendMessage(buf, 8);
   delayMicroseconds(1000);
@@ -98,7 +98,7 @@ void ANT_SetupChannel(uint8_t *buf, uint8_t channel, uint8_t Dev_T, uint8_t Tran
   delayMicroseconds(1000);
 
 
-  // Open RX Scan Mode.
+  // Open RX Scan Mode. WE HAVEN'T FIGURED OUT WHAT THIS DOES, BUT THE PROGRAM SEEMS TO WORK WITH OR WITHOUT IT. LEAVE AS IS.
 //  buf[0] = MESG_TX_SYNC;
 //  buf[1] = 1;
 //  buf[2] = 0x5B;
@@ -121,14 +121,7 @@ void ANT_SetupChannel(uint8_t *buf, uint8_t channel, uint8_t Dev_T, uint8_t Tran
   Serial.print("Set up Channel. \n");
 }
 
-
-// Deprecated
-void receiveInterrupt(){
-  Serial.println("RS");
-}
-
-
-uint8_t receiveANT(uint8_t *rxBuf){
+uint8_t receiveANT(uint8_t *rxBuf) {
   uint8_t temp = Serial1.read();
   static uint8_t rxState = 0;
   static uint8_t msgLen;
@@ -138,43 +131,42 @@ uint8_t receiveANT(uint8_t *rxBuf){
 
   int8_t result = 0;
 
-  switch (rxState){
-  case 0:  // Searching for 0xA4 or 0xA5
-    if (temp == 0xA4) rxState = 1;
-
-    break;
-  case 1:  // 0xA4 received
-    if (temp > 9) {
-      Serial.println("Message length > 10");
-      rxState = 0;
-      msgLen = 0;
+  switch (rxState) {
+    case 0:  // Searching for 0xA4 or 0xA5. A5 HAS BEEN REMOVED. SEE "SERIAL BUFFER OVERFLOW" IN THE DOCUMENTATION
+      if (temp == 0xA4) rxState = 1;
+  
       break;
-    }
-    
-    index = 0;
-    msgLen = temp;
-    rxBuf[index++] = temp;
-    rxState = 2;
-
-    break;
-  case 2:
-    rxBuf[index++] = temp;
-    rxState = 3;
-    break;
-  case 3:
-    rxBuf[index++] = temp;
-    if (index > (msgLen+2)) rxState = 4;
-    break;
-  case 4:
-    chksum = temp;
-    rxBuf[index++] = temp;
-    rxBuf[index] = 0;
-    result = msgLen;
-    rxState = 0;
-    break;
-
-  default:; 
-
+    case 1:  // 0xA4 received
+      if (temp > 9) {
+        Serial.println("Message length > 10");
+        rxState = 0;
+        msgLen = 0;
+        break;
+      }
+      
+      index = 0;
+      msgLen = temp;
+      rxBuf[index++] = temp;
+      rxState = 2;
+  
+      break;
+    case 2:
+      rxBuf[index++] = temp;
+      rxState = 3;
+      break;
+    case 3:
+      rxBuf[index++] = temp;
+      if (index > (msgLen+2)) rxState = 4;
+      break;
+    case 4:
+      chksum = temp;
+      rxBuf[index++] = temp;
+      rxBuf[index] = 0;
+      result = msgLen;
+      rxState = 0;
+      break;
+  
+    default:; 
   }
 
   return result;

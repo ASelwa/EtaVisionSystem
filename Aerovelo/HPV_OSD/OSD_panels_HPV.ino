@@ -2,7 +2,6 @@
 
 void startPanels(){
   osd.clear();
-  //panLogo(); // Display our logo  
   do_converts(); // load the unit conversion preferences
 }
 
@@ -18,14 +17,11 @@ void panLogo(){
 /******* PANELS - POSITION *******/
 
 void writePanels(){
-  //Test
-  if (osd_set == 0) { // setup panel is called in the else at the end
+  if (osd_set == 0) {
     panGPSComm(7, 10);
     panSDComm(7, 11);
-    //panUTC(6, 0);
     panCalibration(1, 1);
     panSpeeds(1, 6);
-    //panHeading(8, 10);
     panCadence(28-8, 7);
     panDist(8,4); // 11, 4
     panDisplace(8, 3); // 11, 3
@@ -33,71 +29,12 @@ void writePanels(){
     panPower(28-7, 3);
     panBattery(28-14, 12, 7, 1);
     panProfile(1, 12);
-    //panSats(1,0);
-  } else { // if (osd_on > 0)
+  } else {
     panSetup();
   }
 }
 
 /******* PANELS - DEFINITION *******/
-/* **************************************************************** */
-// Panel  : Test
-// Needs  : X, Y locations
-// Output : "Hello World!"
-// Size   : 1 x 6Hea  (rows x chars)
-// Status  : done
-
-void panTest(int first_col, int first_line){
-
-  osd.setPanel(first_col, first_line);
-  osd.openPanel();
-
-  //sprintf(display_string, "%3.2f Hz    ", cadence);
-
-  //dtostrf(cadence, 5,2, display_string);
-
-  //osd.printf_P(PSTR());
-  osd.printf("T=%u %u %u %u %u %u; D=%lu; %c=%u;        S=%li; A=%li; H=%li%c;", UTC.year, UTC.month,UTC.day,UTC.hour,UTC.minute,UTC.second, GPS_Distance, 0x0f, GPS_NumSats, GPS_Speed, GPS_Altitude, GPS_Heading, 0xb0);
-  //osd.printf_P(PSTR(display_string));
-  //osd.printf_P(PSTR(" Hz")); 
-  osd.closePanel();
-
-  Serial.print("Cadence = ");
-  Serial.print(display_string);
-  Serial.println(" Hz")
-    ;
-}
-
-/* **************************************************************** */
-// Panel  : panTest2
-// Needs  : X, Y locations
-// Output : 
-// Size   :   (rows x chars)
-// Status  : 
-
-void panTest2(int first_col, int first_line){
-  osd.setPanel(first_col, first_line);
-  osd.openPanel();
-  osd.printf("Distance: %lu m;             ", GPS_Distance);
-  osd.closePanel();
-
-  osd.setPanel(first_col, first_line + 1);
-  osd.openPanel();
-  osd.printf("%c: %3li km/h;",0xE9,GPS_Speed);
-  osd.closePanel();
-
-  osd.setPanel(first_col, first_line + 2);
-  osd.openPanel();
-  osd.printf("%c: %li m          ",0xE6, GPS_Altitude);
-  osd.closePanel();
-
-  osd.setPanel(first_col, first_line + 3);
-  osd.openPanel();
-  osd.printf("Heading: %3li%c;",GPS_Heading/100, 0xb0);
-  osd.closePanel();
-}
-
-
 /* **************************************************************** */
 // Panel  : panProfile
 // Needs  : X, Y locations
@@ -110,14 +47,24 @@ void panProfile(int first_col, int first_line){
   osd.setPanel(first_col, first_line);
   osd.openPanel();
   
-  //char *rider = getRider(profile_Num);
+  // Fill the buffer with spaces
+  bool endOfName = false;
+  for(int i = 0; i < 10; i++) {
+    if (endOfName == true)
+      profileName[i] = ' ';
+    else if (profileName[i] == 0) { // Null character
+      profileName[i] = ' ';
+      endOfName = true;
+    }
+  }
+  profileName[10] = 0;
   
   switch(mode) {
     case 0: // Real-time
-      osd.printf("R-%s       ", profileName);
+      osd.printf("R-%s", profileName);
       break;
     case 1: // Simulation
-      osd.printf("S-%s       ", profileName);
+      osd.printf("S-%s", profileName);
       break;
     default:
       osd.printf("Invalid mode!");
@@ -182,16 +129,6 @@ void panDisplace(int first_col, int first_line){
 }
 
 void panSpeeds(int first_col, int first_line){
-  //osd.setPanel(first_col-1, first_line-1);
-  //osd.openPanel();
-  //if (START){
-  //  osd.printf("STARTED");
-  //}
-  //else{
-  //  osd.printf("PAUSED ");
-  //}
-  //osd.closePanel();
-
   osd.setPanel(first_col, first_line);
   osd.openPanel();
   osd.printf("Vt:%5.1f     ", targetSpeed);
@@ -206,59 +143,6 @@ void panSpeeds(int first_col, int first_line){
   osd.openPanel();
   osd.printf("Vs:%5.1f     ", simulatedSpeed);
   osd.closePanel();
-  
-//  osd.setPanel(first_col+8, first_line+1);
-//  osd.openPanel();
-//  osd.printf(">");
-//  osd.closePanel();
-//  
-//  osd.setPanel(first_col+9, first_line-1);
-//  osd.openPanel();
-//  double diff = GPS_Speed - targetSpeed;
-//  if (diff > 10){
-//    osd.printf("o");
-//    
-//  } else if (diff > 3){
-//    osd.printf(" |<| | | ");
-//    
-//  } else if (diff < -10) {
-//    osd.printf(" | | | |<");
-//  } else if (diff < -3) {
-//    osd.printf(" | | |<| ");
-//  } else {
-//    osd.printf(" | |<| | ");
-//  }
-//  
-//  osd.closePanel();
-
-  //osd.setPanel(first_col, first_line + 2);
-  //osd.openPanel();
-  //osd.printf("%c: %3li m",0xE6, GPS_Altitude);
-  //osd.closePanel();
-  
-  
-}
-
-/* **************************************************************** */
-// Panel  : panHeading
-// Needs  : X, Y locations
-// Output : Heading and a dynamic compass rose that changes along the heading information
-// Size   : 1 x 13 + 2 x 13  (rows x chars)
-// Status  : 
-
-void panHeading(int first_col, int first_line){
-  osd.setPanel(first_col, first_line);
-  osd.openPanel();
-  osd.printf("Heading: %3li%c;",GPS_Heading/100, 0xb0);
-  osd.closePanel();
-
-  // a dynamic compass rose that changes along the heading information
-  osd.setPanel(first_col, first_line+1);
-  osd.openPanel();
-  //osd_heading  = osd_yaw;
-  //if(osd_yaw < 0) osd_heading = 360 + osd_yaw;
-  osd.printf("%s|%c%s%c", "\x20\xc0\xc0\xc0\xc0\xc0\xc7\xc0\xc0\xc0\xc0\xc0\x20", 0xd0, buf_show, 0xd1);
-  osd.closePanel(); 
 }
 
 /* **************************************************************** */
@@ -340,7 +224,7 @@ void panCalibration(int first_col, int first_line) {
 /* **************************************************************** */
 // Panel  : panBattery
 // Needs  : X, Y locations
-// Output : a voltage
+// Output : Voltage and temperature info
 // Size   : (rows x chars)
 // Staus  : done
 void panBattery(int first_col, int first_line, int first_col_warn, int first_line_warn){
@@ -417,6 +301,32 @@ void panSDComm(int first_col, int first_line) {
   osd.closePanel();
 }
 
+/********************************************************************************************************************
+ * THE REST OF THE FUNCTIONS ARE UNUSED FOR ETA'S OSD EXCEPT PANSETUP(). NONE OF IT SHOULD NEED TO BE CHANGED.
+ ********************************************************************************************************************/
+
+/* **************************************************************** */
+// Panel  : panHeading
+// Needs  : X, Y locations
+// Output : Heading and a dynamic compass rose that changes along the heading information
+// Size   : 1 x 13 + 2 x 13  (rows x chars)
+// Status  : 
+
+void panHeading(int first_col, int first_line){
+  osd.setPanel(first_col, first_line);
+  osd.openPanel();
+  osd.printf("Heading: %3li%c;",GPS_Heading/100, 0xb0);
+  osd.closePanel();
+
+  // a dynamic compass rose that changes along the heading information
+  osd.setPanel(first_col, first_line+1);
+  osd.openPanel();
+  //osd_heading  = osd_yaw;
+  //if(osd_yaw < 0) osd_heading = 360 + osd_yaw;
+  osd.printf("%s|%c%s%c", "\x20\xc0\xc0\xc0\xc0\xc0\xc7\xc0\xc0\xc0\xc0\xc0\x20", 0xd0, buf_show, 0xd1);
+  osd.closePanel(); 
+}
+
 /* **************************************************************** */
 // Panel  : panRose
 // Needs  : X, Y locations
@@ -432,10 +342,6 @@ void panRose(int first_col, int first_line){
   osd.printf("%s|%c%s%c", "\x20\xc0\xc0\xc0\xc0\xc0\xc7\xc0\xc0\xc0\xc0\xc0\x20", 0xd0, buf_show, 0xd1);
   osd.closePanel();
 }
-
-
-
-
 
 /* **************************************************************** */
 // Panel  : efficiency

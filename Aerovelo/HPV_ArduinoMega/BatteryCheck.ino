@@ -1,9 +1,8 @@
-// Can handle up to 15.818 volts
-const float R1 = 326000; // 326000, 267000
-const float R2 = 22000; // 22000, 20400
-// determine by voltage divider resistors, see text
+// Can handle up to 15.818 volts with the breadboard values
+const float R1 = 326000; // 326000 measured on breadboard, 267000 measured after soldering
+const float R2 = 22000; // 22000 measured on breadboard, 20400 measured after soldering
 const float resistorFactor = 1023.0 * (R2/(R1 + R2));  // 1023*0.348
-const int BATTERY_PIN = 0;         // +V from battery is connected to analog pin 2
+const int BATTERY_PIN = 0;         // +V from battery is connected to analog pin 0
 const int TEMPERATURE_PIN = A2;
 
 float potential() {
@@ -18,10 +17,10 @@ float getBatteryLevel() {
 }
 
 /*
- * Low battery only if value read is consistently lower than threshold
+ * Low battery only if value read is consistently lower than threshold (at least 5 readings in a row)
  */
 bool lowBattery(float potential) {
-  static int lastPotentials[5] = {9999, 9999, 9999, 9999, 9999};
+  static int lastPotentials[5] = {9999, 9999, 9999, 9999, 9999}; // Placeholder values
   static int index = 0;
   static bool lowFlag = false;
   bool low = true;
@@ -49,6 +48,9 @@ bool lowBattery(float potential) {
       return true;
 }
 
+/*
+ * Measure the current temperature
+ */
 float readTemp () {
  
  // Input voltage for temperature block is 3.3V
@@ -71,6 +73,9 @@ float readTemp () {
  return temperature;
 }
 
+/*
+ * Check if the temperature is high
+ */
 bool highTemp(float temp) {
   if (temp > 55)
     return true;

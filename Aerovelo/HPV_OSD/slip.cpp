@@ -1,4 +1,8 @@
 /*
+ * You should never have to modify this file.
+ */
+
+/*
  * slip.c
  *
  * Created: 20/05/2012 7:24:19 PM

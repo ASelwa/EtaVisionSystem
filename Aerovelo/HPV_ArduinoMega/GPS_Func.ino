@@ -6,7 +6,7 @@
 #include <math.h>
 
 /*
-Set starting position
+ * Set starting position
  */
 void GPS_setStart(){
 
@@ -18,13 +18,13 @@ void GPS_setStart(){
   LongitudePrev = GPS.Longitude;
   AltitudePrev = GPS.Altitude;
 
-  startSet = 1;
+  startSet = 1; // Flag to not run this function again
 
   return;
 }
 /*
-Calculates the 3D distance in mm between two points using 
- Pythagoras Theorem on an equirectangular projection
+ * Calculates the 3D distance in mm between two points using 
+ * Pythagoras Theorem on an equirectangular projection
  */
 uint32_t GPS_getDistance(const int32_t lat1, const int32_t lon1, const int32_t alt1, const int32_t lat2, const int32_t lon2, const int32_t alt2){
 
@@ -32,21 +32,7 @@ uint32_t GPS_getDistance(const int32_t lat1, const int32_t lon1, const int32_t a
   x = ((deg2rad(lon2)-deg2rad(lon1)) * cos((deg2rad(lat1)+deg2rad(lat2))/2))/10000.0;
   y = ((deg2rad(lat2)-deg2rad(lat1)))/10000.0;
   
-  
-  //if ((GPS.hacc > (R/2)*x) && (GPS.vacc > (R/2)*y)){
-  //  return 0;
-  //}
-  /*
-  z = (double((alt2-alt1)))*10.0;
-  Serial.println("z: ");
-  Serial.println(z);
-  */
-  
   dist = sqrt(x*x + y*y) * R;
-  //dist = sqrt(dist*dist + z*z);
-  
-  if (dist < 0)
-    Serial.println("WARNING: dist is negative!");
 
   uint32_t final = 0;
   final += dist;  
