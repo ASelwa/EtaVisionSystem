@@ -293,6 +293,8 @@ void loop() { // Original loop
       lastGPSUpdate = millis();
       GPSLost = false;
       
+      Serial.println("GPS received!");
+      
       *((uint8_t*)slipBuffer + 0) = ID_GPSCOMM;
       *((uint8_t*)(slipBuffer + 1 + 0)) = 1; // Received from GPS
       *((uint8_t*)slipBuffer + 1 + 1) = 0;
