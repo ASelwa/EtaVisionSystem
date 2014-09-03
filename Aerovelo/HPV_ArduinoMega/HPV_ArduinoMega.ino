@@ -41,7 +41,6 @@
 #define ID_SDCOMM       22
 #define ID_MODE         21
 
-#define MAX_PROFILE_NUM    2
 #define COURSE_LENGTH   8045 // 8045 metres
 #define POWER_START      300
 #define POWER_PRE_SPRINT 337
