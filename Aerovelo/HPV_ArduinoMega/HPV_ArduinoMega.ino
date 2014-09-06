@@ -395,7 +395,7 @@ void loop() {
       if (simulation_mode) {
         *((int32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; // Assume same as distance
       } else {
-        *((int32_t*)(slipBuffer + 1 + 0)) = displacement;
+        *((uint32_t*)(slipBuffer + 1 + 0)) = displacement;
       }
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
@@ -490,10 +490,10 @@ void loop() {
       
     } else if (millis() - lastGPSUpdate > 5000) {
       GPSLost = true;
-      *((uint8_t*)slipBuffer + 0) = ID_GPSCOMM;
-      *((uint8_t*)(slipBuffer + 1 + 0)) = 0; // No receive from GPS
-      *((uint8_t*)slipBuffer + 1 + 1) = 0;
-      SlipPacketSend(2, (char*)slipBuffer, &Serial3);
+      // *((uint8_t*)slipBuffer + 0) = ID_GPSCOMM;
+      // *((uint8_t*)(slipBuffer + 1 + 0)) = 0; // No receive from GPS
+      // *((uint8_t*)slipBuffer + 1 + 1) = 0;
+      // SlipPacketSend(2, (char*)slipBuffer, &Serial3);
       
       sd_Open(logFilename);
       sd_Print("GPS lost connection. ");
