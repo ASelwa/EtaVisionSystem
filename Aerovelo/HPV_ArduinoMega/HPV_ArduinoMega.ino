@@ -395,7 +395,7 @@ void loop() {
       if (simulation_mode) {
         *((int32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; // Assume same as distance
       } else {
-        *((uint32_t*)(slipBuffer + 1 + 0)) = displacement;
+        *((int32_t*)(slipBuffer + 1 + 0)) = displacement;
       }
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
