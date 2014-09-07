@@ -395,7 +395,7 @@ void loop() {
       if (simulation_mode) {
         *((int32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; // Assume same as distance
       } else {
-        *((uint32_t*)(slipBuffer + 1 + 0)) = displacement;
+        *((int32_t*)(slipBuffer + 1 + 0)) = displacement;
       }
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
@@ -514,7 +514,7 @@ void loop() {
   sd_Print(dtoa(sdBuffer, alt*1.0 / 1000)); sd_Print(", ");
   sprintf((char*)sdBuffer, "%u, ", GPS_totalDistance/ 1000);
   sd_Print(sdBuffer);
-  sprintf((char*)sdBuffer, "%u, ", displacement / 1000);
+  sprintf((char*)sdBuffer, "%li, ", displacement / 1000);
   sd_Print(sdBuffer);
   sd_Print(dtoa(sdBuffer, GPS.Ground_Speed*0.036)); sd_Print(", ");
   sd_Print(dtoa(sdBuffer, targetSpeed*0.036)); sd_Print(", ");
