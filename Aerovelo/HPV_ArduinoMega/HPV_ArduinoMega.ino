@@ -488,7 +488,7 @@ void loop() {
       *((uint8_t*)slipBuffer + 1 + 3) = 0;
       SlipPacketSend(4, (char*)slipBuffer, &Serial3);
       
-    } else if (millis() - lastGPSUpdate > 5000) {
+    } else if (millis() - lastGPSUpdate > 2000) {
       GPSLost = true;
       // *((uint8_t*)slipBuffer + 0) = ID_GPSCOMM;
       // *((uint8_t*)(slipBuffer + 1 + 0)) = 0; // No receive from GPS
