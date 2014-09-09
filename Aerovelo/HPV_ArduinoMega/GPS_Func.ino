@@ -33,7 +33,40 @@ uint32_t GPS_getDistance(const int32_t lat1, const int32_t lon1, const int32_t a
   y = ((deg2rad(lat2)-deg2rad(lat1)))/10000.0;
   
   dist = sqrt(x*x + y*y) * R;
+  
+  
+  /////////////////////////////////////////////////////////
+  // TEST Calculation
+  float latRad, lonRad;
+  float flat, flon;
+  float tlat, tlon;
+  float tlatRad, tlonRad;
+  float midLat, midLon;
+    
+  //convert to decimal degree
+  flat = lat1 /10000.0;
+  flon = lon1 /10000.0;
+  tlat = lat2 / 10000.0;
+  tlon = lon2 / 10000.0;
 
+  //convert decimal degree into radian
+  latRad = flat * 0.017453293;
+  lonRad = flon * 0.017453293;
+  tlatRad = tlat * 0.017453293;
+  tlonRad = tlon * 0.017453293;
+
+  midLat = tlatRad - latRad;
+  midLon = tlonRad - lonRad;
+
+  //Calculate the distance in KM
+  float latSin = sin((latRad - tlatRad)/2);
+  float lonSin = sin((lonRad - tlonRad)/2);
+  dist = 2 * asin(sqrt((latSin*latSin) + cos(latRad) * cos(tlatRad) * (lonSin * lonSin)));
+  dist = dist * R;
+  ////////////////////////////////////////////////////////
+  
+  
+  
   uint32_t final = 0;
   final += dist;  
   return (dist);

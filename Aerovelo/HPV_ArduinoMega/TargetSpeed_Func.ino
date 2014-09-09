@@ -105,6 +105,11 @@ bool loadFinishCoordinates() {
   sd_ReadWord(dataFile, _word);
   AltitudeFinish = atof(_word) * 1000;
   dataFile.close();
+  
+//  Serial.print("Lat"); Serial.println(LattitudeFinish);
+//  Serial.print("Lon"); Serial.println(LongitudeFinish);
+//  Serial.print("Alt"); Serial.println(AltitudeFinish);
+  
 }
 
 /*
