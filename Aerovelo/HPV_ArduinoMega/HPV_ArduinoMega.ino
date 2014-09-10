@@ -539,7 +539,7 @@ void logSRM() {
   // Time (ms), GPS Distance (m), GPS Displacement (m), GPS Speed (km/h), Target Speed (km/h), Power (W), Cadence (rpm), Velocity (km/h), Simulated Distance (m), Heart Rate (bpm)
   sd_Open(SRMlogFilename);
   
-  sd_Print(millis()); sd_Print(", ");
+  sd_Print(dtoa(sdBuffer, (double)millis())); sd_Print(", ");
   sprintf((char*)sdBuffer, "%u, ", GPS_totalDistance/ 1000);
   sd_Print(sdBuffer);
   sprintf((char*)sdBuffer, "%li, ", displacement / 1000);
