@@ -66,6 +66,7 @@ int8_t Toggle;
 int8_t profileNum = 0;
 char profileFilename[32] = {0};
 char logFilename[32] = "LogTest.txt"; // "LGdflt.txt"
+char SRMlogFilename[32] = "SRMLogDf.txt";
 char profileName[16];
 double coeff[7] = {0};
 
@@ -102,6 +103,7 @@ void setup() {
   for (int i = 1; i < 100000; ++i){
     sprintf(logFilename, "Log%d.csv", i);
     if (!SD.exists(logFilename)){
+	  sprintf(SRMlogFilename, "SLg%d.csv", i);
       break;
     }
   }
@@ -109,7 +111,8 @@ void setup() {
   loadFinishCoordinates();
   
   sd_Log("Time (hh:mm:ss), Latitude (deg), Longitude (deg), Altitude (m), Distance (m), Displacement (m), Ground Speed (km/h), Target Speed (km/h), Power (W), Cadence (rpm), Velocity (km/h), Simulated Distance (m), Heart Rate (bpm), Battery (V)\r\n");
-
+  sd_Write("Time (ms), GPS Distance (m), GPS Displacement (m), GPS Speed (km/h), Target Speed (km/h), Power (W), Cadence (rpm), Velocity (km/h), Simulated Distance (m), Heart Rate (bpm)", SRMlogFilename);
+  
   // Crank Torque Frequency
   //ANT_SetupChannel(antBuffer, 0, 0, 0, 8182, 0); UNCOMMENT THIS LINE TO SEARCH FOR ANY DEVICE (ONLY SAFE FOR DEBUGGING)
   ANT_SetupChannel(antBuffer, 0, 11, 0, 8182, 12131);
@@ -255,6 +258,9 @@ void loop() {
               *((uint16_t*)(slipBuffer + 1 + 0)) = power10s;
               *((uint8_t*)slipBuffer + 1 + 2) = 0;
               SlipPacketSend(3, (char*)slipBuffer, &Serial3);
+			  
+			  // Write the updated values to the log file
+			  logSRM();
               
               break;
 
@@ -525,6 +531,28 @@ void loop() {
   sprintf(sdBuffer, "%u, ", Hrt);
   sd_Print(sdBuffer);
   sd_Print(dtoa(sdBuffer, getBatteryLevel())); sd_Print(", ");
+  
+  sd_Close();
+}
+
+void logSRM() {
+  // Time (ms), GPS Distance (m), GPS Displacement (m), GPS Speed (km/h), Target Speed (km/h), Power (W), Cadence (rpm), Velocity (km/h), Simulated Distance (m), Heart Rate (bpm)
+  sd_Open(SRMlogFilename);
+  
+  sd_Print(millis()); sd_Print(", ");
+  sprintf((char*)sdBuffer, "%u, ", GPS_totalDistance/ 1000);
+  sd_Print(sdBuffer);
+  sprintf((char*)sdBuffer, "%li, ", displacement / 1000);
+  sd_Print(sdBuffer);
+  sd_Print(dtoa(sdBuffer, GPS.Ground_Speed*0.036)); sd_Print(", ");
+  sd_Print(dtoa(sdBuffer, targetSpeed*0.036)); sd_Print(", ");
+  sd_Print(dtoa(sdBuffer, power)); sd_Print(", ");
+  sd_Print(dtoa(sdBuffer, cadence)); sd_Print(", ");
+  sd_Print(dtoa(sdBuffer, velocity * 3.6)); sd_Print(", ");
+  sd_Print(dtoa(sdBuffer, distance)); sd_Print(", ");
+  sprintf(sdBuffer, "%u, ", Hrt);
+  sd_Print(sdBuffer);
+  sd_Print("\r\n");
   
   sd_Close();
 }
