@@ -25,9 +25,9 @@ bool lowBattery(float potential) {
   static bool lowFlag = false;
   bool low = true;
   
-  for (int i = 0; i < 5; i++) {
-    Serial.print(lastPotentials[i]); Serial.print("\t");
-  } Serial.println();
+//  for (int i = 0; i < 5; i++) {
+//    Serial.print(lastPotentials[i]); Serial.print("\t");
+//  } Serial.println();
   
   if (!lowFlag) { // Low battery stays low
     lastPotentials[index++] = potential * 100;
@@ -66,9 +66,9 @@ float readTemp () {
  float res2 = res1*(1/(Vdd/Vin - 1));
  float temperature = 1/((log(res2/res1)/B) + (1/(refTemp+273.15))) - 273.15;
  
- Serial.print("Vin = ");Serial.print(Vin);Serial.print(" V");
- Serial.print("\tR2 = ");Serial.print(res2);Serial.print(" ohms");
- Serial.print("\tTemp = ");Serial.print(temperature);Serial.println(" C");
+// Serial.print("Vin = ");Serial.print(Vin);Serial.print(" V");
+// Serial.print("\tR2 = ");Serial.print(res2);Serial.print(" ohms");
+// Serial.print("\tTemp = ");Serial.print(temperature);Serial.println(" C");
  
  return temperature;
 }
@@ -77,7 +77,7 @@ float readTemp () {
  * Check if the temperature is high
  */
 bool highTemp(float temp) {
-  if (temp > 55)
+  if (temp > 80)
     return true;
     
   return false;

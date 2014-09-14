@@ -118,7 +118,7 @@ void ANT_SetupChannel(uint8_t *buf, uint8_t channel, uint8_t Dev_T, uint8_t Tran
   ANT_SendMessage(buf, 5);
   delayMicroseconds(1000);
 
-  Serial.print("Set up Channel. \n");
+  //Serial.print("Set up Channel. \n");
 }
 
 uint8_t receiveANT(uint8_t *rxBuf) {
@@ -138,7 +138,7 @@ uint8_t receiveANT(uint8_t *rxBuf) {
       break;
     case 1:  // 0xA4 received
       if (temp > 9) {
-        Serial.println("Message length > 10");
+        //Serial.println("Message length > 10");
         rxState = 0;
         msgLen = 0;
         break;

@@ -28,13 +28,13 @@ void GPS_setStart(){
  */
 uint32_t GPS_getDistance(const int32_t lat1, const int32_t lon1, const int32_t alt1, const int32_t lat2, const int32_t lon2, const int32_t alt2){
 
-  double x, y, z, dist;
-  x = ((deg2rad(lon2)-deg2rad(lon1))/10000.0 * cos((deg2rad(lat1)+deg2rad(lat2))/2/10000.0));
-  y = ((deg2rad(lat2)-deg2rad(lat1)))/10000.0;
+//  double x, y, z, dist;
+//  x = ((deg2rad(lon2)-deg2rad(lon1))/10000.0 * cos((deg2rad(lat1)+deg2rad(lat2))/2/10000.0));
+//  y = ((deg2rad(lat2)-deg2rad(lat1)))/10000.0;
+//  
+//  dist = sqrt(x*x + y*y) * R;
   
-  dist = sqrt(x*x + y*y) * R;
-  
-  
+  double dist;
   /////////////////////////////////////////////////////////
   // TEST Calculation
   float latRad, lonRad;

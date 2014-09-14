@@ -79,7 +79,7 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
   if (pwrRx[0] != 0x9 || pwrRx[1] != 0x4E || pwrRx[2] != 0x0) {
     *power = 0;
     *time_interval = 0;
-    Serial.print("RESET POWER");
+    //Serial.print("RESET POWER");
     return;
   }
 
@@ -128,26 +128,26 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
           torque = (torque_freq * 10) / cB(pwrRx[5], pwrRx[6]);
           pwr = torque * cadence * 3.14159f / 30;
 
-          if (print == 1) {
-            Serial.print("Time stamp: ");
-            Serial.print(cB(pwrRx[7], pwrRx[8]));
-            Serial.print("\tTime diff: ");
-            Serial.print(temp_time);
-            Serial.print("\tCadence Event #: ");
-            Serial.print(pwrRx[4]);
-            Serial.print("\tTorque tick diff: ");
-            Serial.print(torque_tick);
-            Serial.print("\tTorque Tick Count: ");
-            Serial.print(cB(pwrRx[9], pwrRx[10]));
-            Serial.print("\tCadence: ");
-            Serial.print(cadence, 2);
-            Serial.print("RPM\tTorque: ");
-            Serial.print(torque, 2);
-            Serial.print("Nm \tPower: ");
-            Serial.print(pwr, 2);
-            Serial.println(" W");
-            Serial.flush();
-          }
+//          if (print == 1) {
+//            Serial.print("Time stamp: ");
+//            Serial.print(cB(pwrRx[7], pwrRx[8]));
+//            Serial.print("\tTime diff: ");
+//            Serial.print(temp_time);
+//            Serial.print("\tCadence Event #: ");
+//            Serial.print(pwrRx[4]);
+//            Serial.print("\tTorque tick diff: ");
+//            Serial.print(torque_tick);
+//            Serial.print("\tTorque Tick Count: ");
+//            Serial.print(cB(pwrRx[9], pwrRx[10]));
+//            Serial.print("\tCadence: ");
+//            Serial.print(cadence, 2);
+//            Serial.print("RPM\tTorque: ");
+//            Serial.print(torque, 2);
+//            Serial.print("Nm \tPower: ");
+//            Serial.print(pwr, 2);
+//            Serial.println(" W");
+//            Serial.flush();
+//          }
         } else { // first data point, so don't calculate anything
           first_data = false;
         }
@@ -169,11 +169,11 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
       break;
 
     case 0x1: // Broadcast calibration data page
-      if (print == 2) {
-        Serial.print("Calibration offset: ");
-        Serial.print(cB(pwrRx[9], pwrRx[10]));
-        Serial.println("Hz.");
-      }
+//      if (print == 2) {
+//        Serial.print("Calibration offset: ");
+//        Serial.print(cB(pwrRx[9], pwrRx[10]));
+//        Serial.println("Hz.");
+//      }
 
       last_msg_time = millis();
       first_data = true; // Skip the first calculation coming out of a coast
@@ -206,8 +206,8 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
   float distance = *dist;
 
   if (isnan(velocity)) {
-    Serial.print("static variable velocity in function simulate is NAN. velocity passed in as a parameter is ");
-    Serial.println(*velo);
+    //Serial.print("static variable velocity in function simulate is NAN. velocity passed in as a parameter is ");
+    //Serial.println(*velo);
     velocity = *velo;
   }
 
@@ -263,14 +263,14 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
   
   if (isnan(CdA)) {
     Paero = 0;
-    Serial.println("CdA is NaN.");
-    Serial.print("q: "); Serial.println(q); Serial.print("CdA: "); Serial.println(CdA); Serial.print("velocity: "); Serial.println(velocity);
+    //Serial.println("CdA is NaN.");
+    //Serial.print("q: "); Serial.println(q); Serial.print("CdA: "); Serial.println(CdA); Serial.print("velocity: "); Serial.println(velocity);
   }
 
 
   if (isnan(velocity)) {
-    Serial.print("static variable velocity in function simulate2 is NAN. (check #2) velocity passed in as a parameter is ");
-    Serial.println(*velo);
+    //Serial.print("static variable velocity in function simulate2 is NAN. (check #2) velocity passed in as a parameter is ");
+    //Serial.println(*velo);
     velocity = *velo;
   }
 
@@ -307,8 +307,8 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
       // Guess elevation change using previous velocity and time travelled
       change_elev = getElevation(distance) - getElevation(prev_dist);
       if (change_elev > 100) {
-        Serial.println("Elevation greater than 100");
-        Serial.println(change_elev);
+        //Serial.println("Elevation greater than 100");
+        //Serial.println(change_elev);
       } else {
         prev_Pelev = Pelev;
         Pelev = M * (-g) * change_elev / power_interval; //kgm2/s3  kg*m/s2 * m / s
@@ -340,49 +340,49 @@ void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, f
 
     if (velocity < 0) velocity = 0;
 
-    if (print == 1) {
-      Serial.print("Power: ");
-      Serial.print(power);
-      Serial.print(" W.\tPower interval: ");
-      Serial.print(power_interval);
-      Serial.print(" s.\tEnergy in: ");
-      Serial.print(power_in * power_interval);
-      Serial.print(" J.\tVelocity: ");
-      Serial.print(velocity * 3.6); // convert to km/h
-      Serial.print(" km/h.\tDistance: ");
-      Serial.print(distance * 1.0);
-      Serial.print(" m.\tNet energy: ");
-      Serial.print(power_left * power_interval);
-      Serial.print (" J.\n");
-      /*Serial.print("Compute time = ");
-      Serial.println(t2-t1);*/
-    } else if (print == 2) {
-      Serial.print("Power in: ");
-      Serial.print(power_in);
-      Serial.print(" W.\tPower interval: ");
-      Serial.print(power_interval);
-      Serial.print(" s.\tRolling Power: ");
-      Serial.print(Proll);
-      Serial.print(" W.\tAir Power: ");
-      Serial.print(Paero);
-      Serial.print(" W.\tElev Power: ");
-      Serial.print(Pelev);
-      Serial.print(" W.\tPower left: ");
-      Serial.print(power_left);
-      Serial.print(" W.\tVelocity: ");
-      Serial.print(velocity * 3.6);
-      Serial.print(" km/h.\tDistance: ");
-      Serial.print(distance * 1.0);
-      Serial.print(" m.\n");
-    } else if (print == 3) {
-      Serial.print("Velocity = ");
-      Serial.print(velocity * 3.6);
-      Serial.print(" km/h\n");
-    }
+//    if (print == 1) {
+//      Serial.print("Power: ");
+//      Serial.print(power);
+//      Serial.print(" W.\tPower interval: ");
+//      Serial.print(power_interval);
+//      Serial.print(" s.\tEnergy in: ");
+//      Serial.print(power_in * power_interval);
+//      Serial.print(" J.\tVelocity: ");
+//      Serial.print(velocity * 3.6); // convert to km/h
+//      Serial.print(" km/h.\tDistance: ");
+//      Serial.print(distance * 1.0);
+//      Serial.print(" m.\tNet energy: ");
+//      Serial.print(power_left * power_interval);
+//      Serial.print (" J.\n");
+//      /*Serial.print("Compute time = ");
+//      Serial.println(t2-t1);*/
+//    } else if (print == 2) {
+//      Serial.print("Power in: ");
+//      Serial.print(power_in);
+//      Serial.print(" W.\tPower interval: ");
+//      Serial.print(power_interval);
+//      Serial.print(" s.\tRolling Power: ");
+//      Serial.print(Proll);
+//      Serial.print(" W.\tAir Power: ");
+//      Serial.print(Paero);
+//      Serial.print(" W.\tElev Power: ");
+//      Serial.print(Pelev);
+//      Serial.print(" W.\tPower left: ");
+//      Serial.print(power_left);
+//      Serial.print(" W.\tVelocity: ");
+//      Serial.print(velocity * 3.6);
+//      Serial.print(" km/h.\tDistance: ");
+//      Serial.print(distance * 1.0);
+//      Serial.print(" m.\n");
+//    } else if (print == 3) {
+//      Serial.print("Velocity = ");
+//      Serial.print(velocity * 3.6);
+//      Serial.print(" km/h\n");
+//    }
   }
   
   if (isnan(distance) || isinf(distance) || isnan(velocity) || isinf(velocity)) {
-    Serial.println("Warning: distance or velocity not a number. Breaking from simulate.");
+    //Serial.println("Warning: distance or velocity not a number. Breaking from simulate.");
     sd_Log("Warning: distance or velocity not a number. Breaking from simulate.");
     return; // If something goes really, really wrong and none of the other checks can save it, return without updating distance or velocity
   }

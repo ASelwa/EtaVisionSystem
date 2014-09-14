@@ -11,7 +11,7 @@ void toggle() {
   //If button was pressed, update "profile"
   if (Toggle != lastToggle) {
     sd_Write("Profile changed. ", logFilename);
-    Serial.println("Toggle!");
+    //Serial.println("Toggle!");
     lastToggle = Toggle;
 
     // Reset the state
@@ -36,15 +36,15 @@ void toggle() {
       }
       
       simulation_mode = false;
-      Serial.print("Updated Profile #: ");
-      Serial.println(profileNum+1);
+      //Serial.print("Updated Profile #: ");
+      //Serial.println(profileNum+1);
       sprintf(profileFilename, "PF%02d.txt", profileNum+1);
-      Serial.println(profileFilename);
-      Serial.println(logFilename);
+      //Serial.println(profileFilename);
+      //Serial.println(logFilename);
 
       dataFile = SD.open(profileFilename, FILE_READ);
       if (dataFile) {
-        Serial.println("File opened");
+        //Serial.println("File opened");
         // Display no OSD message if successful
         *((uint8_t*)slipBuffer + 0) = ID_SDCOMM;
         *((uint8_t*)(slipBuffer + 1 + 0)) = 1;
@@ -54,10 +54,10 @@ void toggle() {
         int n = sd_ReadWord(dataFile, _word);
         memcpy(profileName, _word, n);
         profileName[n] = 0;
-        Serial.println(profileName);
+        //Serial.println(profileName);
         sd_Log(profileName);
 
-        Serial.print("Coefficients: ");
+        //Serial.print("Coefficients: ");
         for (int i = 0; i < 7; ++i) {
           sd_ReadWord(dataFile, _word);
           coeff[i] = atof(_word);
@@ -139,10 +139,10 @@ float calcPower(double distance, float startPower, float preSprintPower) {
   
   if (distance < 6436) { // More than 1 mile to go
     target = startPower + ((preSprintPower - startPower) / 6436.0) * distance; // y = b + mx
-    Serial.print("Target: "); Serial.println(target);
+    //Serial.print("Target: "); Serial.println(target);
   } else { // Change to something else if sprint profile is desired
     target = startPower + ((preSprintPower - startPower) / 6436.0) * distance; // y = b + mx
-    Serial.print("Target: "); Serial.println(target);
+    //Serial.print("Target: "); Serial.println(target);
   }
 
   return target;
@@ -156,14 +156,14 @@ float calcDisplacePower(double displacement, float startPower, float preSprintPo
   
   displacement /= 1000.0;
   
-  Serial.print("Displacement: "); Serial.println(displacement);
+  //Serial.print("Displacement: "); Serial.println(displacement);
   
   if (displacement > 1609) { // More than 1 mile to go
     target = preSprintPower - ((preSprintPower - startPower) / 6436.0) * displacement; // y = b + mx
-    Serial.print("Target: "); Serial.println(target);
+    //Serial.print("Target: "); Serial.println(target);
   } else { // Change to something else if real sprint profile is desired
     target = preSprintPower + ((preSprintPower - startPower) / 6436.0) * (1609 - displacement); // y = b + mx
-    Serial.print("Target: "); Serial.println(target);
+    //Serial.print("Target: "); Serial.println(target);
   }
 
   return target;

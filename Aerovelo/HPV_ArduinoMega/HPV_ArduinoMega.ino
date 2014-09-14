@@ -79,7 +79,7 @@ void setup() {
   Serial.begin(115200);	// COM port
   Serial3.begin(115200); // OSD
   Serial1.begin(57600);	// ANT+
-  Serial.println("Program start!");
+  //Serial.println("Program start!");
 
   // For checking the battery voltage
   analogReference(INTERNAL2V56);
@@ -101,9 +101,9 @@ void setup() {
 
   // Figure out SD card log iteration.
   for (int i = 1; i < 100000; ++i){
-    sprintf(logFilename, "Log%d.csv", i);
+    sprintf(logFilename, "LogNew%d.csv", i);
     if (!SD.exists(logFilename)){
-	  sprintf(SRMlogFilename, "SLg%d.csv", i);
+	  sprintf(SRMlogFilename, "SLgNew%d.csv", i);
       break;
     }
   }
@@ -119,7 +119,7 @@ void setup() {
   // Heart rate channel.
   ANT_SetupChannel(antBuffer, 1, 120, 0, 16140, 45063);
 
-  Serial.println("ANT+ setup complete.");
+  //Serial.println("ANT+ setup complete.");
 
   calibrate();
   
@@ -138,7 +138,7 @@ void calibrate() {
   int16_t cal_values[6];
   int16_t calibrationValue;
 
-  Serial.println("Begin calibration... Waiting for calibration messages.");
+  //Serial.println("Begin calibration... Waiting for calibration messages.");
   sd_Log("Begin calibration... Waiting for calibration messages. ");
   calibrateMessageOSD(1, 0);
 
@@ -146,7 +146,7 @@ void calibrate() {
     if (Serial1.available() && (m = receiveANT(antBuffer)) == 9 && antBuffer[1] == 0x4E && antBuffer[4] == 0x10) {
       cal_values[i++] = antBuffer[9] * 256 + antBuffer[10];
       calibrateMessageOSD(2, 0);
-      Serial.print("Receiving... ");
+      //Serial.print("Receiving... ");
       sprintf(sdBuffer, "Received message %d. ", i);
       sd_Log(sdBuffer);
     }
@@ -155,9 +155,9 @@ void calibrate() {
   calibrationValue = average(cal_values, 6);
   setOffset(calibrationValue);
 
-  Serial.print("Calibration complete! Offset is: ");
-  Serial.print(calibrationValue);
-  Serial.println(" Hz");
+  //Serial.print("Calibration complete! Offset is: ");
+  //Serial.print(calibrationValue);
+  //Serial.println(" Hz");
   sprintf(sdBuffer, "Calibration complete! Offset is: %d Hz. ", calibrationValue);
   sd_Log(sdBuffer);
 
@@ -211,11 +211,11 @@ void loop() {
     // Read ANT+ Data
     if (Serial1.available()) {
       if ((m = receiveANT(antBuffer)) > 0) {
-        Serial.print("ANT+ Packet Received: ");
-        for (i = 0; i < m + 3; ++i) {
-          Serial.print(antBuffer[i], HEX);
-          Serial.print(' ');
-        } Serial.print('\n');
+        //Serial.print("ANT+ Packet Received: ");
+        //for (i = 0; i < m + 3; ++i) {
+          //Serial.print(antBuffer[i], HEX);
+          //Serial.print(' ');
+        //} Serial.print('\n');
 
         if (m == 9) {
           switch (antBuffer[2]) { // Channel
@@ -285,7 +285,7 @@ void loop() {
       lastGPSUpdate = millis();
       GPSLost = false;
       
-      Serial.println("GPS received!");
+      //Serial.println("GPS received!");
       
       *((uint8_t*)slipBuffer + 0) = ID_GPSCOMM;
       *((uint8_t*)(slipBuffer + 1 + 0)) = 1; // Received from GPS
@@ -301,8 +301,8 @@ void loop() {
 
       if (startSet == 0) {
         GPS_setStart();
-        Serial.println(startSet);
-        Serial.println("GPS start set!");
+        //Serial.println(startSet);
+        //Serial.println("GPS start set!");
 
         // Prepare the moving average arrays
         for (int x = 0; x < numTerms; x++) {
@@ -343,7 +343,7 @@ void loop() {
       }
 
       //Updates profileNum, profileFilename, logFilename and starting GPS location if the yellow button is pressed
-      toggle();
+      //toggle();
       
       //Send profileNum through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_PROFNUM;
@@ -428,7 +428,7 @@ void loop() {
         GPS.Init();
       
       //Updates profileNum, profileFilename, logFilename and starting GPS location if the yellow button is pressed
-      toggle();
+      //toggle();
       
       //Send profileNum through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_PROFNUM;
@@ -504,7 +504,7 @@ void loop() {
       sd_Open(logFilename);
       sd_Print("GPS lost connection. ");
       sd_Close();
-      Serial.println("No message for 5 seconds.");
+      //Serial.println("No message for 5 seconds.");
     }
   }
   TIME += PERIOD;

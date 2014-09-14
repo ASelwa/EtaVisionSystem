@@ -1,15 +1,15 @@
 // SD functions
 void sd_Init() {
-  Serial.println("Initializing SD card...");
-  Serial.print("_SS =");
-  Serial.println(_SS);
+//  Serial.println("Initializing SD card...");
+//  Serial.print("_SS =");
+//  Serial.println(_SS);
   // make sure that the default chip select pin is set to
   // output, even if you don't use it:
   pinMode(_SS, OUTPUT);
 
   // see if the card is present and can be initialized:
   if (!SD.begin(_SS)) {
-    Serial.println("Card failed, or not present");
+    //Serial.println("Card failed, or not present");
     // Display error message
     *((uint8_t*)slipBuffer + 0) = ID_SDCOMM;
     *((uint8_t*)(slipBuffer + 1 + 0)) = 0;
@@ -17,7 +17,7 @@ void sd_Init() {
     SlipPacketSend(2, (char*)slipBuffer, &Serial3);
   }
   else {
-    Serial.println("Card initialized.");
+    //Serial.println("Card initialized.");
     // Display no OSD message if successful
     *((uint8_t*)slipBuffer + 0) = ID_SDCOMM;
     *((uint8_t*)(slipBuffer + 1 + 0)) = 1;
