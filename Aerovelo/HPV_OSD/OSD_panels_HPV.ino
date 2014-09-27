@@ -22,10 +22,10 @@ void writePanels(){
     panSDComm(7, 11);
     panCalibration(1, 1);
     panSpeeds(1, 6);
-    panCadence(28-8, 7);
-    panDist(8,4); // 11, 4
-    panDisplace(8, 3); // 11, 3
-    panHeart(28-6, 8);
+    panCadence(28-8, 8);
+    //panDist(8,4); // 11, 4
+    panDisplace(8, 4); // 11, 3
+    panHeart(28-6, 9);
     panPower(28-7, 3);
     panBattery(28-14, 12, 7, 1);
     panProfile(1, 12);
@@ -129,17 +129,17 @@ void panDisplace(int first_col, int first_line){
 }
 
 void panSpeeds(int first_col, int first_line){
-  osd.setPanel(first_col, first_line);
-  osd.openPanel();
-  osd.printf("Vt:%5.1f     ", targetSpeed);
-  osd.closePanel();
+//  osd.setPanel(first_col, first_line);
+//  osd.openPanel();
+//  osd.printf("Vt:%5.1f     ", targetSpeed);
+//  osd.closePanel();
 
   osd.setPanel(first_col, first_line + 1);
   osd.openPanel();
   osd.printf("Vg:%5.1f     ", GPS_Speed); // GS = 0xE9 char
   osd.closePanel();
   
-  osd.setPanel(first_col, first_line + 2);
+  osd.setPanel(first_col, first_line + 4);
   osd.openPanel();
   osd.printf("Vs:%5.1f     ", simulatedSpeed);
   osd.closePanel();
@@ -179,10 +179,10 @@ void panPower(int first_col, int first_line) {
   osd.printf("A: %3u W", avgPower);
   osd.closePanel();
   
-  osd.setPanel(first_col, first_line+2);
-  osd.openPanel();
-  osd.printf("S: %3u W", power_10s);
-  osd.closePanel();
+//  osd.setPanel(first_col, first_line+2);
+//  osd.openPanel();
+//  osd.printf("S: %3u W", power_10s);
+//  osd.closePanel();
   
   osd.setPanel(first_col, first_line+3);
   osd.openPanel();
