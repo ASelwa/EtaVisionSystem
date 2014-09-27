@@ -1,0 +1,5 @@
+Time (hh:mm:ss), Latitude (deg), Longitude (deg), Altitude (m), Distance (m), Displacement (m), Ground Speed (km/h), Target Speed (km/h), Power (W), Cadence (rpm), Velocity (m/s), Simulated Distance (m), Heart Rate (bpm), Battery (V)
+Begin calibration... Waiting for calibration messages. Received message 1. Received message 2. Received message 3. Received message 4. Received message 5. Received message 6. Calibration complete! Offset is: 512 Hz. GPS lost connection. Profile changed. 
+0:0:0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 95, 4.1671552, 
+0:0:0, 0, 0, 0, 0, 0, 0, 0, 69.2272872, 29.9475898, 1.7010653, 1.7040422, 96, 4.184164, 
+0:0:0, 0, 0, 0, 0, 0, 0, 0, 69.2272872, 29.9475898, 1.7010653, 1.7040422, 96, 4.1671552, 
