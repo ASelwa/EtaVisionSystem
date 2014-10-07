@@ -1,0 +1,6 @@
+Time (hh:mm:ss), Latitude (deg), Longitude (deg), Altitude (m), Distance (m), Displacement (m), Ground Speed (km/h), Target Speed (km/h), Power (W), Cadence (rpm), Velocity (km/h), Simulated Distance (m), Heart Rate (bpm), Battery (V)
+GPS lost connection. Profile changed. 
+23:59:52, 43.6587943, -79.393341, 149.1540145, 0, 986, 0, 0, 0, 0, 0, 0, 0, 9.0647602, 
+23:59:52, 43.6587943, -79.393341, 149.1540145, 0, 986, 0, 0, 0, 0, 0, 0, 0, 8.9855927, 
+23:59:52, 43.6587943, -79.393341, 149.1540145, 0, 986, 0, 0, 0, 0, 0, 0, 0, 9.0251769, GPS lost connection. 
+23:59:52, 43.6587943, -79.393341, 149.1540145, 0, 986, 0, 0, 0, 0, 0, 0, 0, 8.9855927, 
