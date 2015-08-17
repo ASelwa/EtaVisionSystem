@@ -260,6 +260,7 @@ void loop() {
               SlipPacketSend(3, (char*)slipBuffer, &Serial3);
 			  
 			  // Write the updated values to the log file
+                          //(The SRM log file with all possible data saved, was a feature add on Sept. 10, 2014)
 			  logSRM();
               
               break;
