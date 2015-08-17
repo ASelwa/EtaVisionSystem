@@ -1,4 +1,4 @@
-EtaVisionSystem
+**EtaVisionSystem**
 ===============
 
 This repo contains code and documentation for AeroVelo's Eta speedbike vision system.
@@ -6,7 +6,9 @@ This repo contains code and documentation for AeroVelo's Eta speedbike vision sy
 It includes code for the Arduino Mega, code for the minimOSD, and some documentation as well as datasheets.
 
 
-BRANCHES
+ 
+
+####BRANCHES
 
 The master branch contains the most recent updates.
 
