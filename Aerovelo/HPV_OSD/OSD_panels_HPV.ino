@@ -16,15 +16,18 @@ void panLogo(){
 
 /******* PANELS - POSITION *******/
 
+void beginningPanels(){
+    panSDComm(7, 11);
+    panGPSComm(7, 10);
+    panCalibration(1, 1);
+}
+
 void writePanels(){
   if (osd_set == 0) {
-    panGPSComm(7, 10);
-    panSDComm(7, 11);
-    panCalibration(1, 1);
     panSpeeds(1, 6);
     panCadence(28-8, 8);
-    //panDist(8,4); // 11, 4
-    panDisplace(8, 4); // 11, 3
+    panDist(8,4); // 11, 4
+    //panDisplace(8, 4); // 11, 3
     panHeart(28-6, 9);
     panPower(28-7, 3);
     panBattery(28-14, 12, 7, 1);
@@ -213,6 +216,9 @@ void panCalibration(int first_col, int first_line) {
       break;
     case 3:
       osd.printf("Val: %4i", offset);
+      break;
+    case 4:
+      osd.printf("DEF. 507 ");
       break;
     default:
       osd.printf("Invalid  ");

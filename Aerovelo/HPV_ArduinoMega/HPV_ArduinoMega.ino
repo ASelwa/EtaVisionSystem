@@ -1,6 +1,12 @@
 /* Arduino Mega Main Program
  * By Oleksiy Ryndin and Sherry Shi
  */
+ 
+ /*
+  *   TODO:
+  *    - store default calibration number (507 Hz, found in simulation.cpp also) in one place
+  *  
+  */
 
 #include <SD.h>
 #include <SPI.h>
@@ -41,9 +47,10 @@
 #define ID_SDCOMM       22
 #define ID_MODE         21
 
-#define COURSE_LENGTH   8045 // 8045 metres
-#define POWER_START      300
-#define POWER_PRE_SPRINT 337
+#define COURSE_LENGTH   8045 // Metres
+#define POWER_START      300 // Watts
+#define POWER_PRE_SPRINT 337 // Watts
+#define CALIBRATION_TIME 10000 // Milliseconds
 
 const uint8_t TOGGLE_PIN = A1;
 
@@ -54,6 +61,7 @@ char gpsFilename[32];
 char antFilename[32];
 static uint8_t Hrt;
 uint32_t TIME;
+uint32_t TEMPTIME;
 
 int32_t LattitudeStart = 436585166, LongitudeStart = -793934912, AltitudeStart = 117689;
 int32_t LattitudeFinish, LongitudeFinish, AltitudeFinish;
@@ -142,6 +150,8 @@ void calibrate() {
   sd_Log("Begin calibration... Waiting for calibration messages. ");
   calibrateMessageOSD(1, 0);
 
+  TEMPTIME = millis(); //To timeout the calibration if taking too long
+  
   while (i < 6) {
     if (Serial1.available() && (m = receiveANT(antBuffer)) == 9 && antBuffer[1] == 0x4E && antBuffer[4] == 0x10) {
       cal_values[i++] = antBuffer[9] * 256 + antBuffer[10];
@@ -149,21 +159,46 @@ void calibrate() {
       Serial.print("Receiving... ");
       sprintf(sdBuffer, "Received message %d. ", i);
       sd_Log(sdBuffer);
+      
+      // Should mean that all the required calibrated values were received
+      if (i == 6) {
+        calibrated = true; }   
+    }
+    else { // Nothing available on the ANT serial
+      if (millis() - TEMPTIME > CALIBRATION_TIME) { // If more than CALIBRATION_TIME already passed
+        break; // exit the while loop
+      }
     }
   }
-
-  calibrationValue = average(cal_values, 6);
-  setOffset(calibrationValue);
-
-  Serial.print("Calibration complete! Offset is: ");
-  Serial.print(calibrationValue);
-  Serial.println(" Hz");
-  sprintf(sdBuffer, "Calibration complete! Offset is: %d Hz. ", calibrationValue);
-  sd_Log(sdBuffer);
-
-  calibrateMessageOSD(3, calibrationValue);
-  delay(2000);
-  calibrateMessageOSD(0, calibrationValue);
+  
+  if (calibrated) { 
+    calibrationValue = average(cal_values, 6);
+    setOffset(calibrationValue);
+  
+    Serial.print("Calibration complete! Offset is: ");
+    Serial.print(calibrationValue);
+    Serial.println(" Hz");
+    sprintf(sdBuffer, "Calibration complete! Offset is: %d Hz. ", calibrationValue);
+    sd_Log(sdBuffer);
+    
+    // Display the calibration data on the OSD
+    calibrateMessageOSD(3, calibrationValue); // The number 3 writes the value to the screen (See calibration state in OSD_panels_HPV) 
+  }
+  
+  else {
+    calibrationValue = 507;
+    Serial.println("Calibration timed-out...Offset is set as default: 507 Hz");
+    sprintf(sdBuffer, "Calibration timed-out...Offset is set as default: 507 Hz");
+    sd_Log(sdBuffer);
+    
+    // Display the calibration data on the OSD
+    calibrateMessageOSD(4, calibrationValue); // The number 4 write default to the screen (See calibration state in OSD_panels_HPV)
+  }
+  
+  // Wait and then clear up the screen
+  delay(3000); // Not large enough? seeing flicker?
+  calibrateMessageOSD(0, calibrationValue); // The number 0 writes a blank message to the screen 
+  
 }
 
 /*

@@ -55,7 +55,8 @@
 #define MinimOSD
 
 #define TELEMETRY_SPEED  115200  // How fast our MAVLink telemetry is coming to Serial port
-#define BOOTTIME         2000   // Time in milliseconds that we show boot loading bar and wait user input
+#define BOOTTIME         100   // Time in milliseconds that we show boot loading bar and wait user input
+#define CALIBRATION_TIME 12000
 
 // Objects and Serial definitions
 FastSerialPort0(Serial);
@@ -85,6 +86,8 @@ float batteryLevel;
 uint8_t lowBattery, highTemp;
 int16_t temperature;
 uint8_t GPSComm, SDComm = 1; // SDComm should default to not display
+
+uint32_t TIME;
 
 /* **********************************************/
 /* ***************** SETUP() *******************/
@@ -135,6 +138,25 @@ void setup()
   // Show bootloader bar
   loadBar();
 
+  // Initial Calibration and values
+  TIME = millis();
+  
+  while (millis() - TIME < CALIBRATION_TIME) {
+    
+    // Get any data updates
+    slipLen = SlipReceive(slipBuffer, &Serial);
+    if (slipLen>0){
+      Serial.println(slipLen);
+      OSD_SlipParse(slipBuffer);
+      slipBuffer[slipLen] = 0; // Is this just the null character? Isn't this unsafe?
+      //memcpy((void*)completedPacket, (void*)slipBuffer, slipLen+1);
+      Serial.println(slipBuffer);
+      //Serial.println(completedPacket);
+    } 
+    delay(120); // Similar to the update rate in the main loop 
+    beginningPanels();
+  }
+  
   // Startup timers  
   Timer.Set(&OnTimer, 120);
 
