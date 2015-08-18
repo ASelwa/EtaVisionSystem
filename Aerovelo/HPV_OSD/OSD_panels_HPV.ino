@@ -20,18 +20,19 @@ void beginningPanels(){
     panSDComm(7, 11);
     panGPSComm(7, 10);
     panCalibration(1, 1);
+    panProfile(1, 12);
 }
 
 void writePanels(){
   if (osd_set == 0) {
     panSpeeds(1, 6);
     panCadence(28-8, 8);
-    panDist(8,4); // 11, 4
+    panSimpleDisplacement(8, 4);
+    //panDist(8,4); // 11, 4
     //panDisplace(8, 4); // 11, 3
     panHeart(28-6, 9);
     panPower(28-7, 3);
     panBattery(28-14, 12, 7, 1);
-    panProfile(1, 12);
   } else {
     panSetup();
   }
@@ -306,6 +307,22 @@ void panSDComm(int first_col, int first_line) {
   
   osd.closePanel();
 }
+
+/* **************************************************************** */
+// Panel  : panSimpleDisplacement
+// Needs  : X, Y locations
+// Output : Nothing if the SD is communicating normally, error message if not able to access SD files
+// Size   : 1 x 14 (rows x chars)
+// Staus  : done
+void panSimpleDisplacement(int first_col, int first_line) {
+  osd.setPanel(first_col, first_line);
+  osd.openPanel();
+  
+  osd.printf("%5li m ", simpleDisplacement);
+  
+  osd.closePanel();
+}
+
 
 /********************************************************************************************************************
  * THE REST OF THE FUNCTIONS ARE UNUSED FOR ETA'S OSD EXCEPT PANSETUP(). NONE OF IT SHOULD NEED TO BE CHANGED.

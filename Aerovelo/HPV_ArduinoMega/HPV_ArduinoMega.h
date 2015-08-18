@@ -19,7 +19,7 @@ extern uint32_t TIME;
 extern char slipBuffer[N_SLIP];
 
 void sd_Init();
-void sd_Write(char *data);
+void sd_Raw_Write(char *data, char *filename);
 void sd_Log(char *data);
 char *dtoa(char *s, double n);
 

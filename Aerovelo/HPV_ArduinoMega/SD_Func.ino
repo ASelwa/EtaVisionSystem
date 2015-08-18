@@ -26,7 +26,7 @@ void sd_Init() {
   }
 }
 
-void sd_Write(char *data, char *filename) {
+void sd_Raw_Write(char *data, char *filename) {
   // Write to SD card
   File dataFile = SD.open(filename, FILE_WRITE);
 

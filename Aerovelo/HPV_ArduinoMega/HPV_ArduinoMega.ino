@@ -5,7 +5,8 @@
  /*
   *   TODO:
   *    - store default calibration number (507 Hz, found in simulation.cpp also) in one place
-  *  
+  *    - keep only one sd card logging function (the one that takes in a filename) 
+  *      (or do something even smarter than the current method)
   */
 
 #include <SD.h>
@@ -46,11 +47,12 @@
 #define ID_GPSCOMM      19
 #define ID_SDCOMM       22
 #define ID_MODE         21
+#define ID_SIMPLEDISPLACEMENT  30
 
 #define COURSE_LENGTH   8045 // Metres
 #define POWER_START      300 // Watts
 #define POWER_PRE_SPRINT 337 // Watts
-#define CALIBRATION_TIME 10000 // Milliseconds
+#define CALIBRATION_TIME 15000 // Milliseconds (Should be a few seconds less than the beginningPanels time, so the pedal calibration value can be seen)
 
 const uint8_t TOGGLE_PIN = A1;
 
@@ -63,8 +65,10 @@ static uint8_t Hrt;
 uint32_t TIME;
 uint32_t TEMPTIME;
 
+// Default coordinates as bike room (256 McCaul Street)
 int32_t LattitudeStart = 436585166, LongitudeStart = -793934912, AltitudeStart = 117689;
-int32_t LattitudeFinish, LongitudeFinish, AltitudeFinish;
+int32_t LattitudeFinish = 436585166, LongitudeFinish = -793934912, AltitudeFinish = 117689;
+
 int32_t LattitudePrev, LongitudePrev, AltitudePrev;
 int8_t startSet = 0;
 uint32_t GPS_totalDistance = 0;
@@ -119,7 +123,7 @@ void setup() {
   loadFinishCoordinates();
   
   sd_Log("Time (hh:mm:ss), Latitude (deg), Longitude (deg), Altitude (m), Distance (m), Displacement (m), Ground Speed (km/h), Target Speed (km/h), Power (W), Cadence (rpm), Velocity (km/h), Simulated Distance (m), Heart Rate (bpm), Battery (V)\r\n");
-  sd_Write("Time (ms), GPS Distance (m), GPS Displacement (m), GPS Speed (km/h), Target Speed (km/h), Power (W), Cadence (rpm), Velocity (km/h), Simulated Distance (m), Heart Rate (bpm)", SRMlogFilename);
+  sd_Raw_Write("Time (hh:mm:ss), Time (ms), GPS Distance (m), GPS Displacement (m), GPS Speed (km/h), Target Speed (km/h), Power (W), Cadence (rpm), Velocity (km/h), Simulated Distance (m), Heart Rate (bpm)", SRMlogFilename);
   
   // Crank Torque Frequency
   //ANT_SetupChannel(antBuffer, 0, 0, 0, 8182, 0); UNCOMMENT THIS LINE TO SEARCH FOR ANY DEVICE (ONLY SAFE FOR DEBUGGING)
@@ -136,82 +140,6 @@ void setup() {
 
 int8_t START = 0;
 
-/*
- * Calibrate the bike pedals.
- */
-void calibrate() {
-  bool calibrated = false;
-  int8_t m;
-  uint8_t i = 0; // Index for cal_values
-  int16_t cal_values[6];
-  int16_t calibrationValue;
-
-  Serial.println("Begin calibration... Waiting for calibration messages.");
-  sd_Log("Begin calibration... Waiting for calibration messages. ");
-  calibrateMessageOSD(1, 0);
-
-  TEMPTIME = millis(); //To timeout the calibration if taking too long
-  
-  while (i < 6) {
-    if (Serial1.available() && (m = receiveANT(antBuffer)) == 9 && antBuffer[1] == 0x4E && antBuffer[4] == 0x10) {
-      cal_values[i++] = antBuffer[9] * 256 + antBuffer[10];
-      calibrateMessageOSD(2, 0);
-      Serial.print("Receiving... ");
-      sprintf(sdBuffer, "Received message %d. ", i);
-      sd_Log(sdBuffer);
-      
-      // Should mean that all the required calibrated values were received
-      if (i == 6) {
-        calibrated = true; }   
-    }
-    else { // Nothing available on the ANT serial
-      if (millis() - TEMPTIME > CALIBRATION_TIME) { // If more than CALIBRATION_TIME already passed
-        break; // exit the while loop
-      }
-    }
-  }
-  
-  if (calibrated) { 
-    calibrationValue = average(cal_values, 6);
-    setOffset(calibrationValue);
-  
-    Serial.print("Calibration complete! Offset is: ");
-    Serial.print(calibrationValue);
-    Serial.println(" Hz");
-    sprintf(sdBuffer, "Calibration complete! Offset is: %d Hz. ", calibrationValue);
-    sd_Log(sdBuffer);
-    
-    // Display the calibration data on the OSD
-    calibrateMessageOSD(3, calibrationValue); // The number 3 writes the value to the screen (See calibration state in OSD_panels_HPV) 
-  }
-  
-  else {
-    calibrationValue = 507;
-    Serial.println("Calibration timed-out...Offset is set as default: 507 Hz");
-    sprintf(sdBuffer, "Calibration timed-out...Offset is set as default: 507 Hz");
-    sd_Log(sdBuffer);
-    
-    // Display the calibration data on the OSD
-    calibrateMessageOSD(4, calibrationValue); // The number 4 write default to the screen (See calibration state in OSD_panels_HPV)
-  }
-  
-  // Wait and then clear up the screen
-  delay(3000); // Not large enough? seeing flicker?
-  calibrateMessageOSD(0, calibrationValue); // The number 0 writes a blank message to the screen 
-  
-}
-
-/*
- * Sends the specified message and value to the OSD
- */
-void calibrateMessageOSD(uint8_t messageNum, int16_t calibrationValue) {
-  *((uint8_t*)slipBuffer + 0) = ID_CALIBRATION;
-  *((uint8_t*)(slipBuffer + 1 + 0)) = messageNum;
-  *((int16_t*)(slipBuffer + 1 + 1)) = calibrationValue;
-  *((uint8_t*)slipBuffer + 1 + 3) = 0;
-  SlipPacketSend(4, (char*)slipBuffer, &Serial3);
-}
-
 static float power, cadence, velocity, distance = 0;
 float averagePower, power10s, targetPower;
 static bool coast = false;
@@ -220,12 +148,14 @@ static uint16_t t2 = 0;
 static uint32_t lastGPSUpdate = millis();
 static uint32_t targetSpeed;
 static int32_t displacement;
+static int32_t simpleDisplacement = 0;
 static int32_t lat, lon, alt;
 static bool GPSLost = false;
 
-/*
- * The main program
- */
+
+/********************************************************
+ *               MAIN PROGRAM  
+ ********************************************************/
 void loop() {
   int8_t slipLen;
 
@@ -270,13 +200,14 @@ void loop() {
                 power10s = tenSecPower(power);
               }
               
+              /* Not necessary for road testing
               if (simulation_mode || GPSLost) {
                 targetPower = calcPower(distance, POWER_START, POWER_PRE_SPRINT);
                 *((uint8_t*)slipBuffer + 0) = ID_TPOWER;
                 *((uint16_t*)(slipBuffer + 1 + 0)) = targetPower;
                 *((uint8_t*)slipBuffer + 1 + 2) = 0;
                 SlipPacketSend(3, (char*)slipBuffer, &Serial3);
-              }
+              }*/
 
               *((uint8_t*)slipBuffer + 0) = ID_POWER;
               *((uint16_t*)(slipBuffer + 1 + 0)) = power;
@@ -336,9 +267,13 @@ void loop() {
       static int index = 0;
 
       if (startSet == 0) {
+        //Serial.print("Pre SS Lat: "); Serial.println(LattitudeStart);
+        //Serial.print("Pre SS Lon: "); Serial.println(LongitudeStart);
+        //Serial.print("Pre SS Alt: "); Serial.println(AltitudeStart);
         GPS_setStart();
-        Serial.println(startSet);
-        Serial.println("GPS start set!");
+        //Serial.print("Post SS Lat: "); Serial.println(LattitudeStart);
+        //Serial.print("Post SS Lon: "); Serial.println(LongitudeStart);
+        //Serial.print("Post SS Alt: "); Serial.println(AltitudeStart); 
 
         // Prepare the moving average arrays
         for (int x = 0; x < numTerms; x++) {
@@ -361,6 +296,9 @@ void loop() {
       
       displacement = GPS_getDistance(LattitudeFinish, LongitudeFinish, AltitudeFinish, lat, lon, alt);
       uint32_t currDistance = GPS_getDistance(LattitudePrev, LongitudePrev, AltitudePrev, lat, lon, alt);
+      
+      simpleDisplacement = GPS_getDistance(LattitudeStart, LongitudeStart, AltitudeStart, lat, lon, alt);
+      
 
       if (currDistance >= 0) {
         GPS_totalDistance += currDistance;
@@ -371,13 +309,22 @@ void loop() {
       }
       
       if (!simulation_mode) {
-        targetPower = calcDisplacePower(displacement, POWER_START, POWER_PRE_SPRINT);
+        // Target power will be based on simulated distance travelled
+          targetPower = calcPower(distance, POWER_START, POWER_PRE_SPRINT);
+          *((uint8_t*)slipBuffer + 0) = ID_TPOWER;
+          *((uint16_t*)(slipBuffer + 1 + 0)) = targetPower;
+          *((uint8_t*)slipBuffer + 1 + 2) = 0;
+          SlipPacketSend(3, (char*)slipBuffer, &Serial3);
+        // WHAT SHOULD BE HERE
+        /*targetPower = calcDisplacePower(displacement, POWER_START, POWER_PRE_SPRINT);
         *((uint8_t*)slipBuffer + 0) = ID_TPOWER;
         *((uint16_t*)(slipBuffer + 1 + 0)) = targetPower;
         *((uint8_t*)slipBuffer + 1 + 2) = 0;
-        SlipPacketSend(3, (char*)slipBuffer, &Serial3);
+        SlipPacketSend(3, (char*)slipBuffer, &Serial3);*/
       }
 
+
+      /* NO PROFILE STUFF FOR NOW
       //Updates profileNum, profileFilename, logFilename and starting GPS location if the yellow button is pressed
       toggle();
       
@@ -398,6 +345,7 @@ void loop() {
       *((uint8_t*)(slipBuffer + 1 + 0)) = simulation_mode;
       *((uint8_t*)slipBuffer + 1 + 2) = 0;
       SlipPacketSend(2, (char*)slipBuffer, &Serial3);
+      */
 
       if (simulation_mode) {
         targetSpeed = calcSpeed(COURSE_LENGTH - distance, coeff);
@@ -442,6 +390,12 @@ void loop() {
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
       
+      //Send simpleDisplacement through SLIP
+      *((uint8_t*)slipBuffer + 0) = ID_SIMPLEDISPLACEMENT;
+      *((int32_t*)(slipBuffer + 1 + 0)) = simpleDisplacement;
+      *((uint8_t*)slipBuffer + 1 + 4) = 0;
+      SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+      
         // Send battery information
       float batteryLevel = getBatteryLevel();
       *((uint8_t*)slipBuffer + 0) = ID_BATTERY;
@@ -463,6 +417,8 @@ void loop() {
       if (!simulation_mode)
         GPS.Init();
       
+      
+      /* ONCE AGAIN NO PROFILE STUFF
       //Updates profileNum, profileFilename, logFilename and starting GPS location if the yellow button is pressed
       toggle();
       
@@ -483,6 +439,7 @@ void loop() {
       *((uint8_t*)(slipBuffer + 1 + 0)) = simulation_mode;
       *((uint8_t*)slipBuffer + 1 + 2) = 0;
       SlipPacketSend(2, (char*)slipBuffer, &Serial3);
+      */
       
       targetSpeed = calcSpeed(COURSE_LENGTH - distance, coeff);
       //Send target speed through SLIP
@@ -512,6 +469,12 @@ void loop() {
       //Send Displacement through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_DISPLACEMENT;
       *((int32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; // Assume same as distance
+      *((uint8_t*)slipBuffer + 1 + 4) = 0;
+      SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+      
+      //Send simpleDisplacement through SLIP
+      *((uint8_t*)slipBuffer + 0) = ID_SIMPLEDISPLACEMENT;
+      *((int32_t*)(slipBuffer + 1 + 0)) = simpleDisplacement;
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
       
@@ -569,12 +532,96 @@ void loop() {
   sd_Print(dtoa(sdBuffer, getBatteryLevel())); sd_Print(", ");
   
   sd_Close();
+  
+}
+
+
+
+
+
+
+
+/*********************************************************************************
+ *                               FUNCTIONS
+ *********************************************************************************/
+
+// Calibrate the bike pedals.
+void calibrate() {
+  bool calibrated = false;
+  int8_t m;
+  uint8_t i = 0; // Index for cal_values
+  int16_t cal_values[6];
+  int16_t calibrationValue;
+
+  Serial.println("Begin calibration... Waiting for calibration messages.");
+  sd_Log("Begin calibration... Waiting for calibration messages. ");
+  calibrateMessageOSD(1, 0);
+
+  TEMPTIME = millis(); //To timeout the calibration if taking too long
+  
+  while (i < 6) {
+    if (Serial1.available() && (m = receiveANT(antBuffer)) == 9 && antBuffer[1] == 0x4E && antBuffer[4] == 0x10) {
+      cal_values[i++] = antBuffer[9] * 256 + antBuffer[10];
+      calibrateMessageOSD(2, 0);
+      Serial.print("Receiving... ");
+      sprintf(sdBuffer, "Received message %d. ", i);
+      sd_Log(sdBuffer);
+      
+      // Should mean that all the required calibrated values were received
+      if (i == 6) {
+        calibrated = true; }   
+    }
+    else { // Nothing available on the ANT serial
+      if (millis() - TEMPTIME > CALIBRATION_TIME) { // If more than CALIBRATION_TIME already passed
+        break; // exit the while loop
+      }
+    }
+  }
+  
+  if (calibrated) { 
+    calibrationValue = average(cal_values, 6);
+    setOffset(calibrationValue);
+  
+    Serial.print("Calibration complete! Offset is: ");
+    Serial.print(calibrationValue);
+    Serial.println(" Hz");
+    sprintf(sdBuffer, "Calibration complete! Offset is: %d Hz. ", calibrationValue);
+    sd_Log(sdBuffer);
+    
+    // Display the calibration data on the OSD
+    calibrateMessageOSD(3, calibrationValue); // The number 3 writes the value to the screen (See calibration state in OSD_panels_HPV) 
+  }
+  
+  else {
+    calibrationValue = 507;
+    Serial.println("Calibration timed-out...Offset is set as default: 507 Hz");
+    sprintf(sdBuffer, "Calibration timed-out...Offset is set as default: 507 Hz");
+    sd_Log(sdBuffer);
+    
+    // Display the calibration data on the OSD
+    calibrateMessageOSD(4, calibrationValue); // The number 4 write default to the screen (See calibration state in OSD_panels_HPV)
+  }
+  
+  // Wait and then clear up the screen (IF REQUIRED)
+  //delay(3000); // Not large enough? seeing flicker?
+  //calibrateMessageOSD(0, calibrationValue); // The number 0 writes a blank message to the screen 
+}
+
+// Sends the specified message and value to the OSD
+void calibrateMessageOSD(uint8_t messageNum, int16_t calibrationValue) {
+  *((uint8_t*)slipBuffer + 0) = ID_CALIBRATION;
+  *((uint8_t*)(slipBuffer + 1 + 0)) = messageNum;
+  *((int16_t*)(slipBuffer + 1 + 1)) = calibrationValue;
+  *((uint8_t*)slipBuffer + 1 + 3) = 0;
+  SlipPacketSend(4, (char*)slipBuffer, &Serial3);
 }
 
 void logSRM() {
-  // Time (ms), GPS Distance (m), GPS Displacement (m), GPS Speed (km/h), Target Speed (km/h), Power (W), Cadence (rpm), Velocity (km/h), Simulated Distance (m), Heart Rate (bpm)
+  // Time(hh:mm:ss), Time (ms), GPS Distance (m), GPS Displacement (m), GPS Speed (km/h), Target Speed (km/h), Power (W), Cadence (rpm), Velocity (km/h), Simulated Distance (m), Heart Rate (bpm)
   sd_Open(SRMlogFilename);
   
+  sprintf((char*)sdBuffer, "%u:%u:%u, ", GPS.UTC.hour, GPS.UTC.minute, GPS.UTC.second);
+  sd_Print(sdBuffer);
   sd_Print(dtoa(sdBuffer, (double)millis())); sd_Print(", ");
   sprintf((char*)sdBuffer, "%u, ", GPS_totalDistance/ 1000);
   sd_Print(sdBuffer);

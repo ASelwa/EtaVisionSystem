@@ -3,7 +3,7 @@
 extern float cadence;
 extern uint16_t power, power_10s, avgPower, targetPower;
 extern uint32_t GPS_Time, GPS_Distance;
-extern int32_t GPS_Displacement;
+extern int32_t GPS_Displacement, simpleDisplacement;
 extern uint8_t GPS_NumSats;
 extern int32_t GPS_Altitude, GPS_Heading;
 extern double  GPS_Speed, simulatedSpeed, targetSpeed;
@@ -108,6 +108,8 @@ void OSD_SlipParse(char *slipBuffer) {
   case ID_MODE:
     mode = *((uint8_t*) (slipBuffer+1));
     break;
+  case ID_SIMPLEDISPLACEMENT:
+    simpleDisplacement = (*((int32_t*)(slipBuffer+1)))/1000;
   default:;
   }
 }

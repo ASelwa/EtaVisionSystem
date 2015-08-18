@@ -27,16 +27,16 @@ void GPS_setStart(){
  * Pythagoras Theorem on an equirectangular projection
  */
 uint32_t GPS_getDistance(const int32_t lat1, const int32_t lon1, const int32_t alt1, const int32_t lat2, const int32_t lon2, const int32_t alt2){
-
+  
+  /*  THIS MATH DOESN'T WORK FOR LARGE DISTANCES?
   double x, y, z, dist;
   x = ((deg2rad(lon2)-deg2rad(lon1))/10000.0 * cos((deg2rad(lat1)+deg2rad(lat2))/2/10000.0));
-  y = ((deg2rad(lat2)-deg2rad(lat1)))/10000.0;
-  
+  y = ((deg2rad(lat2)-deg2rad(lat1)))/10000.0; 
   dist = sqrt(x*x + y*y) * R;
+  */
   
-  
-  /////////////////////////////////////////////////////////
-  // TEST Calculation
+  // This math works with all GPS coords, not just two extremely close points
+  float dist;
   float latRad, lonRad;
   float flat, flon;
   float tlat, tlon;
@@ -61,14 +61,10 @@ uint32_t GPS_getDistance(const int32_t lat1, const int32_t lon1, const int32_t a
   //Calculate the distance in KM
   float latSin = sin((latRad - tlatRad)/2);
   float lonSin = sin((lonRad - tlonRad)/2);
-  dist = 2 * asin(sqrt((latSin*latSin) + cos(latRad) * cos(tlatRad) * (lonSin * lonSin)));
-  dist = dist * R;
-  ////////////////////////////////////////////////////////
+  dist = 2 * R * asin(sqrt((latSin*latSin) + cos(latRad) * cos(tlatRad) * (lonSin * lonSin)));  
   
-  
-  
-  uint32_t final = 0;
-  final += dist;  
+  //uint32_t final = 0;
+  //final += dist;  
   return (dist);
 }
 

@@ -10,7 +10,7 @@ void toggle() {
   Toggle = !digitalRead(TOGGLE_PIN);
   //If button was pressed, update "profile"
   if (Toggle != lastToggle) {
-    sd_Write("Profile changed. ", logFilename);
+    sd_Log("Profile changed. ");
     Serial.println("Toggle!");
     lastToggle = Toggle;
 
@@ -94,7 +94,7 @@ bool loadFinishCoordinates() {
   File dataFile = SD.open("FinCoord.txt", FILE_READ);
   
   if (!dataFile) {
-    sd_Log("Could not open FinCoord.txt. ");
+    sd_Log("Could not open FinCoord.txt.\n");
     return false;
   }
   
@@ -156,7 +156,7 @@ float calcDisplacePower(double displacement, float startPower, float preSprintPo
   
   displacement /= 1000.0;
   
-  Serial.print("Displacement: "); Serial.println(displacement);
+  //Serial.print("Displacement: "); Serial.println(displacement);
   
   if (displacement > 1609) { // More than 1 mile to go
     target = preSprintPower - ((preSprintPower - startPower) / 6436.0) * displacement; // y = b + mx

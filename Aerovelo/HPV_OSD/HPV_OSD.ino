@@ -56,7 +56,7 @@
 
 #define TELEMETRY_SPEED  115200  // How fast our MAVLink telemetry is coming to Serial port
 #define BOOTTIME         100   // Time in milliseconds that we show boot loading bar and wait user input
-#define CALIBRATION_TIME 12000
+#define CALIBRATION_TIME 20000
 
 // Objects and Serial definitions
 FastSerialPort0(Serial);
@@ -73,7 +73,7 @@ char display_string[128];
 float cadence;
 uint16_t power, power_10s, avgPower, targetPower;
 uint32_t GPS_Time, GPS_Distance;
-int32_t GPS_Displacement;
+int32_t GPS_Displacement, simpleDisplacement;
 uint8_t GPS_NumSats;
 int32_t GPS_Altitude, GPS_Heading;
 double GPS_Speed, simulatedSpeed, targetSpeed;
@@ -137,6 +137,7 @@ void setup()
   panel = 0; //set panel to 0 to start in the first navigation screen
   // Show bootloader bar
   loadBar();
+  osd.clear();
 
   // Initial Calibration and values
   TIME = millis();
@@ -153,12 +154,12 @@ void setup()
       Serial.println(slipBuffer);
       //Serial.println(completedPacket);
     } 
-    delay(120); // Similar to the update rate in the main loop 
+    delay(250); // 4 Hz update rate
     beginningPanels();
   }
   
   // Startup timers  
-  Timer.Set(&OnTimer, 120);
+  Timer.Set(&OnTimer, 200); // 5 Hz
 
   // House cleaning, clear display and enable timers
   osd.clear();
