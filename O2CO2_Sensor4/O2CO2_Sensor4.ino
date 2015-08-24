@@ -55,17 +55,20 @@ float temp_value = 0;
 
       // How long to collect data for
       //int n_seconds_saved = 3600;
-      int n_average = 23; // 90 gives roughly 0.33 Hz sampling frequency
+      int n_average = 140; // 90 gives roughly 0.33 Hz sampling frequency
       // 23 gave 60 points in 196s = 0.306 Hz
-    
-      #define SAVE_O2 false
-      #define SAVE_CO2 false
+      // 3 gave 270 points in 171s = 1.579 Hz
+      // 50 gives...270 points in 491s
+      // 100 gives 270 points in 990s
+      // 180 gives 270 points in 1794ish seconds for 2 variable
+      #define SAVE_O2 true
+      #define SAVE_CO2 true
       #define SAVE_CALIPER true
       #define SAVE_DISK true
-      #define SAVE_DISK_AMB true
+      #define SAVE_DISK_AMB false
       #define SAVE_TIME false
       // DATA_SIZE = 660 / # variables
-      #define DATA_SIZE 180
+      #define DATA_SIZE 135
       int data_size = DATA_SIZE;
       float O2_temp;
       float CO2_temp;
@@ -74,11 +77,11 @@ float temp_value = 0;
       float disk_amb_temp;
       
       // Set the size as 1 if "SAVE" flags are false 
-      int O2_average[1];
-      int CO2_average[1];
+      int O2_average[DATA_SIZE];
+      int CO2_average[DATA_SIZE];
       unsigned int caliper_average[DATA_SIZE];
       unsigned int disk_average[DATA_SIZE];
-      unsigned int disk_amb_average[DATA_SIZE];
+      unsigned int disk_amb_average[1];
       int time[1];
       
       int datapoint = 0;
@@ -101,10 +104,10 @@ void setup(){
       meanO2 = meanO2 + analogRead(pinO2);
       //
       // print out the values to the serial monitor
-      Serial.print("Calibration Point: ");
+      Serial.print("Calib: ");
       Serial.print(i);
       Serial.print("  ");
-      Serial.print("meanO2: ");
+      Serial.print("O2: ");
       Serial.println(analogRead(pinO2));
       delay(1000);
     //
@@ -160,14 +163,14 @@ void loop(){
           disk_amb_temp = disk_amb_temp + mlx.readAmbientTempC();
     }
       
-    if (PRINT_FLAG) {
+    /*if (PRINT_FLAG) {
       Serial.print(" , O2 = ");
       Serial.println(valO2);
       Serial.print(" , CO2 ppm = ");
       Serial.println(valCO2);
       Serial.print("Time (ms): ");
       Serial.println(millis()-timeOffset);
-    }
+    }*/
   }
   
   // Store the data in the array
@@ -213,45 +216,45 @@ void loop(){
  *                      FUNCTIONS                             *
  **************************************************************/
 void print_function(bool finished) {
-      Serial.println("***************** DATA *****************");
+      Serial.println("START");
       if (SAVE_O2) {
-        Serial.print("Initial O2 reading : ");
+        Serial.print("Initial O2: ");
         Serial.println(meanO2);  
       }
       for (int j = 0; j <datapoint; j++) // print all the datapoints so far
       {   
         Serial.print(j+1); 
         if (SAVE_O2) {
-          Serial.print(", O2 Level [%]: ");
+          Serial.print(", O2: ");
           Serial.print(O2_average[j]/meanO2*100);
         }
         if (SAVE_CO2) {       
-          Serial.print(", CO2 Level [ppm]: ");
+          Serial.print(", CO2: ");
           Serial.print(CO2_average[j]);
         }
         if (SAVE_CALIPER) {
-          Serial.print(", Caliper [deg C]: ");
+          Serial.print(", Cal: ");
           Serial.print((float)caliper_average[j]/100);
         }
         if (SAVE_DISK) {
-          Serial.print(", Disk [deg C]: ");
+          Serial.print(", Disk: ");
           Serial.print((float)disk_average[j]/100);
         }
         if (SAVE_DISK_AMB) {
-          Serial.print(", Disk Ambient [deg C]: ");
+          Serial.print(", Ambient: ");
           Serial.print((float)disk_amb_average[j]/100);
         } 
         if (SAVE_TIME) {
-          Serial.print(",  Time [s]: ");
+          Serial.print(",  Time: ");
           Serial.print(time[j]);
         }
         Serial.println(" ");
       }
       if (finished) {
-          Serial.print("Total Time Logged [s]: ");
+          Serial.print("s: ");
           Serial.println(totalTime/1000);
         }
-      Serial.println("*************** END DATA ***************");
+      Serial.println("END");
 }
 
 
