@@ -54,8 +54,9 @@ float temp_value = 0;
 // ADJUST THESE PARAMETERS 
 
       // How long to collect data for
-      int n_seconds_saved = 3600;
-      int n_average = 4; // 90 gives roughly 0.33 Hz sampling frequency
+      //int n_seconds_saved = 3600;
+      int n_average = 23; // 90 gives roughly 0.33 Hz sampling frequency
+      // 23 gave 60 points in 196s = 0.306 Hz
     
       #define SAVE_O2 false
       #define SAVE_CO2 false
