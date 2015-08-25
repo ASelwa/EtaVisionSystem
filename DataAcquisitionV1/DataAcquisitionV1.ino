@@ -55,7 +55,7 @@ float temp_value = 0;
 
       // How long to collect data for
       //int n_seconds_saved = 3600;
-      int n_average = 140; // 90 gives roughly 0.33 Hz sampling frequency
+      int n_average = 120; // 90 gives roughly 0.33 Hz sampling frequency
       // 23 gave 60 points in 196s = 0.306 Hz
       // 3 gave 270 points in 171s = 1.579 Hz
       // 50 gives...270 points in 491s
