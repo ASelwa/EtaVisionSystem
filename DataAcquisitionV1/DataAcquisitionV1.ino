@@ -1,12 +1,9 @@
 /*
-  O2 and C02 Sensor Sketch
+ Data Acquisition V1
  
- Created 14 January 2015
- by Cameron Robertson
+ Created 23 August 2015
+ by Alex Selwa
  
- Parts required:
- O2 Sensor - Figaro SK-25F
- CO2 Sensor - Figaro TGS 4161
  */
  
 // Set up infrared
@@ -14,13 +11,9 @@
 #include <Adafruit_MLX90614.h>
 Adafruit_MLX90614 mlx = Adafruit_MLX90614();
 
-
-
-// Set up thermocouple
+// Set up thermocouple instance with software SPI on any three digital IO pins.
 #include <SPI.h>
 #include "Adafruit_MAX31855.h" 
-// Example creating a thermocouple instance with software SPI on any three
-// digital IO pins.
 #define DO   3
 #define CS   4
 #define CLK  5
@@ -38,7 +31,7 @@ byte readCO2[] =
   {0xFE, 0X44, 0X00, 0X08, 0X02, 0X9F, 0X25};
 byte response[] = {0,0,0,0,0,0,0};  //create an array to store the response 
 
-////Declare variables used in loops
+// Declare variables used in loops
 float meanO2 = 0;
 float gainO2 = 100;
 float meanVoltO2 = 0;
@@ -55,20 +48,20 @@ float temp_value = 0;
 
       // How long to collect data for
       //int n_seconds_saved = 3600;
-      int n_average = 120; // 90 gives roughly 0.33 Hz sampling frequency
+      int n_average = 500; // 90 gives roughly 0.33 Hz sampling frequency
       // 23 gave 60 points in 196s = 0.306 Hz
       // 3 gave 270 points in 171s = 1.579 Hz
       // 50 gives...270 points in 491s
       // 100 gives 270 points in 990s
       // 180 gives 270 points in 1794ish seconds for 2 variable
-      #define SAVE_O2 true
-      #define SAVE_CO2 true
-      #define SAVE_CALIPER true
+      #define SAVE_O2 false
+      #define SAVE_CO2 false
+      #define SAVE_CALIPER false
       #define SAVE_DISK true
       #define SAVE_DISK_AMB false
       #define SAVE_TIME false
       // DATA_SIZE = 660 / # variables
-      #define DATA_SIZE 135
+      #define DATA_SIZE 500
       int data_size = DATA_SIZE;
       float O2_temp;
       float CO2_temp;
@@ -77,9 +70,9 @@ float temp_value = 0;
       float disk_amb_temp;
       
       // Set the size as 1 if "SAVE" flags are false 
-      int O2_average[DATA_SIZE];
-      int CO2_average[DATA_SIZE];
-      unsigned int caliper_average[DATA_SIZE];
+      int O2_average[1];
+      int CO2_average[1];
+      unsigned int caliper_average[1];
       unsigned int disk_average[DATA_SIZE];
       unsigned int disk_amb_average[1];
       int time[1];
@@ -193,11 +186,12 @@ void loop(){
     time[datapoint] = (millis()-timeOffset)/1000;
   }
 
-  // Log to Serial Monitor  
+  print_function(false);
+  /* // Log to Serial Monitor  
   if (Serial.available() > 0) { 
     totalTime = millis()-timeOffset; // Save the end time
     print_function(true);
-  }
+  }*/
   datapoint++;
   
   // STAY IN THIS PRINTING LOOP FOREVER WHEN RUN OUT ROOM IN THE DATA ARRAYS
