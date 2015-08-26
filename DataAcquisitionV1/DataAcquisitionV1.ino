@@ -33,77 +33,54 @@ byte response[] = {0,0,0,0,0,0,0};  //create an array to store the response
 
 // Declare variables used in loops
 float meanO2 = 0;
-float gainO2 = 100;
-float meanVoltO2 = 0;
-float baseVoltO2 = 0;
 int valO2 = 0;
-float valVoltO2 = 0;
-float valPercentO2 = 0;
-float CO2ppm = 0;
 float number_of_points = 10; //for initial average
-int threshold = 10;
-float temp_value = 0;
 
 // ADJUST THESE PARAMETERS 
-
-      // How long to collect data for
-      //int n_seconds_saved = 3600;
-      int n_average = 500; // 90 gives roughly 0.33 Hz sampling frequency
-      // 23 gave 60 points in 196s = 0.306 Hz
-      // 3 gave 270 points in 171s = 1.579 Hz
-      // 50 gives...270 points in 491s
-      // 100 gives 270 points in 990s
-      // 180 gives 270 points in 1794ish seconds for 2 variable
       #define SAVE_O2 false
       #define SAVE_CO2 false
-      #define SAVE_CALIPER false
+      #define SAVE_CALIPER true
       #define SAVE_DISK true
       #define SAVE_DISK_AMB false
-      #define SAVE_TIME false
-      // DATA_SIZE = 660 / # variables
-      #define DATA_SIZE 500
-      int data_size = DATA_SIZE;
+      
+      #define DATA_SIZE 300 // DATA_SIZE = 660ish / # variables enabled above
+
+      int n_seconds_saved = 120; // How long to collect data for
+      
+      // Main data arrays: set the size as 1 if "SAVE" flags are false 
+      int O2_average[1];
+      int CO2_average[1];
+      unsigned int caliper_average[DATA_SIZE];
+      unsigned int disk_average[DATA_SIZE];
+      unsigned int disk_amb_average[1];  
+      
+      // Flow controlling variables
+      unsigned long time;
+      int period = n_seconds_saved * 1000 / DATA_SIZE; // ms      
+      int counter = 0; // For averaging while loop
+      int datapoint = 0; // For indexing data arrays
+      
+      // Temporary variables used
       float O2_temp;
       float CO2_temp;
       float caliper_temp;
       float disk_temp;
       float disk_amb_temp;
-      
-      // Set the size as 1 if "SAVE" flags are false 
-      int O2_average[1];
-      int CO2_average[1];
-      unsigned int caliper_average[1];
-      unsigned int disk_average[DATA_SIZE];
-      unsigned int disk_amb_average[1];
-      int time[1];
-      
-      int datapoint = 0;
-      unsigned long timeOffset;
-      unsigned long totalTime;
-      
       unsigned long valCO2 = 0;
-
-      // For printing data as it's collected
-      #define PRINT_FLAG false
-
-
+    
+    
+    
 void setup(){
   Serial.begin(115200);
   K_30_Serial.begin(9600);//start the reading of the co2 sensor
-
+  
   // Calibrate O2 Sensor
   if (SAVE_O2) {
     for (int i=0; i < number_of_points; i++){
       meanO2 = meanO2 + analogRead(pinO2);
-      //
       // print out the values to the serial monitor
-      Serial.print("Calib: ");
-      Serial.print(i);
-      Serial.print("  ");
-      Serial.print("O2: ");
       Serial.println(analogRead(pinO2));
       delay(1000);
-    //
     } 
     meanO2 = meanO2/number_of_points;
     
@@ -113,8 +90,6 @@ void setup(){
   
   // IR temperature sensor setup
   mlx.begin();
-
-  timeOffset = millis(); // To track the starting time  
 }
 
 // Measurement and Printout Loop
@@ -126,23 +101,22 @@ void loop(){
   caliper_temp = 0;
   disk_temp = 0;
   disk_amb_temp = 0;
+  counter = 0;
+  time = millis();
   
-  for (int i = 0; i<n_average; i++){
-    
+  while (millis() - time < period) {
     if (SAVE_O2) {
       valO2 = analogRead(pinO2); // read the value of the O2 sensor
       O2_temp = O2_temp + valO2;
     }
     if (SAVE_CO2) {
-        sendRequest(readCO2); 
-      if (getValue(response) < 10001)
-      {
-        valCO2 = getValue(response); 
+      sendRequest(readCO2); 
+      if (getValue(response) < 10001) {
+        valCO2 = getValue(response);
       }
-      else
-      {
-        valCO2 = 10000; 
+      else {
         //valCO2 = CO2_average[datapoint]/i; // Divide by zero?
+        valCO2 = 10000; 
       }
       CO2_temp = CO2_temp + valCO2;      
     }
@@ -155,49 +129,35 @@ void loop(){
     if (SAVE_DISK_AMB) {
           disk_amb_temp = disk_amb_temp + mlx.readAmbientTempC();
     }
-      
-    /*if (PRINT_FLAG) {
-      Serial.print(" , O2 = ");
-      Serial.println(valO2);
-      Serial.print(" , CO2 ppm = ");
-      Serial.println(valCO2);
-      Serial.print("Time (ms): ");
-      Serial.println(millis()-timeOffset);
-    }*/
+    counter++;
   }
   
   // Store the data in the array
   if (SAVE_O2) {
-    O2_average[datapoint] = O2_temp/n_average;
+    O2_average[datapoint] = O2_temp/counter;
   }
   if (SAVE_CO2) {
-    CO2_average[datapoint] = CO2_temp/n_average;
+    CO2_average[datapoint] = CO2_temp/counter;
   }
   if (SAVE_CALIPER) {
-    caliper_average[datapoint] = caliper_temp/n_average*100;
+    caliper_average[datapoint] = caliper_temp/counter*100;
   }
   if (SAVE_DISK) {
-    disk_average[datapoint] = disk_temp/n_average*100;
+    disk_average[datapoint] = disk_temp/counter*100;
   }
   if (SAVE_DISK_AMB) {
-    disk_amb_average[datapoint] = disk_amb_temp/n_average*100;
+    disk_amb_average[datapoint] = disk_amb_temp/counter*100;
   }  
-  if (SAVE_TIME) {
-    time[datapoint] = (millis()-timeOffset)/1000;
-  }
 
-  print_function(false);
-  /* // Log to Serial Monitor  
+  // Log to Serial Monitor  
   if (Serial.available() > 0) { 
-    totalTime = millis()-timeOffset; // Save the end time
     print_function(true);
-  }*/
+  }
   datapoint++;
   
   // STAY IN THIS PRINTING LOOP FOREVER WHEN RUN OUT ROOM IN THE DATA ARRAYS
-  if (datapoint > data_size-1) {
+  if (datapoint > DATA_SIZE-1) {
     datapoint--;
-    totalTime = millis()-timeOffset; // Save the end time
     while (true) {
       print_function(true);
       delay(10000); // It will print the entire log every 10 seconds
@@ -210,9 +170,9 @@ void loop(){
  *                      FUNCTIONS                             *
  **************************************************************/
 void print_function(bool finished) {
-      Serial.println("START");
+      Serial.println("*");
       if (SAVE_O2) {
-        Serial.print("Initial O2: ");
+        Serial.print("mO2: ");
         Serial.println(meanO2);  
       }
       for (int j = 0; j <datapoint; j++) // print all the datapoints so far
@@ -238,17 +198,13 @@ void print_function(bool finished) {
           Serial.print(", Ambient: ");
           Serial.print((float)disk_amb_average[j]/100);
         } 
-        if (SAVE_TIME) {
-          Serial.print(",  Time: ");
-          Serial.print(time[j]);
-        }
         Serial.println(" ");
       }
       if (finished) {
           Serial.print("s: ");
-          Serial.println(totalTime/1000);
+          Serial.println(time/1000);
         }
-      Serial.println("END");
+      Serial.println("*");
 }
 
 
@@ -286,8 +242,7 @@ unsigned long getValue(byte packet[])
 { 
     int high = packet[3];                        //high byte for value is 4th byte in packet in the packet 
     int low = packet[4];                         //low byte for value is 5th byte in the packet 
- 
-   
+
     unsigned long val = high*256 + low;                //Combine high byte and low byte with this formula to get value 
     return val* valMultiplier; 
 } 
