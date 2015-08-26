@@ -43,9 +43,9 @@ float number_of_points = 10; //for initial average
       #define SAVE_DISK true
       #define SAVE_DISK_AMB false
       
-      #define DATA_SIZE 300 // DATA_SIZE = 660ish / # variables enabled above
+      #define DATA_SIZE 250 // DATA_SIZE = 660ish / # variables enabled above
 
-      int n_seconds_saved = 120; // How long to collect data for
+      int n_seconds_saved = 2100; // How long to collect data for
       
       // Main data arrays: set the size as 1 if "SAVE" flags are false 
       int O2_average[1];
