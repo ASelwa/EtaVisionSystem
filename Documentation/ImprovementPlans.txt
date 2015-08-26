@@ -1,0 +1,18 @@
+Displacement - from start coords
+
+
+		Dreal or Dsim
+Vg						Preal
+Vt						Ptarget
+Vs %-					RPM
+
+HR						Voltage
+
+
+
+(targets change based on whether Dreal or Dsim)
+
+Vsim percentage difference of Vreal in REAL mode
+Vg = simulated speed in SIM mode
+
+
