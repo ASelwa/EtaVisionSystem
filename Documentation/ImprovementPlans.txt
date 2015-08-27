@@ -4,7 +4,7 @@ Displacement - from start coords
 		Dreal or Dsim
 Vg						Preal
 Vt						Ptarget
-Vs %-					RPM
+Vs %-						RPM
 
 HR						Voltage
 

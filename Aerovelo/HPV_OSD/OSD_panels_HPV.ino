@@ -26,13 +26,16 @@ void beginningPanels(){
 void writePanels(){
   if (osd_set == 0) {
     panSpeeds(1, 6);
-    panCadence(28-8, 8);
-    panSimpleDisplacement(8, 4);
+    panCadence(20, 8);
+    panSimpleDisplacement(8, 5);
     //panDist(8,4); // 11, 4
     //panDisplace(8, 4); // 11, 3
-    panHeart(28-6, 9);
-    panPower(28-7, 3);
+    //panHeart(28-6, 9);
+    panPower(21, 6);
     panBattery(28-14, 12, 7, 1);
+    
+    panTime(1, 0);
+    
   } else {
     panSetup();
   }
@@ -133,17 +136,17 @@ void panDisplace(int first_col, int first_line){
 }
 
 void panSpeeds(int first_col, int first_line){
-//  osd.setPanel(first_col, first_line);
-//  osd.openPanel();
-//  osd.printf("Vt:%5.1f     ", targetSpeed);
-//  osd.closePanel();
-
   osd.setPanel(first_col, first_line + 1);
+  osd.openPanel();
+  osd.printf("Vt:%5.1f     ", targetSpeed);
+  osd.closePanel();
+
+  osd.setPanel(first_col, first_line);
   osd.openPanel();
   osd.printf("Vg:%5.1f     ", GPS_Speed); // GS = 0xE9 char
   osd.closePanel();
   
-  osd.setPanel(first_col, first_line + 4);
+  osd.setPanel(first_col, first_line + 2);
   osd.openPanel();
   osd.printf("Vs:%5.1f     ", simulatedSpeed);
   osd.closePanel();
@@ -173,22 +176,22 @@ void panHeart(int first_col, int first_line){
 }
 
 void panPower(int first_col, int first_line) {
-  osd.setPanel(first_col, first_line);
+  osd.setPanel(first_col, first_line+1);
   osd.openPanel();
   osd.printf("T: %3u W", targetPower);
   osd.closePanel();
   
-  osd.setPanel(first_col, first_line+1);
-  osd.openPanel();
-  osd.printf("A: %3u W", avgPower);
-  osd.closePanel();
+//  osd.setPanel(first_col, first_line+1);
+//  osd.openPanel();
+//  osd.printf("A: %3u W", avgPower);
+//  osd.closePanel();
   
 //  osd.setPanel(first_col, first_line+2);
 //  osd.openPanel();
 //  osd.printf("S: %3u W", power_10s);
 //  osd.closePanel();
   
-  osd.setPanel(first_col, first_line+3);
+  osd.setPanel(first_col, first_line);
   osd.openPanel();
   osd.printf("R: %3u W", power);
   osd.closePanel();
@@ -863,7 +866,8 @@ void panTime(int first_col, int first_line){
   osd.setPanel(first_col, first_line);
   osd.openPanel();
   start_Time = millis()/1000;
-  osd.printf("%c%2i%c%02i", 0xB3,((int)start_Time/60)%60,0x3A,(int)start_Time%60);
+  osd.printf("%2i%c%02i", ((int)start_Time/60)%60,0x3A,(int)start_Time%60);
+//osd.printf("%c%2i%c%02i", 0xB3,((int)start_Time/60)%60,0x3A,(int)start_Time%60);
   osd.closePanel();
 }
 

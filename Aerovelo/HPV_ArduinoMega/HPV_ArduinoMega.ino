@@ -18,6 +18,8 @@
 #include "simulation.h"
 
 
+#define PERIOD 1000 // Main loop period
+
 #define _SS 53
 
 // Message IDs
@@ -78,7 +80,7 @@ int8_t Toggle;
 int8_t profileNum = 0;
 char profileFilename[32] = {0};
 char logFilename[32] = "LogTest.txt"; // "LGdflt.txt"
-char SRMlogFilename[32] = "SRMLogDf.txt";
+//char logFilename[32] = "SRMLogDf.txt";
 char profileName[16];
 double coeff[7] = {0};
 
@@ -88,7 +90,7 @@ void setup() {
 
   // Select serial port.
   // Serial2 is GPS
-  Serial.begin(115200);	// COM port
+  Serial.begin(38400);	// COM port
   Serial3.begin(115200); // OSD
   Serial1.begin(57600);	// ANT+
   Serial.println("Program start!");
@@ -99,9 +101,9 @@ void setup() {
   // Reset ANT+
   pinMode(3, OUTPUT);
   digitalWrite(3, LOW);
-  delayMicroseconds(1000);
+  delayMicroseconds(2000);
   digitalWrite(3, HIGH);
-  delayMicroseconds(1000);
+  delayMicroseconds(2000);
 
   // Toggle
   pinMode(TOGGLE_PIN, INPUT);
@@ -115,24 +117,26 @@ void setup() {
   for (int i = 1; i < 100000; ++i){
     sprintf(logFilename, "Log%d.csv", i);
     if (!SD.exists(logFilename)){
-	  sprintf(SRMlogFilename, "SLg%d.csv", i);
+      //sprintf(SRMlogFilename, "SLg%d.csv", i);
       break;
     }
   }
   
-  loadFinishCoordinates();
+  //loadFinishCoordinates();
+
+  // Write the log file headings
+  sd_Log("Time (hh:mm:ss), Time (ms), Displacement (m), Sim Distance (m), Ground Speed (km/h), Target Speed (km/h), Sim Speed (km/h), Power (W), Cadence (rpm), Latitude (deg), Longitude (deg), Altitude (m), Heart Rate (bpm), Battery (V)");
   
-  sd_Log("Time (hh:mm:ss), Latitude (deg), Longitude (deg), Altitude (m), Distance (m), Displacement (m), Ground Speed (km/h), Target Speed (km/h), Power (W), Cadence (rpm), Velocity (km/h), Simulated Distance (m), Heart Rate (bpm), Battery (V)\r\n");
-  sd_Raw_Write("Time (hh:mm:ss), Time (ms), GPS Distance (m), GPS Displacement (m), GPS Speed (km/h), Target Speed (km/h), Power (W), Cadence (rpm), Velocity (km/h), Simulated Distance (m), Heart Rate (bpm)", SRMlogFilename);
   
   // Crank Torque Frequency
-  //ANT_SetupChannel(antBuffer, 0, 0, 0, 8182, 0); UNCOMMENT THIS LINE TO SEARCH FOR ANY DEVICE (ONLY SAFE FOR DEBUGGING)
+  // ANT_SetupChannel(antBuffer, 0, 0, 0, 8182, 0); UNCOMMENT THIS LINE TO SEARCH FOR ANY DEVICE (ONLY SAFE FOR DEBUGGING)
   ANT_SetupChannel(antBuffer, 0, 11, 0, 8182, 12131);
   // Heart rate channel.
   ANT_SetupChannel(antBuffer, 1, 120, 0, 16140, 45063);
 
   Serial.println("ANT+ setup complete.");
 
+  // Calibrate pedals
   calibrate();
   
   TIME = millis() + PERIOD;
@@ -225,9 +229,8 @@ void loop() {
               *((uint8_t*)slipBuffer + 1 + 2) = 0;
               SlipPacketSend(3, (char*)slipBuffer, &Serial3);
 			  
-			  // Write the updated values to the log file
-                          //(The SRM log file with all possible data saved, was a feature add on Sept. 10, 2014)
-			  logSRM();
+              // Write the updated values to the log file (mainly power updates)
+              logData();
               
               break;
 
@@ -240,7 +243,6 @@ void loop() {
               break;
           }
         }
-
       }
     }
 
@@ -265,7 +267,7 @@ void loop() {
       static int32_t longitude[numTerms];
       static int32_t altitude[numTerms];
       static int index = 0;
-
+ 
       if (startSet == 0) {
         //Serial.print("Pre SS Lat: "); Serial.println(LattitudeStart);
         //Serial.print("Pre SS Lon: "); Serial.println(LongitudeStart);
@@ -493,7 +495,7 @@ void loop() {
       *((uint8_t*)slipBuffer + 1 + 3) = 0;
       SlipPacketSend(4, (char*)slipBuffer, &Serial3);
       
-    } else if (millis() - lastGPSUpdate > 7000) {
+    } else if (millis() - lastGPSUpdate > 10000) {
       GPSLost = true;
       // *((uint8_t*)slipBuffer + 0) = ID_GPSCOMM;
       // *((uint8_t*)(slipBuffer + 1 + 0)) = 0; // No receive from GPS
@@ -501,42 +503,15 @@ void loop() {
       // SlipPacketSend(2, (char*)slipBuffer, &Serial3);
       
       sd_Open(logFilename);
-      sd_Print("GPS lost connection. ");
+      sd_Print("GPS lost connection.");
       sd_Close();
       Serial.println("No message for 5 seconds.");
     }
   }
   TIME += PERIOD;
   
-  //Store in SD
-  sd_Open(logFilename);
-  
-  sd_Print("\r\n");
-  sprintf((char*)sdBuffer, "%u:%u:%u, ", GPS.UTC.hour, GPS.UTC.minute, GPS.UTC.second);
-  sd_Print(sdBuffer);
-  sd_Print(dtoa(sdBuffer, lat*1.0 / 10000000)); sd_Print(", ");
-  sd_Print(dtoa(sdBuffer, lon*1.0 / 10000000)); sd_Print(", ");
-  sd_Print(dtoa(sdBuffer, alt*1.0 / 1000)); sd_Print(", ");
-  sprintf((char*)sdBuffer, "%u, ", GPS_totalDistance/ 1000);
-  sd_Print(sdBuffer);
-  sprintf((char*)sdBuffer, "%li, ", displacement / 1000);
-  sd_Print(sdBuffer);
-  sd_Print(dtoa(sdBuffer, GPS.Ground_Speed*0.036)); sd_Print(", ");
-  sd_Print(dtoa(sdBuffer, targetSpeed*0.036)); sd_Print(", ");
-  sd_Print(dtoa(sdBuffer, power)); sd_Print(", ");
-  sd_Print(dtoa(sdBuffer, cadence)); sd_Print(", ");
-  sd_Print(dtoa(sdBuffer, velocity * 3.6)); sd_Print(", ");
-  sd_Print(dtoa(sdBuffer, distance)); sd_Print(", ");
-  sprintf(sdBuffer, "%u, ", Hrt);
-  sd_Print(sdBuffer);
-  sd_Print(dtoa(sdBuffer, getBatteryLevel())); sd_Print(", ");
-  
-  sd_Close();
-  
+  logData();  
 }
-
-
-
 
 
 
@@ -545,6 +520,39 @@ void loop() {
  *                               FUNCTIONS
  *********************************************************************************/
 
+void logData() {
+  // ("Time (hh:mm:ss), Time (ms), Displacement (m), Sim Distance (m), Ground Speed (km/h), Target Speed (km/h), Sim Speed (km/h), Power (W), Cadence (rpm), Latitude (deg), Longitude (deg), Altitude (m), Heart Rate (bpm), Battery (V)\r\n")
+  
+  sd_Open(logFilename);
+
+  // Times
+  sd_Print("\r\n");
+  sprintf((char*)sdBuffer, "%u:%u:%u, ", GPS.UTC.hour, GPS.UTC.minute, GPS.UTC.second);
+  sd_Print(sdBuffer);
+  sd_Print(dtoa(sdBuffer, (double)millis())); sd_Print(", ");
+  // Distances
+  sd_Print(dtoa(sdBuffer, simpleDisplacement)); sd_Print(", ");
+  sd_Print(dtoa(sdBuffer, distance)); sd_Print(", ");  
+  // Speeds
+  sd_Print(dtoa(sdBuffer, GPS.Ground_Speed*0.036)); sd_Print(", ");  
+  sd_Print(dtoa(sdBuffer, targetSpeed*0.036)); sd_Print(", ");  
+  sd_Print(dtoa(sdBuffer, velocity * 3.6)); sd_Print(", ");
+  // Power and Cadence
+  sd_Print(dtoa(sdBuffer, power)); sd_Print(", ");
+  sd_Print(dtoa(sdBuffer, cadence)); sd_Print(", ");
+  // GPS Coordinates
+  sd_Print(dtoa(sdBuffer, lat*1.0 / 10000000)); sd_Print(", ");
+  sd_Print(dtoa(sdBuffer, lon*1.0 / 10000000)); sd_Print(", ");
+  sd_Print(dtoa(sdBuffer, alt*1.0 / 1000));     sd_Print(", ");
+  // Heart rate and battery
+  sprintf(sdBuffer, "%u, ", Hrt);
+  sd_Print(sdBuffer);
+  sd_Print(dtoa(sdBuffer, getBatteryLevel())); sd_Print(", ");
+  
+  sd_Close();
+}
+
+// CALIBRATE()
 // Calibrate the bike pedals.
 void calibrate() {
   bool calibrated = false;
@@ -554,7 +562,7 @@ void calibrate() {
   int16_t calibrationValue;
 
   Serial.println("Begin calibration... Waiting for calibration messages.");
-  sd_Log("Begin calibration... Waiting for calibration messages. ");
+  sd_Log("Begin calibration... Waiting for calibration messages.");
   calibrateMessageOSD(1, 0);
 
   TEMPTIME = millis(); //To timeout the calibration if taking too long
@@ -585,7 +593,7 @@ void calibrate() {
     Serial.print("Calibration complete! Offset is: ");
     Serial.print(calibrationValue);
     Serial.println(" Hz");
-    sprintf(sdBuffer, "Calibration complete! Offset is: %d Hz. ", calibrationValue);
+    sprintf(sdBuffer, "Calibration complete! Offset is: %d Hz. \r", calibrationValue);
     sd_Log(sdBuffer);
     
     // Display the calibration data on the OSD
@@ -595,13 +603,12 @@ void calibrate() {
   else {
     calibrationValue = 507;
     Serial.println("Calibration timed-out...Offset is set as default: 507 Hz");
-    sprintf(sdBuffer, "Calibration timed-out...Offset is set as default: 507 Hz");
+    sprintf(sdBuffer, "Calibration timed-out...Offset is set as default: 507 Hz\r");
     sd_Log(sdBuffer);
     
     // Display the calibration data on the OSD
     calibrateMessageOSD(4, calibrationValue); // The number 4 write default to the screen (See calibration state in OSD_panels_HPV)
   }
-  
   // Wait and then clear up the screen (IF REQUIRED)
   //delay(3000); // Not large enough? seeing flicker?
   //calibrateMessageOSD(0, calibrationValue); // The number 0 writes a blank message to the screen 
@@ -616,7 +623,7 @@ void calibrateMessageOSD(uint8_t messageNum, int16_t calibrationValue) {
   SlipPacketSend(4, (char*)slipBuffer, &Serial3);
 }
 
-void logSRM() {
+/*void logSRM() {
   // Time(hh:mm:ss), Time (ms), GPS Distance (m), GPS Displacement (m), GPS Speed (km/h), Target Speed (km/h), Power (W), Cadence (rpm), Velocity (km/h), Simulated Distance (m), Heart Rate (bpm)
   sd_Open(SRMlogFilename);
   
@@ -638,11 +645,9 @@ void logSRM() {
   sd_Print("\r\n");
   
   sd_Close();
-}
+}*/
 
-/*
- * Calculates the average of int32_t elements in an array of given length
- */
+// Calculates the average of int32_t elements in an array of given length
 int32_t average(int32_t *beg, const int len) {
   float total = 0;
 
@@ -653,9 +658,7 @@ int32_t average(int32_t *beg, const int len) {
   return (int32_t) (total + 0.5f);
 }
 
-/*
- * Calculates the average of int16_t elements in an array of given length
- */
+//Calculates the average of int16_t elements in an array of given length
 int16_t average(int16_t *beg, const int len) {
   float total = 0;
 
@@ -668,9 +671,7 @@ int16_t average(int16_t *beg, const int len) {
   return (int16_t) (total + 0.5f);
 }
 
-/**
- * Double to string
- */
+// Double to string
 char * dtoa(char *s, double n) {
   const double PRECISION = 0.0000001;  
   

@@ -14,9 +14,9 @@ Adafruit_MLX90614 mlx = Adafruit_MLX90614();
 // Set up thermocouple instance with software SPI on any three digital IO pins.
 #include <SPI.h>
 #include "Adafruit_MAX31855.h" 
-#define DO   3
-#define CS   4
-#define CLK  5
+#define DO   4
+#define CS   5
+#define CLK  6
 Adafruit_MAX31855 thermocouple(CLK, CS, DO);
  
 // Set up O2 and CO2 sensor
@@ -34,24 +34,24 @@ byte response[] = {0,0,0,0,0,0,0};  //create an array to store the response
 // Declare variables used in loops
 float meanO2 = 0;
 int valO2 = 0;
-float number_of_points = 10; //for initial average
+float number_of_points = 2; //for initial average
 
 // ADJUST THESE PARAMETERS 
-      #define SAVE_O2 false
-      #define SAVE_CO2 false
-      #define SAVE_CALIPER true
-      #define SAVE_DISK true
+      #define SAVE_O2 true
+      #define SAVE_CO2 true
+      #define SAVE_CALIPER false
+      #define SAVE_DISK false
       #define SAVE_DISK_AMB false
       
       #define DATA_SIZE 250 // DATA_SIZE = 660ish / # variables enabled above
 
-      int n_seconds_saved = 2100; // How long to collect data for
+      int n_seconds_saved = 210; // How long to collect data for
       
       // Main data arrays: set the size as 1 if "SAVE" flags are false 
-      int O2_average[1];
-      int CO2_average[1];
-      unsigned int caliper_average[DATA_SIZE];
-      unsigned int disk_average[DATA_SIZE];
+      int O2_average[DATA_SIZE];
+      int CO2_average[DATA_SIZE];
+      unsigned int caliper_average[1];
+      unsigned int disk_average[1];
       unsigned int disk_amb_average[1];  
       
       // Flow controlling variables
