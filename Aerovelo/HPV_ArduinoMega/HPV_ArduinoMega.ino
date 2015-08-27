@@ -7,6 +7,8 @@
   *    - store default calibration number (507 Hz, found in simulation.cpp also) in one place
   *    - keep only one sd card logging function (the one that takes in a filename) 
   *      (or do something even smarter than the current method)
+  *    
+  *    Integer overflow on the simulated distance
   */
 
 #include <SD.h>
@@ -90,7 +92,7 @@ void setup() {
 
   // Select serial port.
   // Serial2 is GPS
-  Serial.begin(38400);	// COM port
+  Serial.begin(115200);	// COM port
   Serial3.begin(115200); // OSD
   Serial1.begin(57600);	// ANT+
   Serial.println("Program start!");
@@ -106,8 +108,8 @@ void setup() {
   delayMicroseconds(2000);
 
   // Toggle
-  pinMode(TOGGLE_PIN, INPUT);
-  digitalWrite(TOGGLE_PIN, HIGH);
+  //pinMode(TOGGLE_PIN, INPUT);
+  //digitalWrite(TOGGLE_PIN, HIGH);
 
   // Initialize GPS and SD
   GPS.Init();
@@ -125,16 +127,15 @@ void setup() {
   //loadFinishCoordinates();
 
   // Write the log file headings
-  sd_Log("Time (hh:mm:ss), Time (ms), Displacement (m), Sim Distance (m), Ground Speed (km/h), Target Speed (km/h), Sim Speed (km/h), Power (W), Cadence (rpm), Latitude (deg), Longitude (deg), Altitude (m), Heart Rate (bpm), Battery (V)");
-  
+  sd_Log("Time (hh:mm:ss), Time (ms), Displacement (m), Sim Distance (m), Ground Speed (km/h), Target Speed (km/h), Sim Speed (km/h), Power (W), Cadence (rpm), Latitude (deg), Longitude (deg), Altitude (m), Heart Rate (bpm), Battery (V), Temperature (C),");
+  //delay(500);
   
   // Crank Torque Frequency
   // ANT_SetupChannel(antBuffer, 0, 0, 0, 8182, 0); UNCOMMENT THIS LINE TO SEARCH FOR ANY DEVICE (ONLY SAFE FOR DEBUGGING)
   ANT_SetupChannel(antBuffer, 0, 11, 0, 8182, 12131);
   // Heart rate channel.
   ANT_SetupChannel(antBuffer, 1, 120, 0, 16140, 45063);
-
-  Serial.println("ANT+ setup complete.");
+  //Serial.println("ANT+ setup complete.");
 
   // Calibrate pedals
   calibrate();
@@ -150,12 +151,15 @@ static bool coast = false;
 static uint16_t time_int = 0;
 static uint16_t t2 = 0;
 static uint32_t lastGPSUpdate = millis();
-static uint32_t targetSpeed;
+static uint32_t targetSpeed = 0;
 static int32_t displacement;
 static int32_t simpleDisplacement = 0;
+float logDisplacement = 0;
 static int32_t lat, lon, alt;
 static bool GPSLost = false;
-
+  int counter = 1;
+  
+uint16_t temperature;
 
 /********************************************************
  *               MAIN PROGRAM  
@@ -164,7 +168,7 @@ void loop() {
   int8_t slipLen;
 
   uint8_t temp;
-  int8_t i, m;
+  int8_t i, m; 
 
   // Anything outside this loop is executed every PERIOD milliseconds
   while (TIME > millis()) {
@@ -204,14 +208,13 @@ void loop() {
                 power10s = tenSecPower(power);
               }
               
-              /* Not necessary for road testing
               if (simulation_mode || GPSLost) {
                 targetPower = calcPower(distance, POWER_START, POWER_PRE_SPRINT);
                 *((uint8_t*)slipBuffer + 0) = ID_TPOWER;
                 *((uint16_t*)(slipBuffer + 1 + 0)) = targetPower;
                 *((uint8_t*)slipBuffer + 1 + 2) = 0;
                 SlipPacketSend(3, (char*)slipBuffer, &Serial3);
-              }*/
+              }
 
               *((uint8_t*)slipBuffer + 0) = ID_POWER;
               *((uint16_t*)(slipBuffer + 1 + 0)) = power;
@@ -223,11 +226,11 @@ void loop() {
               *((uint16_t*)(slipBuffer + 1 + 0)) = averagePower;
               *((uint8_t*)slipBuffer + 1 + 2) = 0;
               SlipPacketSend(3, (char*)slipBuffer, &Serial3);
-              
-              *((uint8_t*)slipBuffer + 0) = ID_10S_POWER;
-              *((uint16_t*)(slipBuffer + 1 + 0)) = power10s;
-              *((uint8_t*)slipBuffer + 1 + 2) = 0;
-              SlipPacketSend(3, (char*)slipBuffer, &Serial3);
+//              
+//              *((uint8_t*)slipBuffer + 0) = ID_10S_POWER;
+//              *((uint16_t*)(slipBuffer + 1 + 0)) = power10s;
+//              *((uint8_t*)slipBuffer + 1 + 2) = 0;
+//              SlipPacketSend(3, (char*)slipBuffer, &Serial3);
 			  
               // Write the updated values to the log file (mainly power updates)
               logData();
@@ -254,12 +257,12 @@ void loop() {
       lastGPSUpdate = millis();
       GPSLost = false;
       
-      Serial.println("GPS received!");
-      
-      *((uint8_t*)slipBuffer + 0) = ID_GPSCOMM;
-      *((uint8_t*)(slipBuffer + 1 + 0)) = 1; // Received from GPS
-      *((uint8_t*)slipBuffer + 1 + 1) = 0;
-      SlipPacketSend(2, (char*)slipBuffer, &Serial3);
+//      Serial.println("GPS received!");
+//      
+//      *((uint8_t*)slipBuffer + 0) = ID_GPSCOMM;
+//      *((uint8_t*)(slipBuffer + 1 + 0)) = 1; // Received from GPS
+//      *((uint8_t*)slipBuffer + 1 + 1) = 0;
+//      SlipPacketSend(2, (char*)slipBuffer, &Serial3);
 
       // Track the moving average
       const int numTerms = 3; // Moving average of this many values
@@ -296,19 +299,20 @@ void loop() {
       lon = average(longitude, numTerms);
       alt = average(altitude, numTerms);
       
-      displacement = GPS_getDistance(LattitudeFinish, LongitudeFinish, AltitudeFinish, lat, lon, alt);
-      uint32_t currDistance = GPS_getDistance(LattitudePrev, LongitudePrev, AltitudePrev, lat, lon, alt);
+      //displacement = GPS_getDistance(LattitudeFinish, LongitudeFinish, AltitudeFinish, lat, lon, alt);
+      //uint32_t currDistance = GPS_getDistance(LattitudePrev, LongitudePrev, AltitudePrev, lat, lon, alt);
       
       simpleDisplacement = GPS_getDistance(LattitudeStart, LongitudeStart, AltitudeStart, lat, lon, alt);
-      
+      //logDisplacement = GPS_getDistance(LattitudeStart, LongitudeStart, AltitudeStart, lat, lon, alt);
+      //Serial.print(GPS_getDistance(LattitudeStart, LongitudeStart, AltitudeStart, lat, lon, alt));
 
-      if (currDistance >= 0) {
-        GPS_totalDistance += currDistance;
-
-        LattitudePrev = lat;
-        LongitudePrev = lon;
-        AltitudePrev = alt;
-      }
+//      if (currDistance >= 0) {
+//        GPS_totalDistance += currDistance;
+//
+//        LattitudePrev = lat;
+//        LongitudePrev = lon;
+//        AltitudePrev = alt;
+//      }
       
       if (!simulation_mode) {
         // Target power will be based on simulated distance travelled
@@ -317,12 +321,13 @@ void loop() {
           *((uint16_t*)(slipBuffer + 1 + 0)) = targetPower;
           *((uint8_t*)slipBuffer + 1 + 2) = 0;
           SlipPacketSend(3, (char*)slipBuffer, &Serial3);
+
         // WHAT SHOULD BE HERE
-        /*targetPower = calcDisplacePower(displacement, POWER_START, POWER_PRE_SPRINT);
-        *((uint8_t*)slipBuffer + 0) = ID_TPOWER;
-        *((uint16_t*)(slipBuffer + 1 + 0)) = targetPower;
-        *((uint8_t*)slipBuffer + 1 + 2) = 0;
-        SlipPacketSend(3, (char*)slipBuffer, &Serial3);*/
+//        targetPower = calcDisplacePower(displacement, POWER_START, POWER_PRE_SPRINT);
+//        *((uint8_t*)slipBuffer + 0) = ID_TPOWER;
+//        *((uint16_t*)(slipBuffer + 1 + 0)) = targetPower;
+//        *((uint8_t*)slipBuffer + 1 + 2) = 0;
+//        SlipPacketSend(3, (char*)slipBuffer, &Serial3);
       }
 
 
@@ -349,16 +354,17 @@ void loop() {
       SlipPacketSend(2, (char*)slipBuffer, &Serial3);
       */
 
-      if (simulation_mode) {
-        targetSpeed = calcSpeed(COURSE_LENGTH - distance, coeff);
-      } else {
-        targetSpeed = calcSpeed(displacement / 1000.0, coeff);
-      }
-      //Send target speed through SLIP
-      *((uint8_t*)slipBuffer + 0) = ID_TSPEED;
-      *((int32_t*)(slipBuffer + 1 + 0)) = targetSpeed;
-      *((uint8_t*)slipBuffer + 1 + 4) = 0;
-      SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+//      if (simulation_mode) {
+//        targetSpeed = calcSpeed(COURSE_LENGTH - distance, coeff);
+//      } 
+//      else {
+//        targetSpeed = calcSpeed(displacement / 1000.0, coeff);
+//      }
+//      //Send target speed through SLIP
+//      *((uint8_t*)slipBuffer + 0) = ID_TSPEED;
+//      *((int32_t*)(slipBuffer + 1 + 0)) = targetSpeed;
+//      *((uint8_t*)slipBuffer + 1 + 4) = 0;
+//      SlipPacketSend(6, (char*)slipBuffer, &Serial3);
 
       // Send Speed through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_SPEED;
@@ -372,25 +378,25 @@ void loop() {
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
 
-      //Send Distance through SLIP
+      //Send Distance through SLIP (hijacked for simulated distance)
       *((uint8_t*)slipBuffer + 0) = ID_DISTANCE;
       if (simulation_mode) {
-        *((uint32_t*)(slipBuffer + 1 + 0)) = distance * 1000;
+        *((uint32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; //(uint32_t)distance * 1000;
       } else {
-        *((uint32_t*)(slipBuffer + 1 + 0)) = GPS_totalDistance;
+        *((uint32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; //(uint32_t)distance * 1000; // Hijacked for simulated distance also
       }
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
 
       //Send Displacement through SLIP
-      *((uint8_t*)slipBuffer + 0) = ID_DISPLACEMENT;
-      if (simulation_mode) {
-        *((int32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; // Assume same as distance
-      } else {
-        *((int32_t*)(slipBuffer + 1 + 0)) = displacement;
-      }
-      *((uint8_t*)slipBuffer + 1 + 4) = 0;
-      SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+//      *((uint8_t*)slipBuffer + 0) = ID_DISPLACEMENT;
+//      if (simulation_mode) {
+//        *((int32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; // Assume same as distance
+//      } else {
+//        *((int32_t*)(slipBuffer + 1 + 0)) = displacement;
+//      }
+//      *((uint8_t*)slipBuffer + 1 + 4) = 0;
+//      SlipPacketSend(6, (char*)slipBuffer, &Serial3);
       
       //Send simpleDisplacement through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_SIMPLEDISPLACEMENT;
@@ -399,19 +405,19 @@ void loop() {
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
       
         // Send battery information
-      float batteryLevel = getBatteryLevel();
-      *((uint8_t*)slipBuffer + 0) = ID_BATTERY;
-      *((uint16_t*)(slipBuffer + 1 + 0)) = batteryLevel * 100;
-      *((uint8_t*)slipBuffer + 1 + 2) = lowBattery(batteryLevel);
-      *((uint8_t*)slipBuffer + 1 + 3) = 0;
-      SlipPacketSend(4, (char*)slipBuffer, &Serial3);
+//      float batteryLevel = getBatteryLevel();
+//      *((uint8_t*)slipBuffer + 0) = ID_BATTERY;
+//      *((uint16_t*)(slipBuffer + 1 + 0)) = batteryLevel * 100;
+//      *((uint8_t*)slipBuffer + 1 + 2) = lowBattery(batteryLevel);
+//      *((uint8_t*)slipBuffer + 1 + 3) = 0;
+//      SlipPacketSend(4, (char*)slipBuffer, &Serial3);
       
-      uint16_t temperature = readTemp();
-      *((uint8_t*)slipBuffer + 0) = ID_TEMPERATURE;
-      *((int16_t*)(slipBuffer + 1 + 0)) = temperature;
-      *((uint8_t*)slipBuffer + 1 + 2) = highTemp(temperature);
-      *((uint8_t*)slipBuffer + 1 + 3) = 0;
-      SlipPacketSend(4, (char*)slipBuffer, &Serial3);
+//      temperature = readTemp();
+//      *((uint8_t*)slipBuffer + 0) = ID_TEMPERATURE;
+//      *((int16_t*)(slipBuffer + 1 + 0)) = temperature;
+//      *((uint8_t*)slipBuffer + 1 + 2) = highTemp(temperature);
+//      *((uint8_t*)slipBuffer + 1 + 3) = 0;
+//      SlipPacketSend(4, (char*)slipBuffer, &Serial3);
 
     } else if (GPSLost && millis() - lastGPSUpdate > 1000) {
       lastGPSUpdate = millis();
@@ -443,16 +449,16 @@ void loop() {
       SlipPacketSend(2, (char*)slipBuffer, &Serial3);
       */
       
-      targetSpeed = calcSpeed(COURSE_LENGTH - distance, coeff);
-      //Send target speed through SLIP
-      *((uint8_t*)slipBuffer + 0) = ID_TSPEED;
-      *((int32_t*)(slipBuffer + 1 + 0)) = targetSpeed;
-      *((uint8_t*)slipBuffer + 1 + 4) = 0;
-      SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+//      targetSpeed = calcSpeed(COURSE_LENGTH - distance, coeff);
+//      //Send target speed through SLIP
+//      *((uint8_t*)slipBuffer + 0) = ID_TSPEED;
+//      *((int32_t*)(slipBuffer + 1 + 0)) = targetSpeed;
+//      *((uint8_t*)slipBuffer + 1 + 4) = 0;
+//      SlipPacketSend(6, (char*)slipBuffer, &Serial3);
 
       // Send Speed through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_SPEED;
-      *((int32_t*)(slipBuffer + 1 + 0)) = velocity * 100;
+      *((int32_t*)(slipBuffer + 1 + 0)) = GPS.Ground_Speed;
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
       
@@ -462,17 +468,21 @@ void loop() {
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
 
-      //Send Distance through SLIP
+      //Send Distance through SLIP (hijacked for simulated distance)
       *((uint8_t*)slipBuffer + 0) = ID_DISTANCE;
-      *((uint32_t*)(slipBuffer + 1 + 0)) = distance * 1000;
+      if (simulation_mode) {
+        *((uint32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; //(uint32_t)distance * 1000;
+      } else {
+        *((uint32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; //(uint32_t)distance * 1000; // Hijacked for simulated distance also
+      }
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
-
-      //Send Displacement through SLIP
-      *((uint8_t*)slipBuffer + 0) = ID_DISPLACEMENT;
-      *((int32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; // Assume same as distance
-      *((uint8_t*)slipBuffer + 1 + 4) = 0;
-      SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+//
+//      //Send Displacement through SLIP
+//      *((uint8_t*)slipBuffer + 0) = ID_DISPLACEMENT;
+//      *((int32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; // Assume same as distance
+//      *((uint8_t*)slipBuffer + 1 + 4) = 0;
+//      SlipPacketSend(6, (char*)slipBuffer, &Serial3);
       
       //Send simpleDisplacement through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_SIMPLEDISPLACEMENT;
@@ -481,19 +491,19 @@ void loop() {
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
       
       // Send battery information
-      float batteryLevel = getBatteryLevel();
-      *((uint8_t*)slipBuffer + 0) = ID_BATTERY;
-      *((uint16_t*)(slipBuffer + 1 + 0)) = batteryLevel * 100;
-      *((uint8_t*)slipBuffer + 1 + 2) = lowBattery(batteryLevel);
-      *((uint8_t*)slipBuffer + 1 + 3) = 0;
-      SlipPacketSend(4, (char*)slipBuffer, &Serial3);
-      
-      uint16_t temperature = readTemp();
-      *((uint8_t*)slipBuffer + 0) = ID_TEMPERATURE;
-      *((int16_t*)(slipBuffer + 1 + 0)) = temperature;
-      *((uint8_t*)slipBuffer + 1 + 2) = highTemp(temperature);
-      *((uint8_t*)slipBuffer + 1 + 3) = 0;
-      SlipPacketSend(4, (char*)slipBuffer, &Serial3);
+//      float batteryLevel = getBatteryLevel();
+//      *((uint8_t*)slipBuffer + 0) = ID_BATTERY;
+//      *((uint16_t*)(slipBuffer + 1 + 0)) = batteryLevel * 100;
+//      *((uint8_t*)slipBuffer + 1 + 2) = lowBattery(batteryLevel);
+//      *((uint8_t*)slipBuffer + 1 + 3) = 0;
+//      SlipPacketSend(4, (char*)slipBuffer, &Serial3);
+//      
+//      temperature = readTemp();
+//      *((uint8_t*)slipBuffer + 0) = ID_TEMPERATURE;
+//      *((int16_t*)(slipBuffer + 1 + 0)) = temperature;
+//      *((uint8_t*)slipBuffer + 1 + 2) = highTemp(temperature);
+//      *((uint8_t*)slipBuffer + 1 + 3) = 0;
+//      SlipPacketSend(4, (char*)slipBuffer, &Serial3);
       
     } else if (millis() - lastGPSUpdate > 10000) {
       GPSLost = true;
@@ -503,9 +513,9 @@ void loop() {
       // SlipPacketSend(2, (char*)slipBuffer, &Serial3);
       
       sd_Open(logFilename);
-      sd_Print("GPS lost connection.");
+      sd_Print(" GPS lost connection.");
       sd_Close();
-      Serial.println("No message for 5 seconds.");
+      //Serial.println("No message for 5 seconds.");
     }
   }
   TIME += PERIOD;
@@ -531,23 +541,49 @@ void logData() {
   sd_Print(sdBuffer);
   sd_Print(dtoa(sdBuffer, (double)millis())); sd_Print(", ");
   // Distances
-  sd_Print(dtoa(sdBuffer, simpleDisplacement)); sd_Print(", ");
-  sd_Print(dtoa(sdBuffer, distance)); sd_Print(", ");  
+  sprintf((char*)sdBuffer, "%u, ", simpleDisplacement/ 1000);
+  sd_Print(sdBuffer);
+  
+  sd_Print(ftoa(sdBuffer, distance, 3)); sd_Print(", ");
+  
+  //sprintf((char*)sdBuffer, "%d, ", distance / 1000);
+  //sd_Print(sdBuffer);
+  
+  
+  
+  //sprintf(sdBuffer, "%5li, ", simpleDisplacement/1000);
+  //sd_Print(sdBuffer);
+  //sd_Print(dtoa(sdBuffer, distance/1000)); sd_Print(", ");
+
+// TESTING
+//  sd_Print(ftoa(sdBuffer, logDisplacement, 3)); sd_Print(", ");
+//  sd_Print(dtoa(sdBuffer, simpleDisplacement)); sd_Print(", ");
+
+//  Test to see
+//  simpleDisplacement = 134302;
+//  Serial.print("dtoa: ");
+//  Serial.println(dtoa(sdBuffer, simpleDisplacement)); sd_Print(", ");
+
+
   // Speeds
   sd_Print(dtoa(sdBuffer, GPS.Ground_Speed*0.036)); sd_Print(", ");  
   sd_Print(dtoa(sdBuffer, targetSpeed*0.036)); sd_Print(", ");  
   sd_Print(dtoa(sdBuffer, velocity * 3.6)); sd_Print(", ");
+ 
   // Power and Cadence
   sd_Print(dtoa(sdBuffer, power)); sd_Print(", ");
   sd_Print(dtoa(sdBuffer, cadence)); sd_Print(", ");
+ 
   // GPS Coordinates
   sd_Print(dtoa(sdBuffer, lat*1.0 / 10000000)); sd_Print(", ");
   sd_Print(dtoa(sdBuffer, lon*1.0 / 10000000)); sd_Print(", ");
   sd_Print(dtoa(sdBuffer, alt*1.0 / 1000));     sd_Print(", ");
+ 
   // Heart rate and battery
   sprintf(sdBuffer, "%u, ", Hrt);
   sd_Print(sdBuffer);
-  sd_Print(dtoa(sdBuffer, getBatteryLevel())); sd_Print(", ");
+  sd_Print(ftoa(sdBuffer, getBatteryLevel(), 4)); sd_Print(", ");
+  sd_Print(ftoa(sdBuffer, readTemp(), 4)); sd_Print(", ");
   
   sd_Close();
 }
@@ -593,7 +629,7 @@ void calibrate() {
     Serial.print("Calibration complete! Offset is: ");
     Serial.print(calibrationValue);
     Serial.println(" Hz");
-    sprintf(sdBuffer, "Calibration complete! Offset is: %d Hz. \r", calibrationValue);
+    sprintf(sdBuffer, "Calibration complete! Offset is: %d Hz. ", calibrationValue);
     sd_Log(sdBuffer);
     
     // Display the calibration data on the OSD
@@ -603,7 +639,7 @@ void calibrate() {
   else {
     calibrationValue = 507;
     Serial.println("Calibration timed-out...Offset is set as default: 507 Hz");
-    sprintf(sdBuffer, "Calibration timed-out...Offset is set as default: 507 Hz\r");
+    sprintf(sdBuffer, "Calibration timed-out...Offset is set as default: 507 Hz");
     sd_Log(sdBuffer);
     
     // Display the calibration data on the OSD
@@ -670,6 +706,23 @@ int16_t average(int16_t *beg, const int len) {
 
   return (int16_t) (total + 0.5f);
 }
+
+
+
+char *ftoa(char *a, double f, int precision)
+{
+ long p[] = {0,10,100,1000,10000,100000,1000000,10000000,100000000};
+ 
+ char *ret = a;
+ long heiltal = (long)f;
+ itoa(heiltal, a, 10);
+ while (*a != '\0') a++;
+ *a++ = '.';
+ long desimal = abs((long)((f - heiltal) * p[precision]));
+ itoa(desimal, a, 10);
+ return ret;
+}
+
 
 // Double to string
 char * dtoa(char *s, double n) {

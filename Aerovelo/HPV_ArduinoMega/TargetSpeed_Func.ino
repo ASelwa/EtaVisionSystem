@@ -94,7 +94,7 @@ bool loadFinishCoordinates() {
   File dataFile = SD.open("FinCoord.txt", FILE_READ);
   
   if (!dataFile) {
-    sd_Log("Could not open FinCoord.txt.\n");
+    Serial.print("Could not open FinCoord.txt.\n");
     return false;
   }
   
@@ -139,10 +139,10 @@ float calcPower(double distance, float startPower, float preSprintPower) {
   
   if (distance < 6436) { // More than 1 mile to go
     target = startPower + ((preSprintPower - startPower) / 6436.0) * distance; // y = b + mx
-    Serial.print("Target: "); Serial.println(target);
+    //Serial.print("Target: "); Serial.println(target);
   } else { // Change to something else if sprint profile is desired
     target = startPower + ((preSprintPower - startPower) / 6436.0) * distance; // y = b + mx
-    Serial.print("Target: "); Serial.println(target);
+    //Serial.print("Target: "); Serial.println(target);
   }
 
   return target;

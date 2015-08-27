@@ -55,7 +55,7 @@
 #define MinimOSD
 
 #define TELEMETRY_SPEED  115200  // How fast our MAVLink telemetry is coming to Serial port
-#define BOOTTIME         100   // Time in milliseconds that we show boot loading bar and wait user input
+#define BOOTTIME         200   // Time in milliseconds that we show boot loading bar and wait user input
 #define CALIBRATION_TIME 20000
 
 // Objects and Serial definitions

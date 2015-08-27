@@ -10,9 +10,21 @@
  */
 void GPS_setStart(){
 
-  LattitudeStart = GPS.Lattitude;
-  LongitudeStart = GPS.Longitude;
-  AltitudeStart = GPS.Altitude;
+ // LattitudeStart = GPS.Lattitude;
+ // LongitudeStart = GPS.Longitude;
+ // AltitudeStart = GPS.Altitude;
+
+// FROM GOOGLE MAPS
+ // LattitudeStart = 40.295852*10000000;
+ // LongitudeStart = -83.530750*10000000;
+ // AltitudeStart = 327*1000;
+
+
+// FROM A RUN
+  LattitudeStart = 40.2982673*10000000;
+  LongitudeStart = -83.5329132*10000000;
+  AltitudeStart = 327.7030334*1000;
+
 
   LattitudePrev = GPS.Lattitude;
   LongitudePrev = GPS.Longitude;
