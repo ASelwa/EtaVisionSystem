@@ -89,6 +89,11 @@ uint8_t GPSComm, SDComm = 1; // SDComm should default to not display
 
 uint32_t TIME;
 
+uint8_t BRAKE_MODE;
+uint8_t mode_tracker = 0;
+float accelOSD;
+
+
 /* **********************************************/
 /* ***************** SETUP() *******************/
 

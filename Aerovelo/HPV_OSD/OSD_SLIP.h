@@ -28,6 +28,8 @@
 #define ID_MODE         21
 #define ID_SDCOMM       22
 #define ID_SIMPLEDISPLACEMENT  30
+#define ID_BRAKE_MODE 31
+#define ID_ACCEL 32
 
 typedef struct {
           uint16_t year;

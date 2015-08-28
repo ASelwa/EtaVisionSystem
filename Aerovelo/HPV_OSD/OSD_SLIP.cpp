@@ -18,6 +18,9 @@ extern uint8_t lowBattery, highTemp;
 extern int16_t temperature;
 extern uint8_t GPSComm, SDComm;
 
+extern uint8_t BRAKE_MODE;
+//extern uint8_t mode_tracker = 0;
+extern float accelOSD;
 
 /*
  * Check the message and assign the data to the correct variables
@@ -110,6 +113,15 @@ void OSD_SlipParse(char *slipBuffer) {
     break;
   case ID_SIMPLEDISPLACEMENT:
     simpleDisplacement = (*((int32_t*)(slipBuffer+1)))/1000;
+    break;
+  case ID_BRAKE_MODE:
+    BRAKE_MODE = *((uint8_t*) (slipBuffer+1));
+    break;
+  case ID_ACCEL:
+    accelOSD = (*((int32_t*)(slipBuffer+1)))/100000*105;    
+    //accelOSD = ((double)(*((int32_t*)(slipBuffer+1))));
+    //accelOSD = (*((uint8_t*) slipBuffer+3)*1000.0)/ (1.0* (*((uint16_t*)((uint8_t*)slipBuffer+1))));
+    break;
   default:;
   }
 }

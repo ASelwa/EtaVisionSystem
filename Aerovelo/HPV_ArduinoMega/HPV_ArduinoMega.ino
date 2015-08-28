@@ -19,6 +19,12 @@
 #include "slip.h"
 #include "simulation.h"
 
+#include "RunningAverage.h"
+
+RunningAverage gpsAvg(3);
+int gpsSamples = 0;
+RunningAverage accelAvg(3);
+int accelSamples = 0;
 
 #define PERIOD 1000 // Main loop period
 
@@ -52,6 +58,8 @@
 #define ID_SDCOMM       22
 #define ID_MODE         21
 #define ID_SIMPLEDISPLACEMENT  30
+#define ID_BRAKE_MODE 31
+#define ID_ACCEL 32
 
 #define COURSE_LENGTH   8045 // Metres
 #define POWER_START      300 // Watts
@@ -86,7 +94,12 @@ char logFilename[32] = "LogTest.txt"; // "LGdflt.txt"
 char profileName[16];
 double coeff[7] = {0};
 
+// Old boolean for tracking "simulation mode"
 bool simulation_mode = false;
+
+// Revised boolean for enabling simulation during a real run
+bool SIMULATION = false;
+
 
 void setup() {
 
@@ -140,6 +153,9 @@ void setup() {
   // Calibrate pedals
   calibrate();
   
+  // Running average fills
+  accelAvg.fillValue(0, 4);
+  
   TIME = millis() + PERIOD;
 }
 
@@ -157,9 +173,17 @@ static int32_t simpleDisplacement = 0;
 float logDisplacement = 0;
 static int32_t lat, lon, alt;
 static bool GPSLost = false;
-  int counter = 1;
+  int counter = 1; // not used?
   
 uint16_t temperature;
+
+// For acceleration calc
+int32_t prevSpeed = 0;
+int32_t currSpeed = 0;
+int32_t prevGPSTime = 500;
+int32_t currGPSTime = 1000;
+//int32_t accel = 0;
+
 
 /********************************************************
  *               MAIN PROGRAM  
@@ -169,6 +193,9 @@ void loop() {
 
   uint8_t temp;
   int8_t i, m; 
+  
+  
+  
 
   // Anything outside this loop is executed every PERIOD milliseconds
   while (TIME > millis()) {
@@ -208,13 +235,13 @@ void loop() {
                 power10s = tenSecPower(power);
               }
               
-              if (simulation_mode || GPSLost) {
-                targetPower = calcPower(distance, POWER_START, POWER_PRE_SPRINT);
-                *((uint8_t*)slipBuffer + 0) = ID_TPOWER;
-                *((uint16_t*)(slipBuffer + 1 + 0)) = targetPower;
-                *((uint8_t*)slipBuffer + 1 + 2) = 0;
-                SlipPacketSend(3, (char*)slipBuffer, &Serial3);
-              }
+//              if (simulation_mode || GPSLost) {
+//                targetPower = calcPower(distance, POWER_START, POWER_PRE_SPRINT);
+//                *((uint8_t*)slipBuffer + 0) = ID_TPOWER;
+//                *((uint16_t*)(slipBuffer + 1 + 0)) = targetPower;
+//                *((uint8_t*)slipBuffer + 1 + 2) = 0;
+//                SlipPacketSend(3, (char*)slipBuffer, &Serial3);
+//              }
 
               *((uint8_t*)slipBuffer + 0) = ID_POWER;
               *((uint16_t*)(slipBuffer + 1 + 0)) = power;
@@ -222,10 +249,10 @@ void loop() {
               *((uint8_t*)slipBuffer + 1 + 3) = 0;
               SlipPacketSend(4, (char*)slipBuffer, &Serial3);
               
-              *((uint8_t*)slipBuffer + 0) = ID_AVG_POWER;
-              *((uint16_t*)(slipBuffer + 1 + 0)) = averagePower;
-              *((uint8_t*)slipBuffer + 1 + 2) = 0;
-              SlipPacketSend(3, (char*)slipBuffer, &Serial3);
+//              *((uint8_t*)slipBuffer + 0) = ID_AVG_POWER;
+//              *((uint16_t*)(slipBuffer + 1 + 0)) = averagePower;
+//              *((uint8_t*)slipBuffer + 1 + 2) = 0;
+//              SlipPacketSend(3, (char*)slipBuffer, &Serial3);
 //              
 //              *((uint8_t*)slipBuffer + 0) = ID_10S_POWER;
 //              *((uint16_t*)(slipBuffer + 1 + 0)) = power10s;
@@ -270,6 +297,9 @@ void loop() {
       static int32_t longitude[numTerms];
       static int32_t altitude[numTerms];
       static int index = 0;
+      static int indexAccel = 0;
+      
+      static int32_t accel[numTerms];
  
       if (startSet == 0) {
         //Serial.print("Pre SS Lat: "); Serial.println(LattitudeStart);
@@ -285,19 +315,50 @@ void loop() {
           latitude[x] = GPS.Lattitude;
           longitude[x] = GPS.Longitude;
           altitude[x] = GPS.Altitude;
+          
+          accel[x] = 0;
+          
         }
       }
 
       if (index == numTerms)
         index = 0;
+        indexAccel = 0;
 
       latitude[index] = GPS.Lattitude;
       longitude[index] = GPS.Longitude;
       altitude[index++] = GPS.Altitude;
+      
+      
 
       lat = average(latitude, numTerms);
       lon = average(longitude, numTerms);
       alt = average(altitude, numTerms);
+
+      
+        
+//        
+//        long test = GPS.Ground_Speed*10000000;  // m/s *100 *10,000,000
+//        
+//        Serial.print("test: ");
+//        Serial.println(test);
+//        
+//        unsigned long testTime = millis();
+//        Serial.print("testTime: ");        
+//        Serial.println(testTime);
+//        
+//        long accelTest = (double)test/(double)testTime;
+//        
+//        Serial.println(accelTest);
+//        Serial.println(accelTest/100/10000/1000000);
+//        
+       
+      
+      
+      
+
+      
+      
       
       //displacement = GPS_getDistance(LattitudeFinish, LongitudeFinish, AltitudeFinish, lat, lon, alt);
       //uint32_t currDistance = GPS_getDistance(LattitudePrev, LongitudePrev, AltitudePrev, lat, lon, alt);
@@ -305,6 +366,108 @@ void loop() {
       simpleDisplacement = GPS_getDistance(LattitudeStart, LongitudeStart, AltitudeStart, lat, lon, alt);
       //logDisplacement = GPS_getDistance(LattitudeStart, LongitudeStart, AltitudeStart, lat, lon, alt);
       //Serial.print(GPS_getDistance(LattitudeStart, LongitudeStart, AltitudeStart, lat, lon, alt));
+      
+      
+//      
+
+          // PUT INTO BRAKE MODE
+//         *((uint8_t*)slipBuffer + 0) = ID_BRAKE_MODE;
+//         *((uint8_t*)(slipBuffer + 1 + 0)) = 1; // Change this value
+//         *((uint8_t*)slipBuffer + 1 + 1) = 0;
+//         SlipPacketSend(2, (char*)slipBuffer, &Serial3);
+//      
+//      delay(5000);
+      
+            
+      if (simpleDisplacement < 50000) {
+        
+         *((uint8_t*)slipBuffer + 0) = ID_BRAKE_MODE;
+         *((uint8_t*)(slipBuffer + 1 + 0)) = 1; // Change this value
+         *((uint8_t*)slipBuffer + 1 + 1) = 0;
+         SlipPacketSend(2, (char*)slipBuffer, &Serial3);
+        
+      }
+      
+      if (simpleDisplacement > 1000000) {
+        
+         *((uint8_t*)slipBuffer + 0) = ID_BRAKE_MODE;
+         *((uint8_t*)(slipBuffer + 1 + 0)) = 0; // Change this value
+         *((uint8_t*)slipBuffer + 1 + 1) = 0;
+         SlipPacketSend(2, (char*)slipBuffer, &Serial3);
+        
+      }
+      
+      currSpeed = GPS.Ground_Speed*1000000;
+      currGPSTime = millis();
+      
+      //accel = (currSpeed - prevSpeed) / (currGPSTime-prevGPSTime);
+      //accelAvg.addValue(float(accel)/100000);
+      
+      
+      
+      accel[indexAccel++] = (currSpeed - prevSpeed) / (currGPSTime-prevGPSTime);
+      
+      
+      
+//      Serial.print("Running avg Accel: ");
+//      Serial.println(accelAvg.getAverage());
+//      
+//      
+      Serial.print("Accel: ");
+      Serial.println(float(average(accel, numTerms))/100000*105);
+      
+//      Serial.print("currSpeed: ");
+//      Serial.println(currSpeed);
+//      Serial.print("prevSpeed: ");
+//      Serial.println(prevSpeed);
+//      
+//      
+//      Serial.print("currTime: ");
+//      Serial.println(currGPSTime);
+//      Serial.print("prevTime: ");
+//      Serial.println(prevGPSTime);
+//      
+//      
+//      Serial.print("Accel adjust: ");
+//      Serial.println(float(accel)/100000);
+      
+      
+      
+      prevSpeed = currSpeed;
+      prevGPSTime = currGPSTime;    
+      
+      
+//      
+//      
+//      Serial.print("Acceleration avg: ");
+//      Serial.println(accelAvg.getAverage());
+      
+      
+      
+      // Send AccelAvg
+      *((uint8_t*)slipBuffer + 0) = ID_ACCEL;
+      *((int32_t*)(slipBuffer + 1 + 0)) = average(accel, numTerms); // m/s^2 right now?
+      *((uint8_t*)slipBuffer + 1 + 4) = 0;
+      SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
 
 //      if (currDistance >= 0) {
 //        GPS_totalDistance += currDistance;
@@ -314,6 +477,7 @@ void loop() {
 //        AltitudePrev = alt;
 //      }
       
+/* 
       if (!simulation_mode) {
         // Target power will be based on simulated distance travelled
           targetPower = calcPower(distance, POWER_START, POWER_PRE_SPRINT);
@@ -329,6 +493,7 @@ void loop() {
 //        *((uint8_t*)slipBuffer + 1 + 2) = 0;
 //        SlipPacketSend(3, (char*)slipBuffer, &Serial3);
       }
+*/
 
 
       /* NO PROFILE STUFF FOR NOW
@@ -354,17 +519,19 @@ void loop() {
       SlipPacketSend(2, (char*)slipBuffer, &Serial3);
       */
 
-//      if (simulation_mode) {
-//        targetSpeed = calcSpeed(COURSE_LENGTH - distance, coeff);
-//      } 
-//      else {
-//        targetSpeed = calcSpeed(displacement / 1000.0, coeff);
-//      }
-//      //Send target speed through SLIP
-//      *((uint8_t*)slipBuffer + 0) = ID_TSPEED;
-//      *((int32_t*)(slipBuffer + 1 + 0)) = targetSpeed;
-//      *((uint8_t*)slipBuffer + 1 + 4) = 0;
-//      SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+/*
+      if (simulation_mode) {
+        targetSpeed = calcSpeed(COURSE_LENGTH - distance, coeff);
+      } 
+      else {
+        targetSpeed = calcSpeed(displacement / 1000.0, coeff);
+      }
+      //Send target speed through SLIP
+      *((uint8_t*)slipBuffer + 0) = ID_TSPEED;
+      *((int32_t*)(slipBuffer + 1 + 0)) = targetSpeed;
+      *((uint8_t*)slipBuffer + 1 + 4) = 0;
+      SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+*/
 
       // Send Speed through SLIP
       *((uint8_t*)slipBuffer + 0) = ID_SPEED;
@@ -372,21 +539,29 @@ void loop() {
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
       
-      // Send Simulated Speed through SLIP
-      *((uint8_t*)slipBuffer + 0) = ID_SIM_SPEED;
-      *((int32_t*)(slipBuffer + 1 + 0)) = velocity * 100; // Will be converted to km / h in OSD_SLIP
-      *((uint8_t*)slipBuffer + 1 + 4) = 0;
-      SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+      
+      if (SIMULATION) {
+        // Send Simulated Speed through SLIP
+        *((uint8_t*)slipBuffer + 0) = ID_SIM_SPEED;
+        *((int32_t*)(slipBuffer + 1 + 0)) = velocity * 100; // Will be converted to km / h in OSD_SLIP
+        *((uint8_t*)slipBuffer + 1 + 4) = 0;
+        SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+      }
+
 
       //Send Distance through SLIP (hijacked for simulated distance)
       *((uint8_t*)slipBuffer + 0) = ID_DISTANCE;
+      *((uint32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; //(uint32_t)distance * 1000;
+/*      
       if (simulation_mode) {
         *((uint32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; //(uint32_t)distance * 1000;
       } else {
         *((uint32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; //(uint32_t)distance * 1000; // Hijacked for simulated distance also
       }
+*/
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+
 
       //Send Displacement through SLIP
 //      *((uint8_t*)slipBuffer + 0) = ID_DISPLACEMENT;
@@ -462,22 +637,29 @@ void loop() {
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
       
-      // Send Simulated Speed through SLIP
-      *((uint8_t*)slipBuffer + 0) = ID_SIM_SPEED;
-      *((int32_t*)(slipBuffer + 1 + 0)) = velocity * 100; // Will be converted to km / h in OSD_SLIP
-      *((uint8_t*)slipBuffer + 1 + 4) = 0;
-      SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+      if (SIMULATION) {
+        // Send Simulated Speed through SLIP
+        *((uint8_t*)slipBuffer + 0) = ID_SIM_SPEED;
+        *((int32_t*)(slipBuffer + 1 + 0)) = velocity * 100; // Will be converted to km / h in OSD_SLIP
+        *((uint8_t*)slipBuffer + 1 + 4) = 0;
+        SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+      }
 
       //Send Distance through SLIP (hijacked for simulated distance)
       *((uint8_t*)slipBuffer + 0) = ID_DISTANCE;
+      *((uint32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; //(uint32_t)distance * 1000;
+/*      
       if (simulation_mode) {
         *((uint32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; //(uint32_t)distance * 1000;
       } else {
         *((uint32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; //(uint32_t)distance * 1000; // Hijacked for simulated distance also
       }
+*/
       *((uint8_t*)slipBuffer + 1 + 4) = 0;
       SlipPacketSend(6, (char*)slipBuffer, &Serial3);
-//
+      
+      
+      
 //      //Send Displacement through SLIP
 //      *((uint8_t*)slipBuffer + 0) = ID_DISPLACEMENT;
 //      *((int32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; // Assume same as distance
