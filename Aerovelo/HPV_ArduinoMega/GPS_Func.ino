@@ -11,14 +11,9 @@
 void GPS_setStart(){
 
   // CURRENT POSITION
-  // LattitudeStart = GPS.Lattitude;
-  // LongitudeStart = GPS.Longitude;
-  // AltitudeStart = GPS.Altitude;
-
-  // FROM GOOGLE MAPS @ TRC
-  // LattitudeStart = 40.295852*10000000;
-  // LongitudeStart = -83.530750*10000000;
-  // AltitudeStart = 327*1000;
+  LattitudeStart = GPS.Lattitude;
+  LongitudeStart = GPS.Longitude;
+  AltitudeStart = GPS.Altitude;
 
   // FROM A RUN (Just before the corner) @ TRC
   // LattitudeStart = 40.2982673*10000000;
@@ -26,17 +21,21 @@ void GPS_setStart(){
   // AltitudeStart = 327.7030334*1000;
   
   // FROM A RUN, 1000 m before the coordinates above @ TRC
-  LattitudeStart = 40.3054351*10000000;
-  LongitudeStart = -83.5387268*10000000;
-  AltitudeStart = 330.3030395*1000;
-
+  // LattitudeStart = 40.3054351*10000000;
+  // LongitudeStart = -83.5387268*10000000;
+  // AltitudeStart = 330.3030395*1000;
 
   LattitudePrev = GPS.Lattitude;
   LongitudePrev = GPS.Longitude;
   AltitudePrev = GPS.Altitude;
 
   startSet = 1; // Flag to not run this function again
-
+  
+  if (SERIAL_PRINT) {
+    Serial.print("Post SetStart Lat: "); Serial.println(LattitudeStart);
+    Serial.print("Post SetStart Lon: "); Serial.println(LongitudeStart);
+    Serial.print("Post SetStart Alt: "); Serial.println(AltitudeStart); 
+  }
   return;
 }
 /*
