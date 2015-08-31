@@ -3,6 +3,8 @@
  *  This file contains all the functions used to send data to the OSD
  *
  */
+
+/**************** POWER ****************/
 void sendPower() {
   // Real Power and Cadence
   *((uint8_t*)slipBuffer + 0) = ID_POWER;
@@ -33,6 +35,8 @@ void sendTargetPower(float tarP) {
   SlipPacketSend(3, (char*)slipBuffer, &Serial3); 
 }
 
+
+/**************** SPEED ****************/
 void sendSpeed() {
   // Send Speed through SLIP
   *((uint8_t*)slipBuffer + 0) = ID_SPEED;
@@ -40,8 +44,6 @@ void sendSpeed() {
   *((uint8_t*)slipBuffer + 1 + 4) = 0;
   SlipPacketSend(6, (char*)slipBuffer, &Serial3);
 }
-      
-
 
 void sendTargetSpeed() {
   //Send target speed through SLIP
@@ -51,19 +53,75 @@ void sendTargetSpeed() {
   SlipPacketSend(6, (char*)slipBuffer, &Serial3);
 }
  
+void sendSimSpeed() {
+    // Send Simulated Speed through SLIP
+  *((uint8_t*)slipBuffer + 0) = ID_SIM_SPEED;
+  *((int32_t*)(slipBuffer + 1 + 0)) = velocity * 100; // Will be converted to km / h in OSD_SLIP
+  *((uint8_t*)slipBuffer + 1 + 4) = 0;
+  SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+}
 
 
-void sendHeartRate() {
-  *((uint8_t*)slipBuffer + 0) = ID_HEART;
-  *((uint8_t*)(slipBuffer + 1 + 0)) = Hrt;
-  *((uint8_t*)slipBuffer + 1 + 1) = 0;
+
+/**************** DISTANCE ****************/
+void sendDistance() {
+  //Send Distance through SLIP (hijacked for simulated distance)
+  *((uint8_t*)slipBuffer + 0) = ID_DISTANCE;
+  *((uint32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; //(uint32_t)distance * 1000;
+  *((uint8_t*)slipBuffer + 1 + 4) = 0;
+  SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+}
+
+void sendSimpleDisplacement() {
+  //Send simpleDisplacement through SLIP
+  *((uint8_t*)slipBuffer + 0) = ID_SIMPLEDISPLACEMENT;
+  *((int32_t*)(slipBuffer + 1 + 0)) = simpleDisplacement;
+  *((uint8_t*)slipBuffer + 1 + 4) = 0;
+  SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+}
+
+void sendDisplacement() {
+  //Send Displacement through SLIP
+  *((uint8_t*)slipBuffer + 0) = ID_DISPLACEMENT;
+  if (simulation_mode) {
+    *((int32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; // Assume same as distance
+  } else {
+    *((int32_t*)(slipBuffer + 1 + 0)) = displacement;
+  }
+  *((uint8_t*)slipBuffer + 1 + 4) = 0;
+  SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+}
+
+
+/**************** ACCELERATION ****************/
+void sendAccel() {
+  
+  if (BRAKE_MODE) {
+    dof.readAccel();
+    accel = dof.calcAccel(dof.ax) - abias[0];
+    if (SERIAL_PRINT) { Serial.print("Acceleration: "); Serial.println(accel); }  
+    
+    *((uint8_t*)slipBuffer + 0) = ID_ACCEL;
+    *((int32_t*)(slipBuffer + 1 + 0)) = (int32_t)(accel*G_BM*100); // 100*m/s^2 scaling, gets adjusted in OSD_SLIP
+    *((uint8_t*)slipBuffer + 1 + 4) = 0;
+    SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+  }
+}
+
+
+/**************** MODES & BOOLS ****************/
+void sendMode() {
+  // Send real time or simulation mode through SLIP
+  *((uint8_t*)slipBuffer + 0) = ID_MODE;
+  *((uint8_t*)(slipBuffer + 1 + 0)) = SIMULATION;
+  *((uint8_t*)slipBuffer + 1 + 2) = 0;
   SlipPacketSend(2, (char*)slipBuffer, &Serial3);
 }
 
-void sendGPSCOMM() {
+void sendGPSCOMM(int signal) {
   // Sends confirmation that received from GPS
   *((uint8_t*)slipBuffer + 0) = ID_GPSCOMM;
-  *((uint8_t*)(slipBuffer + 1 + 0)) = 1; // Received from GPS
+  *((uint8_t*)(slipBuffer + 1 + 0)) = signal; // Received from GPS
   *((uint8_t*)slipBuffer + 1 + 1) = 0;
   SlipPacketSend(2, (char*)slipBuffer, &Serial3);
 }
@@ -75,15 +133,37 @@ void sendBrakeMode(int signal) {
    SlipPacketSend(2, (char*)slipBuffer, &Serial3);
 }
 
-void sendAccel() {
-  // Send acceleration (averaged in the 3 term array like lat, lon, alt)
-  *((uint8_t*)slipBuffer + 0) = ID_ACCEL;
-  *((int32_t*)(slipBuffer + 1 + 0)) = average(accel, accelTerms); // m/s^2 right now, and then gets adjusted in OSD_SLIP
-  *((uint8_t*)slipBuffer + 1 + 4) = 0;
-  SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+
+/**************** MISC ****************/
+void sendHeartRate() {
+  *((uint8_t*)slipBuffer + 0) = ID_HEART;
+  *((uint8_t*)(slipBuffer + 1 + 0)) = Hrt;
+  *((uint8_t*)slipBuffer + 1 + 1) = 0;
+  SlipPacketSend(2, (char*)slipBuffer, &Serial3);
+}
+
+void sendBattery() {
+      // Send battery information
+      float batteryLevel = getBatteryLevel();
+      *((uint8_t*)slipBuffer + 0) = ID_BATTERY;
+      *((uint16_t*)(slipBuffer + 1 + 0)) = batteryLevel * 100;
+      *((uint8_t*)slipBuffer + 1 + 2) = lowBattery(batteryLevel);
+      *((uint8_t*)slipBuffer + 1 + 3) = 0;
+      SlipPacketSend(4, (char*)slipBuffer, &Serial3);
+}
+
+void sendTemperature() {
+  // Send temperature information
+  uint16_t temperature = readTemp();
+  *((uint8_t*)slipBuffer + 0) = ID_TEMPERATURE;
+  *((int16_t*)(slipBuffer + 1 + 0)) = temperature;
+  *((uint8_t*)slipBuffer + 1 + 2) = highTemp(temperature);
+  *((uint8_t*)slipBuffer + 1 + 3) = 0;
+  SlipPacketSend(4, (char*)slipBuffer, &Serial3);
 }
 
 void receiveOSD() {
+  // Receive any messages from the OSD over SLIP?
   slipLen = SlipReceive(slipBuffer, &Serial);
   if (slipLen > 0) {
     slipBuffer[slipLen] = 0;
@@ -94,7 +174,7 @@ void receiveOSD() {
 }
 
 
-
+/**************** PROFILE ****************/
 void sendProfileNum() {
   //Send profileNum through SLIP
   *((uint8_t*)slipBuffer + 0) = ID_PROFNUM;
@@ -111,13 +191,7 @@ void sendProfileName() {
   SlipPacketSend(18, (char*)slipBuffer, &Serial3);  
 }
 
-void sendMode() {
-  // Send real time or simulation mode through SLIP
-  *((uint8_t*)slipBuffer + 0) = ID_MODE;
-  *((uint8_t*)(slipBuffer + 1 + 0)) = simulation_mode;
-  *((uint8_t*)slipBuffer + 1 + 2) = 0;
-  SlipPacketSend(2, (char*)slipBuffer, &Serial3);
-}
+
 
 
 

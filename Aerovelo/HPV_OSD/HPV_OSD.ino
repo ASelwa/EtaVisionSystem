@@ -56,7 +56,7 @@
 
 #define TELEMETRY_SPEED  115200  // How fast our MAVLink telemetry is coming to Serial port
 #define BOOTTIME         200   // Time in milliseconds that we show boot loading bar and wait user input
-#define CALIBRATION_TIME 20000
+#define CALIBRATION_TIME 500
 
 // Objects and Serial definitions
 FastSerialPort0(Serial);
@@ -89,9 +89,9 @@ uint8_t GPSComm, SDComm = 1; // SDComm should default to not display
 
 uint32_t TIME;
 
-uint8_t BRAKE_MODE;
+uint8_t BRAKE_MODE = 0;
 uint8_t mode_tracker = 0;
-float accelOSD;
+float accelOSD = 0;
 
 
 /* **********************************************/
