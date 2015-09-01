@@ -158,7 +158,8 @@ void panDisplace(int first_col, int first_line){
   
   osd.setPanel(first_col, first_line+2);
   osd.openPanel();
-  osd.printf("%5.1f", accelOSD);
+  osd.printf("%5li N ", accelOSD);
+  //osd.printf("%5.1f", accelOSD);
   osd.closePanel();
   
   

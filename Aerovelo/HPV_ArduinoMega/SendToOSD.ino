@@ -98,11 +98,16 @@ void sendAccel() {
   
   if (BRAKE_MODE) {
     dof.readAccel();
-    accel = dof.calcAccel(dof.ax) - abias[0];
-    if (SERIAL_PRINT) { Serial.print("Acceleration: "); Serial.println(accel); }  
     
+    accAvg.addValue( dof.calcAccel(dof.az) );
+    
+    accel = (int32_t)((accAvg.getAverage() - abias[2] - 1)*1000*G_BM*105);
+    
+    if (SERIAL_PRINT) { Serial.print("Acceleration: "); Serial.println(accel/1000); }  
+   
     *((uint8_t*)slipBuffer + 0) = ID_ACCEL;
-    *((int32_t*)(slipBuffer + 1 + 0)) = (int32_t)(accel*G_BM*100); // 100*m/s^2 scaling, gets adjusted in OSD_SLIP
+    *((int32_t*)(slipBuffer + 1 + 0)) = accel;
+    //*((int32_t*)(slipBuffer + 1 + 0)) = (int32_t)(accel*G_BM*100); // 100*m/s^2 scaling, gets adjusted in OSD_SLIP
     *((uint8_t*)slipBuffer + 1 + 4) = 0;
     SlipPacketSend(6, (char*)slipBuffer, &Serial3);
   }
@@ -164,6 +169,7 @@ void sendTemperature() {
 
 void receiveOSD() {
   // Receive any messages from the OSD over SLIP?
+  int8_t slipLen;
   slipLen = SlipReceive(slipBuffer, &Serial);
   if (slipLen > 0) {
     slipBuffer[slipLen] = 0;

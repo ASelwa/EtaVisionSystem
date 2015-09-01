@@ -23,6 +23,11 @@
 #include <Kalman.h>
 Kalman kalman;
 
+int accSample = 500;
+#include "RunningAverage.h"
+RunningAverage accAvg(accSample);
+
+
 #define G_BM 9.79778
 #define PERIOD 1000 // Main loop period
 #define SERIAL_PRINT true
@@ -50,7 +55,7 @@ bool SIMULATION = false;
 LSM9DS0 dof(MODE_I2C, LSM9DS0_G, LSM9DS0_XM);
 //const byte INT1XM = 33;
 float abias[3] = {0, 0, 0}, gbias[3] = {0, 0, 0};
-float accel, ax, ay, az, gx, gy, gz, mx, my, mz;
+float ax, ay, az, gx, gy, gz, mx, my, mz;
 
 const uint8_t TOGGLE_PIN = A1;
 
@@ -97,6 +102,7 @@ void setup() {
   // Use the FIFO mode to average accelerometer and gyro readings to calculate the biases, which can then be removed from
   // all subsequent measurements.
   dof.calLSM9DS0(gbias, abias);
+  accAvg.fillValue(0, accSample);
 
   // For checking the battery voltage
   analogReference(INTERNAL2V56);
@@ -139,7 +145,12 @@ void setup() {
   // Calibrate pedals
   if (CALIBRATE) { calibrate(); }
   
+  // PUT OSD INTO BRAKE MODE (for testing)
+  sendBrakeMode(1);
+  BRAKE_MODE = true;
+  
   TIME = millis() + PERIOD;
+  
 }
 
 int8_t START = 0;
@@ -153,6 +164,7 @@ static uint32_t lastGPSUpdate = millis();
 static uint32_t targetSpeed = 0;
 static int32_t displacement;
 static int32_t simpleDisplacement = 0;
+static int32_t accel = 0;
 float logDisplacement = 0;
 static int32_t lat, lon, alt;
 static bool GPSLost = false;
@@ -164,15 +176,17 @@ int32_t currSpeed = 0;
 int32_t prevGPSTime = 500;
 int32_t currGPSTime = 1000;
 
-int8_t slipLen;
-uint8_t temp;
-int8_t i, m; 
+ 
 
 
 /********************************************************
  *               MAIN PROGRAM  
  ********************************************************/
 void loop() {
+  
+
+  uint8_t temp;
+  int8_t i, m;
   
   /*
   dof.readAccel();       
@@ -314,11 +328,7 @@ void loop() {
       lastGPSUpdate = millis();
       Serial2.end();
       GPS.Init();
-      
-      
-      Serial.println("GPSLost and elapsed time > 1000");
-      delay(10000);
-      
+            
       if (SIMULATION) { 
         targetSpeed = calcSpeed(COURSE_LENGTH - distance, coeff);
         sendSimSpeed();
@@ -339,19 +349,15 @@ void loop() {
     } else if (millis() - lastGPSUpdate > 10000) {
       GPSLost = true;
       //sendGPSCOMM(0);
-      
-      Serial.println("elapsed time > 10,000");
-      delay(10000);
-      
+
       sd_Open(logFilename);
       sd_Print(" GPS lost");
       sd_Close();
       if (SERIAL_PRINT) { Serial.println("GPS lost"); }
     }
     
-    // PUT OSD INTO BRAKE MODE (for testing)
-    sendBrakeMode(1);
-    //sendAccel();
+    sendAccel();
+    delay(2);
   }
   
   TIME += PERIOD;

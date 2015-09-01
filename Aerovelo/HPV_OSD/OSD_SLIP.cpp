@@ -3,7 +3,7 @@
 extern float cadence;
 extern uint16_t power, power_10s, avgPower, targetPower;
 extern uint32_t GPS_Time, GPS_Distance;
-extern int32_t GPS_Displacement, simpleDisplacement;
+extern int32_t GPS_Displacement, simpleDisplacement, accelOSD;
 extern uint8_t GPS_NumSats;
 extern int32_t GPS_Altitude, GPS_Heading;
 extern double  GPS_Speed, simulatedSpeed, targetSpeed;
@@ -20,7 +20,6 @@ extern uint8_t GPSComm, SDComm;
 
 extern uint8_t BRAKE_MODE;
 //extern uint8_t mode_tracker = 0;
-extern float accelOSD;
 
 /*
  * Check the message and assign the data to the correct variables
@@ -118,7 +117,7 @@ void OSD_SlipParse(char *slipBuffer) {
     BRAKE_MODE = *((uint8_t*) (slipBuffer+1));
     break;
   case ID_ACCEL:
-    accelOSD = (*((int32_t*)(slipBuffer+1)))/100*105;    
+    accelOSD = (*((int32_t*)(slipBuffer+1)))/1000;    
     //accelOSD = ((double)(*((int32_t*)(slipBuffer+1))));
     //accelOSD = (*((uint8_t*) slipBuffer+3)*1000.0)/ (1.0* (*((uint16_t*)((uint8_t*)slipBuffer+1))));
     break;

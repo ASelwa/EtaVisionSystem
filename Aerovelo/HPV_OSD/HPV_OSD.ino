@@ -73,7 +73,7 @@ char display_string[128];
 float cadence;
 uint16_t power, power_10s, avgPower, targetPower;
 uint32_t GPS_Time, GPS_Distance;
-int32_t GPS_Displacement, simpleDisplacement;
+int32_t GPS_Displacement, simpleDisplacement, accelOSD;
 uint8_t GPS_NumSats;
 int32_t GPS_Altitude, GPS_Heading;
 double GPS_Speed, simulatedSpeed, targetSpeed;
@@ -91,7 +91,6 @@ uint32_t TIME;
 
 uint8_t BRAKE_MODE = 0;
 uint8_t mode_tracker = 0;
-float accelOSD = 0;
 
 
 /* **********************************************/
