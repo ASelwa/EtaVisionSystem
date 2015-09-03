@@ -172,20 +172,20 @@ void panDisplace(int first_col, int first_line){
 }
 
 void panSpeeds(int first_col, int first_line){
-//  osd.setPanel(first_col, first_line + 1);
-//  osd.openPanel();
-//  osd.printf("Vt:%5.1f     ", targetSpeed);
-//  osd.closePanel();
+  osd.setPanel(first_col, first_line + 1);
+  osd.openPanel();
+  osd.printf("Vt:%5.1f     ", targetSpeed);
+  osd.closePanel();
 
   osd.setPanel(first_col, first_line);
   osd.openPanel();
   osd.printf("Vg:%5.1f     ", GPS_Speed); // GS = 0xE9 char
   osd.closePanel();
   
-//  osd.setPanel(first_col, first_line + 2);
-//  osd.openPanel();
-//  osd.printf("Vs:%5.1f     ", simulatedSpeed);
-//  osd.closePanel();
+  osd.setPanel(first_col, first_line + 2);
+  osd.openPanel();
+  osd.printf("Vs:%5.1f     ", simulatedSpeed);
+  osd.closePanel();
 }
 
 /* **************************************************************** */
@@ -212,10 +212,10 @@ void panHeart(int first_col, int first_line){
 }
 
 void panPower(int first_col, int first_line) {
-//  osd.setPanel(first_col, first_line+1);
-//  osd.openPanel();
-//  osd.printf("T: %3u W", targetPower);
-//  osd.closePanel();
+  osd.setPanel(first_col, first_line+1);
+  osd.openPanel();
+  osd.printf("T: %3u W", targetPower);
+  osd.closePanel();
 //  
 //  osd.setPanel(first_col, first_line);
 //  osd.openPanel();
@@ -227,7 +227,7 @@ void panPower(int first_col, int first_line) {
 //  osd.printf("S: %3u W", power_10s);
 //  osd.closePanel();
   
-  osd.setPanel(first_col, first_line-1);
+  osd.setPanel(first_col, first_line);
   osd.openPanel();
   osd.printf("R: %3u W", power);
   osd.closePanel();

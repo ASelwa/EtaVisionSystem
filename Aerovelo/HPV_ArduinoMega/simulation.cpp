@@ -87,7 +87,7 @@ void readPowerMeter(uint8_t *pwrRx, uint8_t print, uint16_t *time_interval, floa
     case 0x10:
       if (pwrRx[6] != 0xFF)
         cadence = pwrRx[6];
-      // else cadence doesn't change 
+      // else cadence doesn't change   
       *power = cB(pwrRx[10], pwrRx[9]);
       *time_interval = 0;
       break;

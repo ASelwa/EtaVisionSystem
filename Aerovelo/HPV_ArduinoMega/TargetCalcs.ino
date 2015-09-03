@@ -11,7 +11,7 @@ void toggle() {
   //If button was pressed, update "profile"
   if (Toggle != lastToggle) {
     sd_Log("Profile changed. ");
-    Serial.println("Toggle!");
+    if (SERIAL_PRINT) { Serial.println("Toggle!"); }
     lastToggle = Toggle;
 
     // Reset the state
@@ -27,7 +27,7 @@ void toggle() {
     *((uint8_t*)slipBuffer + 1 + 2) = 0;
     SlipPacketSend(3, (char*)slipBuffer, &Serial3);
     
-    if (simulation_mode) {
+    if (SIMULATION) {
       profileNum++;
       
       sprintf(profileFilename, "PF%02d.txt", profileNum+1);
@@ -35,7 +35,7 @@ void toggle() {
         profileNum = 0;
       }
       
-      simulation_mode = false;
+      SIMULATION = false;
       Serial.print("Updated Profile #: ");
       Serial.println(profileNum+1);
       sprintf(profileFilename, "PF%02d.txt", profileNum+1);
@@ -80,7 +80,7 @@ void toggle() {
       GPS_setStart();
       
     } else {
-      simulation_mode = true;
+      SIMULATION = true;
     }
   }
 }
@@ -94,7 +94,7 @@ bool loadFinishCoordinates() {
   File dataFile = SD.open("FinCoord.txt", FILE_READ);
   
   if (!dataFile) {
-    Serial.print("Could not open FinCoord.txt.\n");
+    if (SERIAL_PRINT) { Serial.print("Could not open FinCoord.txt.\n"); }
     return false;
   }
   
@@ -160,10 +160,10 @@ float calcDisplacePower(double displacement, float startPower, float preSprintPo
   
   if (displacement > 1609) { // More than 1 mile to go
     target = preSprintPower - ((preSprintPower - startPower) / 6436.0) * displacement; // y = b + mx
-    Serial.print("Target: "); Serial.println(target);
+    //Serial.print("Target: "); Serial.println(target);
   } else { // Change to something else if real sprint profile is desired
     target = preSprintPower + ((preSprintPower - startPower) / 6436.0) * (1609 - displacement); // y = b + mx
-    Serial.print("Target: "); Serial.println(target);
+    //Serial.print("Target: "); Serial.println(target);
   }
 
   return target;

@@ -83,7 +83,7 @@ void sendSimpleDisplacement() {
 void sendDisplacement() {
   //Send Displacement through SLIP
   *((uint8_t*)slipBuffer + 0) = ID_DISPLACEMENT;
-  if (simulation_mode) {
+  if (SIMULATION) {
     *((int32_t*)(slipBuffer + 1 + 0)) = (COURSE_LENGTH - distance) * 1000; // Assume same as distance
   } else {
     *((int32_t*)(slipBuffer + 1 + 0)) = displacement;
@@ -94,6 +94,21 @@ void sendDisplacement() {
 
 
 /**************** ACCELERATION ****************/
+void sendAccel() {
+    
+    if (SERIAL_PRINT) { Serial.print("Acceleration: "); Serial.println(accel*105/100); }  
+   
+    *((uint8_t*)slipBuffer + 0) = ID_ACCEL;
+    *((int32_t*)(slipBuffer + 1 + 0)) = accel*105/100;
+    //*((int32_t*)(slipBuffer + 1 + 0)) = (int32_t)(accel*G_BM*100); // 100*m/s^2 scaling, gets adjusted in OSD_SLIP
+    *((uint8_t*)slipBuffer + 1 + 4) = 0;
+    SlipPacketSend(6, (char*)slipBuffer, &Serial3);
+}
+
+
+
+
+/*
 void sendAccel() {
   
   if (BRAKE_MODE) {
@@ -111,7 +126,11 @@ void sendAccel() {
     *((uint8_t*)slipBuffer + 1 + 4) = 0;
     SlipPacketSend(6, (char*)slipBuffer, &Serial3);
   }
-}
+} */
+
+
+
+
 
 
 /**************** MODES & BOOLS ****************/
@@ -173,7 +192,7 @@ void receiveOSD() {
   slipLen = SlipReceive(slipBuffer, &Serial);
   if (slipLen > 0) {
     slipBuffer[slipLen] = 0;
-    Serial.println(slipBuffer);
+    if (SERIAL_PRINT) { Serial.println(slipBuffer); }
     if (slipBuffer[0] == '!') START = 1;
     else if (slipBuffer[0] == '*') START = 0;
   }

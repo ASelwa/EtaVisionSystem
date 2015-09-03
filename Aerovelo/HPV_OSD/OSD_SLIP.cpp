@@ -117,7 +117,7 @@ void OSD_SlipParse(char *slipBuffer) {
     BRAKE_MODE = *((uint8_t*) (slipBuffer+1));
     break;
   case ID_ACCEL:
-    accelOSD = (*((int32_t*)(slipBuffer+1)))/1000;    
+    accelOSD = (*((int32_t*)(slipBuffer+1)));    
     //accelOSD = ((double)(*((int32_t*)(slipBuffer+1))));
     //accelOSD = (*((uint8_t*) slipBuffer+3)*1000.0)/ (1.0* (*((uint16_t*)((uint8_t*)slipBuffer+1))));
     break;
