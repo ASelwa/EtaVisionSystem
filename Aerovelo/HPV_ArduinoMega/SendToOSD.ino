@@ -40,7 +40,7 @@ void sendTargetPower(float tarP) {
 void sendSpeed() {
   // Send Speed through SLIP
   *((uint8_t*)slipBuffer + 0) = ID_SPEED;
-  *((int32_t*)(slipBuffer + 1 + 0)) = GPS.Ground_Speed;
+  *((int32_t*)(slipBuffer + 1 + 0)) = GPS.Ground_Speed; //velAvgInt; 
   *((uint8_t*)slipBuffer + 1 + 4) = 0;
   SlipPacketSend(6, (char*)slipBuffer, &Serial3);
 }
@@ -104,18 +104,12 @@ void sendAccel() {
     *((uint8_t*)slipBuffer + 1 + 4) = 0;
     SlipPacketSend(6, (char*)slipBuffer, &Serial3);
 }
-
-
-
-
 /*
 void sendAccel() {
   
   if (BRAKE_MODE) {
     dof.readAccel();
-    
     accAvg.addValue( dof.calcAccel(dof.az) );
-    
     accel = (int32_t)((accAvg.getAverage() - abias[2] - 1)*1000*G_BM*105);
     
     if (SERIAL_PRINT) { Serial.print("Acceleration: "); Serial.println(accel/1000); }  
@@ -131,10 +125,12 @@ void sendAccel() {
 
 
 
-
-
 /**************** MODES & BOOLS ****************/
 void sendMode() {
+  
+  //Serial.print("SIMULATION ");
+  //Serial.println(SIMULATION);
+  
   // Send real time or simulation mode through SLIP
   *((uint8_t*)slipBuffer + 0) = ID_MODE;
   *((uint8_t*)(slipBuffer + 1 + 0)) = SIMULATION;
@@ -169,6 +165,7 @@ void sendHeartRate() {
 void sendBattery() {
       // Send battery information
       float batteryLevel = getBatteryLevel();
+      //Serial.println(batteryLevel);
       *((uint8_t*)slipBuffer + 0) = ID_BATTERY;
       *((uint16_t*)(slipBuffer + 1 + 0)) = batteryLevel * 100;
       *((uint8_t*)slipBuffer + 1 + 2) = lowBattery(batteryLevel);

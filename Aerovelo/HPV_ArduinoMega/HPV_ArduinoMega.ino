@@ -5,10 +5,18 @@
  /*
   *   TODO:
   *    - store default calibration number (507 Hz, found in simulation.cpp also) in one place
-  *    - keep only one sd card logging function (the one that takes in a filename) 
+  *    Done- keep only one sd card logging function (the one that takes in a filename) 
   *      (or do something even smarter than the current method)
   *    
-  *    Integer overflow on the simulated distance
+  *    Integer overflow on the simulated distance (32,000? even though it's always treated as a float)
+        
+        - check wheel circumference (based on past excel data)
+        - check 45 M as the simpleDisp shown after simulation
+
+        Done- GPS time enable
+        
+        Started- GPS frequency investigation
+        
   */
 
 
@@ -34,16 +42,21 @@
 #define BRAKE_MODE_EXIT 1000000 // When distance*1000 [m] from start coordinates is larger than this, exit brake mode
 #define G_BM 9.79778
 #define TIRE_CIRC 2.00 // Metres
-#define COURSE_LENGTH   8045 // Metres
+#define COURSE_LENGTH   8045 // Metres  ****Change this in simulation.cpp also!!!
 #define POWER_START      300 // Watts
 #define POWER_PRE_SPRINT 337 // Watts
 #define CALIBRATION_TIME 15000 // Milliseconds (Should be a few seconds less than the beginningPanels time, so the pedal calibration value can be seen)
+
+//#define DRIVE_ETA 0.95 // Drivetrain efficiency
+//#define M 113.85 // Mass of bike in kg
+//#define M_WHEELS 2.23 // Wheel mass in kg (effective factor applied)
+//#define M_TOTAL M + M_WHEELS
 
 // BOOLEAN FLAGS
 #define SERIAL_PRINT false
 #define CALIBRATE true
 int BRAKE_MODE = 0;
-bool SIMULATION = true; // enabling simulation during a real run
+bool SIMULATION = false; // enabling simulation during a real run
 
 /**********************************************************************************************************************
  *                                                    PERIPHERAL SETUP                                                *
@@ -92,7 +105,7 @@ RunningAverage accAvg(accSample);
 +5V - Yellow - RED
 GND - Green - GREEN
 Analog - Orange - BLUE */
-int threshold = 744;
+
 
 /**********************************************************************************************************************
  *                                                        VARIABLES                                                   *
@@ -103,7 +116,7 @@ double coeff[7] = {0};
 
 int8_t START = 0;
 
-static float power, cadence, velocity, distance = 0;
+static float power, cadence, velocity, distance;
 float averagePower, power10s, targetPower;
 static bool coast = false;
 static uint16_t time_int = 0;
@@ -134,16 +147,18 @@ static int32_t prevSpeed = 0;
 static int32_t prevTime = 0;
 static int32_t currTime = 100;
 static int32_t hallStartTime = 0;
+int threshold = 288;
 
+
+// Runtime
 uint16_t timePlaceholder = 0;
-
 
 /**********************************************************************************************************************
  *                                                         SETUP                                                      *
  **********************************************************************************************************************/
 void setup() {
 
-  //Serial.print
+  timePlaceholder = millis();
   
   // Serial Setup
   Serial.begin(115200);	// COM port
@@ -151,25 +166,16 @@ void setup() {
   Serial1.begin(57600);	// ANT+
   // Serial2 is GPS
   if (SERIAL_PRINT) { Serial.println("Program start!"); }
-
- /* // Accelerometer setup
-  uint16_t status = dof.begin();
-  dof.setAccelScale(dof.A_SCALE_2G); // The smaller the range, the higher the resolution
-  dof.setAccelODR(dof.A_ODR_400); // Set output data rate (ODR) at 400 Hz
-  dof.setAccelABW(dof.A_ABW_50); // Anti-aliasing filter (like a low pass) at 50 Hz
-  // Use the FIFO mode to average accelerometer and gyro readings to calculate the biases, which can then be removed from
-  // all subsequent measurements.
-  dof.calLSM9DS0(gbias, abias);
-  accAvg.fillValue(0, accSample); */
   
-  // For checking the battery voltage
-  analogReference(INTERNAL2V56);
-  
-  // Hall effect setup
-  //thresholdHallEffect(5);
-  //Serial.print("threshold: ");
-  //Serial.println(threshold);
+  // Toggle
+  pinMode(TOGGLE_PIN, INPUT);
+  digitalWrite(TOGGLE_PIN, HIGH); // Enables the internal pullup resistor
 
+  // Check status of button, if HIGH simulation mode, else SIMULATION stays equal to false
+  if (digitalRead(TOGGLE_PIN)) {
+    SIMULATION = true; 
+  }
+   
   // Reset ANT+
   pinMode(3, OUTPUT);
   digitalWrite(3, LOW);
@@ -197,21 +203,49 @@ void setup() {
   ANT_SetupChannel(antBuffer, 1, 120, 0, 16140, 45063);  // Heart rate channel
   if (SERIAL_PRINT) { Serial.println("ANT+ setup complete."); }
 
+  // Wait for at least 1000 ms from startup so the OSD receives the mode and battery level
+  while (millis() - timePlaceholder < 3000) {
+    delay(10);
+  }
+  // Placed here so there's time for the OSD to boot up
+  sendMode(); // Send the mode to the OSD
+  sendBattery(); 
+
   // Calibrate pedals
   if (CALIBRATE) { calibrate(); }
 
   // PUT OSD INTO BRAKE MODE (for testing)
-  BRAKE_MODE = 1;
-  sendBrakeMode(BRAKE_MODE);
+//  BRAKE_MODE = 1;
+//  sendBrakeMode(BRAKE_MODE);
 
-  // Toggle
-  //pinMode(TOGGLE_PIN, INPUT);
-  //digitalWrite(TOGGLE_PIN, HIGH);
+  TIME = millis() + PERIOD; 
+ 
+//  Serial.print("Setup ");
+//  Serial.println(millis()-timePlaceholder);
+
+
+
+// EXCESS CODE (MAY BE REQUIRED AT SOME POINT)
+
+  // Hall effect setup
+//  thresholdHallEffect(5);
+//  Serial.print("threshold: ");
+//  Serial.println(threshold);
+  
+   /* // Accelerometer setup
+  uint16_t status = dof.begin();
+  dof.setAccelScale(dof.A_SCALE_2G); // The smaller the range, the higher the resolution
+  dof.setAccelODR(dof.A_ODR_400); // Set output data rate (ODR) at 400 Hz
+  dof.setAccelABW(dof.A_ABW_50); // Anti-aliasing filter (like a low pass) at 50 Hz
+  // Use the FIFO mode to average accelerometer and gyro readings to calculate the biases, which can then be removed from
+  // all subsequent measurements.
+  dof.calLSM9DS0(gbias, abias);
+  accAvg.fillValue(0, accSample); */
+  
+  // For checking the battery voltage
+  //analogReference(INTERNAL2V56);
 
   //loadFinishCoordinates();
-
-  
-  TIME = millis() + PERIOD;  
 }
 
 /**********************************************************************************************************************
@@ -227,15 +261,12 @@ void loop() {
     
     if (BRAKE_MODE) {
       
-      currSpeed = (int32_t)(hallSpeed(3000, 1)*100000000); // m/s scaled up by 1E8
+      //timePlaceholder = millis();
+      
+      currSpeed = (int32_t)(hallSpeed(500, 1)*100000000); // m/s scaled up by 1E8 // 500ms gives clean data above 60km/h
       // time is in micro seconds (scaled up by 1E6)
       // NOTE: using currentTimeFunc which is updated at the end of the hallSpeed call
       accel = (currSpeed - prevSpeed) / (currentTimeFunc - prevTime); // Result is m/s^2 scaled up by 1E2
-      
-      //sendAccel();
-      
-      //Serial.print("  Time diff in micro s: ");
-      //Serial.println(currentTimeFunc - prevTime);
 
 //      Serial.print("Current Time [micro s]: ");
 //      Serial.println(currentTimeFunc);
@@ -243,18 +274,22 @@ void loop() {
 //      Serial.println(prevTime);
 //      Serial.print("Speed [km/h]: ");
 //      Serial.print(float(currSpeed*3.6)/100000000);
-      Serial.print("    Accel Force [N]: ");
-      Serial.println(accel*105/100);
+//      Serial.print("    Accel Force [N]: ");
+//      Serial.println(accel*105/100);
       
       sendAccel();
       sendSpeed();
       
       prevTime = currentTimeFunc;
-      prevSpeed = currSpeed;    
+      prevSpeed = currSpeed;   
+     
+    //Serial.print("BRAKE MODE     ");
+    //Serial.println(millis()-timePlaceholder); 
     }
     
     
-    else { 
+    else {     
+      //timePlaceholder = millis();
 /*********************** BEGIN: READ ANT+ DATA ***************************/
       if (Serial1.available()) {
         if ((m = receiveANT(antBuffer)) > 0) {
@@ -293,11 +328,14 @@ void loop() {
           }
         }
       }
+    //Serial.print("ANT+           ");
+    //Serial.println(millis()-timePlaceholder);
     }
 /************************* END: READ ANT+ DATA **************************/
 
-/*********************** BEGIN: READ GPS DATA ***************************/
     
+    //timePlaceholder = millis();
+/*********************** BEGIN: READ GPS DATA ***************************/
     GPS.Read(); //Read GPS Data (Updates buffer?)
     if (GPS.NewData) {
       GPS.NewData = 0;
@@ -305,7 +343,7 @@ void loop() {
       GPSLost = false;
       
       if (SERIAL_PRINT) { Serial.println("GPS received!"); }
-
+      
       // Variables for moving average
       const int numTerms = 3;
       static int32_t latitude[numTerms];
@@ -342,7 +380,6 @@ void loop() {
       //logDisplacement = GPS_getDistance(LattitudeStart, LongitudeStart, AltitudeStart, lat, lon, alt);
       //Serial.print(GPS_getDistance(LattitudeStart, LongitudeStart, AltitudeStart, lat, lon, alt));
                   
-      
       // Checking and adjusting BRAKE_MODE appropriately
       if (simpleDisplacement < BRAKE_MODE_ENTER) {  
         BRAKE_MODE = 1; 
@@ -353,20 +390,23 @@ void loop() {
       sendBrakeMode(BRAKE_MODE);
 
       if (SIMULATION) { 
-        // Target power based on simulated distance travelled
+        // Targets based on simulated distance travelled
+        targetSpeed = calcSpeed(distance, coeff);
         targetPower = calcPower(distance, POWER_START, POWER_PRE_SPRINT);
-        sendTargetPower(targetPower);
-        sendSimSpeed();
-        sendDistance(); // Hijacked to send simulated distance
-        
-        targetSpeed = calcSpeed(COURSE_LENGTH - distance, coeff);
+
+        // Simple displacement hijacked to send simulated distance
+        simpleDisplacement = (COURSE_LENGTH - distance) * 1000;    
       }
       else {
         targetSpeed = calcSpeed(COURSE_LENGTH - (simpleDisplacement / 1000.0), coeff);
+        targetPower = calcPower(COURSE_LENGTH - (simpleDisplacement / 1000.0), POWER_START, POWER_PRE_SPRINT);
       }
-        
-      sendTargetSpeed();
+
       sendSpeed();
+      sendTargetSpeed();
+      sendSimSpeed();
+
+      sendTargetPower(targetPower);
       
       sendSimpleDisplacement();
 
@@ -379,16 +419,32 @@ void loop() {
       GPS.Init();
             
       if (SIMULATION) { 
-        targetSpeed = calcSpeed(COURSE_LENGTH - distance, coeff);
-        sendSimSpeed();
-        sendDistance(); // Hijacked to send simulated distance
+        // Targets based on simulated distance travelled
+        targetSpeed = calcSpeed(distance, coeff);
+        targetPower = calcPower(distance, POWER_START, POWER_PRE_SPRINT);
+
+        // Simple displacement hijacked to send simulated distance
+        simpleDisplacement = (COURSE_LENGTH - distance) * 1000;    
       }
       else {
         targetSpeed = calcSpeed(COURSE_LENGTH - (simpleDisplacement / 1000.0), coeff);
+        targetPower = calcPower(COURSE_LENGTH - (simpleDisplacement / 1000.0), POWER_START, POWER_PRE_SPRINT);
       }
-        
-      sendTargetSpeed();
+      
+      // Checking and adjusting BRAKE_MODE appropriately
+      if (simpleDisplacement < BRAKE_MODE_ENTER) {  
+        BRAKE_MODE = 1; 
+      }
+      if (simpleDisplacement > BRAKE_MODE_EXIT) {
+        BRAKE_MODE = 0;
+      }
+      sendBrakeMode(BRAKE_MODE);
+
       sendSpeed();
+      sendTargetSpeed();
+      sendSimSpeed();
+
+      sendTargetPower(targetPower);
       
       sendSimpleDisplacement();
       
@@ -404,15 +460,19 @@ void loop() {
       sd_Close();
       if (SERIAL_PRINT) { Serial.println("GPS lost"); }
     }
+/************************* END: READ GPS DATA ****************************/
+    //Serial.print("GPS            ");
+    //Serial.println(millis()-timePlaceholder);
+     
   }
 /*********************** END: PERIOD WHILE LOOP ***************************/  
-  
+
   TIME += PERIOD;
   
-//  unsigned long temper = millis();
+  //timePlaceholder = millis();
   logData();  
-//  Serial.print("Logging micro seconds: ");
-//  Serial.println((millis()-temper)*1000);
+  //Serial.print("LogData        ");
+  //Serial.println(millis()-timePlaceholder);
 }
 
 
@@ -434,7 +494,7 @@ void logData() {
   sd_Print(dtoa(sdBuffer, (double)millis())); sd_Print(", ");
 
   // Distances
-  sprintf((char*)sdBuffer, "%u, ", simpleDisplacement/ 1000);
+  sprintf((char*)sdBuffer, "%d, ", simpleDisplacement/ 1000);
   sd_Print(sdBuffer);  
   sd_Print(ftoa(sdBuffer, distance, 3)); sd_Print(", ");
 
@@ -450,9 +510,6 @@ void logData() {
   
   // Accel Force
   sd_Print(dtoa(sdBuffer, float(accel)*105/100)); sd_Print(", ");
-
-//  sprintf((char*)sdBuffer, "%d, ", accel*105/100);  
-//  sd_Print(sdBuffer); 
  
   // GPS Coordinates
   sd_Print(dtoa(sdBuffer, lat*1.0 / 10000000)); sd_Print(", ");
@@ -540,7 +597,7 @@ void calibrateMessageOSD(uint8_t messageNum, int16_t calibrationValue) {
   SlipPacketSend(4, (char*)slipBuffer, &Serial3);
 }
 
-// 
+// Gets the threshold for the hall effect sensor
 void thresholdHallEffect(int N) {
   
   int sensorValue;
@@ -551,7 +608,7 @@ void thresholdHallEffect(int N) {
   
   while (i < N) {
   sensorValue = analogRead(A3);
-  Serial.println(sensorValue);
+  //Serial.println(sensorValue);
   if ((sensorValue < threshold) && (trigger == 0)) {
     trigger = 1;
     i++;
@@ -624,7 +681,7 @@ float hallSpeed(int sampleTime, int samples) {
 //    Serial.print(velAvg/count);
     
     if (count == 0) {
-      Serial.println("Zero - bad avg...");
+      //Serial.println("Zero - bad avg...");
       return 0; 
   }
     else { 

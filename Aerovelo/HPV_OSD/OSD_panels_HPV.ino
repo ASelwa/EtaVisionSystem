@@ -20,7 +20,8 @@ void beginningPanels(){
     panSDComm(7, 11);
     panGPSComm(7, 10);
     panCalibration(1, 1);
-    //panProfile(1, 12);
+    panBattery(28-14, 12, 7, 1);
+    panProfile(1, 12);
 }
 
 void writePanels(){
@@ -76,27 +77,29 @@ void panProfile(int first_col, int first_line){
   osd.setPanel(first_col, first_line);
   osd.openPanel();
   
-  // Fill the buffer with spaces
-  bool endOfName = false;
-  for(int i = 0; i < 10; i++) {
-    if (endOfName == true)
-      profileName[i] = ' ';
-    else if (profileName[i] == 0) { // Null character
-      profileName[i] = ' ';
-      endOfName = true;
-    }
-  }
-  profileName[10] = 0;
+//  // Fill the buffer with spaces
+//  bool endOfName = false;
+//  for(int i = 0; i < 10; i++) {
+//    if (endOfName == true)
+//      profileName[i] = ' ';
+//    else if (profileName[i] == 0) { // Null character
+//      profileName[i] = ' ';
+//      endOfName = true;
+//    }
+//  }
+//  profileName[10] = 0;
   
   switch(mode) {
     case 0: // Real-time
-      osd.printf("R-%s", profileName);
+      osd.printf("R");
       break;
     case 1: // Simulation
-      osd.printf("S-%s", profileName);
+      osd.printf("S");
       break;
+    case 2: // initial
+      osd.printf(" ");
     default:
-      osd.printf("Invalid mode!");
+      osd.printf(" ");
   }
   
   osd.closePanel();
@@ -286,17 +289,17 @@ void panBattery(int first_col, int first_line, int first_col_warn, int first_lin
   
   osd.closePanel();
   
-  if (highTemp) {
-    osd.setPanel(first_col_warn, first_line_warn);
-    osd.openPanel();
-    osd.printf("%3d C TEMP ALERT", temperature);
-    osd.closePanel();
-  } else {
-    osd.setPanel(first_col_warn, first_line_warn);
-    osd.openPanel();
-    osd.printf("                ");
-    osd.closePanel();
-  }
+//  if (highTemp) {
+//    osd.setPanel(first_col_warn, first_line_warn);
+//    osd.openPanel();
+//    osd.printf("%3d C TEMP ALERT", temperature);
+//    osd.closePanel();
+//  } else {
+//    osd.setPanel(first_col_warn, first_line_warn);
+//    osd.openPanel();
+//    osd.printf("                ");
+//    osd.closePanel();
+//  }
 }
 
 /* **************************************************************** */
@@ -356,8 +359,12 @@ void panSDComm(int first_col, int first_line) {
 void panSimpleDisplacement(int first_col, int first_line) {
   osd.setPanel(first_col, first_line);
   osd.openPanel();
+  //osd.printf("%5li m ", simpleDisplacement);
   
-  osd.printf("%5li m ", simpleDisplacement);
+  if (simpleDisplacement < 1609) // Display in metres
+    osd.printf("%5li m ", simpleDisplacement);
+  else // Display in miles
+    osd.printf("%5.2f mi ", simpleDisplacement * 1.0 / 1609);
   
   osd.closePanel();
 }

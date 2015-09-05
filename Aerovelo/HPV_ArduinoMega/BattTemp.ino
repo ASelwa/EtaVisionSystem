@@ -1,13 +1,26 @@
 // Can handle up to 15.818 volts with the breadboard values
-const float R1 = 326000; // 326000 measured on breadboard, 267000 measured after soldering
-const float R2 = 22000; // 22000 measured on breadboard, 20400 measured after soldering
-const float resistorFactor = 1023.0 * (R2/(R1 + R2));  // 1023*0.348
+const float R1 = 330000; // 326000 measured on breadboard, 267000 measured after soldering
+const float R2 = 21700; // 22000 measured on breadboard, 20400 measured after soldering
+const float resistorFactor = (R2/(R1 + R2));  // 1023*0.348
 const int BATTERY_PIN = 0;         // +V from battery is connected to analog pin 0
 const int TEMPERATURE_PIN = A2;
 
 float potential() {
+  
   int val = analogRead(BATTERY_PIN);  // read the value from the sensor
-  float volts = 2.56*(val / resistorFactor); // calculate the ratio
+  //float volts = 2.56*(val / resistorFactor); // calculate the ratio
+  
+//  Serial.print("analogRead ");
+//  Serial.println(val);
+//  
+//  Serial.print("readVcc ");
+//  Serial.println(readVcc());
+  
+  float volts = val / 1023.0 * readVcc() / 1000.0 / resistorFactor;
+
+//  Serial.print("Volts ");
+//  Serial.println(volts);
+
   
   return volts;
 }
@@ -15,6 +28,36 @@ float potential() {
 float getBatteryLevel() {
   return potential();
 }
+
+
+long readVcc() {
+  // Read 1.1V reference against AVcc
+  // set the reference to Vcc and the measurement to the internal 1.1V reference
+  #if defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
+    ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
+  #elif defined (__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
+    ADMUX = _BV(MUX5) | _BV(MUX0);
+  #elif defined (__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__)
+    ADMUX = _BV(MUX3) | _BV(MUX2);
+  #else
+    ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
+  #endif  
+ 
+  delay(2); // Wait for Vref to settle
+  ADCSRA |= _BV(ADSC); // Start conversion
+  while (bit_is_set(ADCSRA,ADSC)); // measuring
+ 
+  uint8_t low  = ADCL; // must read ADCL first - it then locks ADCH  
+  uint8_t high = ADCH; // unlocks both
+ 
+  long result = (high<<8) | low;
+  //result = 1125300L / result; // Calculate Vcc (in mV); 1125300 = 1.1*1023*1000
+  
+  result = 1.1*9.8/9.5*1023*1000 / result; 
+  
+  return result; // Vcc in millivolts
+}
+
 
 /*
  * Low battery only if value read is consistently lower than threshold (at least 5 readings in a row)
@@ -59,7 +102,7 @@ float readTemp () {
  // lowest temperature reading possible is -4C (when temperature block outputs 2.56V on terminal 
  
  float res1 = 10000;
- float refVolt = 2.56, Vdd = 3.3;
+ float refVolt = readVcc() / 1000.0, Vdd = 3.3;
  float B = 3435;
  float refTemp = 25;
  

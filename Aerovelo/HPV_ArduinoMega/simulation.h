@@ -6,6 +6,8 @@
 #include "Arduino.h"
 #include "HPV_ArduinoMega.h" // Only for logging function
 
+float FmultiMap(float val, float * _in, float * _out, uint8_t size);
+
 float getElevation(float distance);
 
 uint16_t cB(const uint8_t x, const uint8_t y);
