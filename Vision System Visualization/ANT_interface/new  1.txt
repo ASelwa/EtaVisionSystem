@@ -1,0 +1,139 @@
+Set up CTS interrupt. 
+Set up ANT+ reset pin 
+Receive successful
+Set up serial ports. 
+Program start!
+Set up Channel. 
+New command; T = 13
+New command; T = 14
+Receive successful
+1 6F 1 CB 
+Receive successful
+Receive successful
+3 40 0 42 0 A5 
+Receive successful
+Receive successful
+3 40 0 43 0 A4 
+Receive successful
+Receive successful
+3 40 0 4B 0 AC 
+Receive successful
+5 51 0 0 0 B 0 FB 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+New command; T = 2002
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+New command; T = 4002
+9 4E 0 FA FF FF 0 97 23 D8 1C 69 
+9 4E 0 FA FF FF 0 97 23 D8 1C 69 
+9 4E 0 FB 0 0 C ED D8 1C FF C2 
+9 4E 0 FB 0 0 C ED D8 1C FF C2 
+New command; T = 6002
+9 4E 0 FB 0 0 C ED D8 1C FF C2 
+9 4E 0 FB 0 0 C ED D8 1C FF C2 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+New command; T = 8002
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+New command; T = 10002
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+New command; T = 12002
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+New command; T = 14002
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+New command; T = 16002
+9 4E 0 FA FF FF 0 97 23 D8 1C 69 
+9 4E 0 FA FF FF 0 97 23 D8 1C 69 
+9 4E 0 FB 0 0 C ED D8 1C FF C2 
+9 4E 0 FB 0 0 C ED D8 1C FF C2 
+New command; T = 18002
+3 40 0 1 2 E4 
+3 40 0 1 2 E4 
+3 40 0 1 2 E4 
+3 40 0 1 2 E4 
+New command; T = 20002
+New command; T = 22002
+New command; T = 24002
+New command; T = 26002
+New command; T = 28002
+New command; T = 30002
+New command; T = 32002
+New command; T = 34002
+9 4E 0 0 0 0 0 0 0 0 0 E3 
+// msglen = 9, msg = Broadcast data, ch # = 0, payload = 00 00 00 00 00 00 00 00, chksum = E3
+New command; T = 36002
+9 4E 0 0 0 0 0 0 0 0 0 E3 
+9 4E 0 20 1 0 CC B B 2 60 6C 
+// msglen = 9, msg = Broadcast data, ch # = 0, payload = 20 01 0 CC 0B 0B 02 60, chksum = E3
+// byte 0 = 0x20 means data sensor type is CTF (crank torque-frequency) message (section 6.4)
+// byte 1  = 0x01 means completed pedal revolution counter
+	// number of cadence events that have occurred between two consecutively received messages
+// byte 2,3 = slope, conversion factor for torque ticks to newton meters (0x00CC = 20.4 Nm/Hz)
+// byte 4,5 = time of the most recent cadence event (1/2000 of a second, aka 500us)
+	// 0x0B0B = 2827 * 500us = 1.413
+// byte 6,7 = count of the most recent torque event
+	//
+9 4E 0 20 1 0 CC B B 2 60 6C 
+9 4E 0 20 1 0 CC B B 2 60 6C 
+New command; T = 38002
+9 4E 0 20 2 0 CC 19 59 8 BF FA 
+// msglen = 9, msg = Broadcast data, ch # = 0, payload = 20 01 0 CC 19 59 08 BF, chksum = E3
+9 4E 0 20 2 0 CC 19 59 8 BF FA 
+9 4E 0 20 2 0 CC 19 59 8 BF FA 
+9 4E 0 20 2 0 CC 19 59 8 BF FA 
+New command; T = 40002
+9 4E 0 20 3 0 CC 26 A7 E B1 32 
+9 4E 0 20 3 0 CC 26 A7 E B1 32 
+9 4E 0 20 4 0 CC 2F CB 14 78 83 
+9 4E 0 20 4 0 CC 2F CB 14 78 83 
+New command; T = 42002
+9 4E 0 20 5 0 CC 36 92 18 9B 2D 
+9 4E 0 20 6 0 CC 3C 51 1B DD A2 
+9 4E 0 20 6 0 CC 3C 51 1B DD A2 
+9 4E 0 20 7 0 CC 41 BC 1E 88 63 
+New command; T = 44002
+9 4E 0 20 7 0 CC 41 BC 1E 88 63 
+9 4E 0 20 7 0 CC 41 BC 1E 88 63 
+9 4E 0 20 7 0 CC 41 BC 1E 88 63 
+9 4E 0 20 7 0 CC 41 BC 1E 88 63 
+New command; T = 46002
+9 4E 0 20 7 0 CC 41 BC 1E 88 63 
+9 4E 0 20 7 0 CC 41 BC 1E 88 63 
+9 4E 0 20 7 0 CC 41 BC 1E 88 63 
+9 4E 0 20 7 0 CC 41 BC 1E 88 63 
+New command; T = 48002
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+New command; T = 50002
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F9 B 
+9 4E 0 1 10 1 0 0 0 1 F9 B 
+New command; T = 52002
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+New command; T = 54002
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F8 A 
+9 4E 0 1 10 1 0 0 0 1 F9 B 
+9 4E 0 1 10 1 0 0 0 1 F9 B 
+New command; T = 56002
+9 4E 0 1 10 1 0 0 0 1 F8 A 

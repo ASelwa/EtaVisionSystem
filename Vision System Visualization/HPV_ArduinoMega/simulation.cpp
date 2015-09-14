@@ -5,7 +5,7 @@
 #define DRIVE_ETA 0.95
 #define G 9.79778
 
-float course_length = 8150; // metres
+float course_length = 8045; // metres
 float sim_dt = 0;
 float sim_vel = 0;
 float sim_vel_new = 0;
@@ -228,32 +228,39 @@ float velArray[50] = {
   44.4444
 };
 
-float distPArray[6] = {
-  0.0,
-  420.0,
-  5800.0,
-  7250.0,
-  8050.0,
-  8150.0
-};
-
 float PdistArray[6] = {
-  200.0,
-  300.0,
-  350.0,
-  500.0,
-  500.0,
-  0.0
+  0,
+  420,
+  5800,
+  7250,
+  8050,
+  8150
 };
 
-float VdistArray[6] = {
-  20.0,
-  55.21,
-  126.2,
-  132.8,
-  136.9,
-  137.1
+float PArray[6] = {
+  200,
+  300,
+  350,
+  500,
+  500,
+  0
 };
+
+/* Distance to power target interpolation
+  0 m - 200 W
+  420 m - 300 W
+  5800 m - 350 W
+  7250 m - 470 W
+  8050 m - 470 W
+  8150 m - 0 W */
+  
+/* if speed is less than:  , then gearR =
+  66.9 km/h - 93/38 * 39/18
+  84.0 km/h - 93/30 * 39/18
+  104.0 km/h - 93/24 * 39/18
+  123.7 km/h - 93/20 * 39/18
+  136.1 km/h - 93/18 * 39/18
+  137.1 km/h -  93/16 * 39/18 */
 
 
 
@@ -274,16 +281,19 @@ float FmultiMap(float val, float * _in, float * _out, uint8_t size)
   // interpolate in the right segment for the rest
   return (val - _in[pos-1]) * (_out[pos] - _out[pos-1]) / (_in[pos] - _in[pos-1]) + _out[pos-1];
 }
- 
-    
+
 float powerLookup(float distLocal) {
-  return FmultiMap(distLocal, distPArray, PdistArray, 6);
+  return FmultiMap(distLocal, PdistArray, PArray, 6);
 }
 
-float speedLookup(float distLocal) {
-  return FmultiMap(distLocal, distPArray, VdistArray, 6)*100/3.6;
+float gearLookup(float v) {
+  if (v < 66.9/3.6) { return 93.0/38.0 * 39.0/18.0; }
+  else if (v < 84.0/3.6) { return 93.0/30.0 * 39.0/18.0; }
+  else if (v < 104.0/3.6) { return 93.0/24.0 * 39.0/18.0; }
+  else if (v < 123.7/3.6) { return 93.0/20.0 * 39.0/18.0; }
+  else if (v < 136.1/3.6) { return 93.0/18.0 * 39.0/18.0; }
+  else { return 93.0/16.0 * 39.0/18.0; }
 }
- 
     
 void simulate(float power, uint16_t time_interval, uint8_t print, float* velo, float* dist) {
   

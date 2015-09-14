@@ -8,6 +8,10 @@
 
 float FmultiMap(float val, float * _in, float * _out, uint8_t size);
 
+float powerLookup(float distLocal);
+
+float gearLookup(float v);
+
 float getElevation(float distance);
 
 uint16_t cB(const uint8_t x, const uint8_t y);
@@ -21,11 +25,5 @@ void setOffset(int off);
 float pwrAvg(float pwrIn);
 
 float tenSecPower(float pwrIn);
-
-
-
-float powerLookup(float distLocal);
-
-float speedLookup(float distLocal);
 
 #endif // SIMULATION_H

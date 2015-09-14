@@ -36,8 +36,6 @@ void writePanels(){
       panSimpleDisplacement(8, 5);
       panDisplace(8, 4); // Used for BRAKE_MODE: speed above the simpleDisp and accel below it
       
-      panBrakingBar(7, 7);
-      
       panTime(1, 0);
     }
     
@@ -68,73 +66,6 @@ void writePanels(){
 
 /******* PANELS - DEFINITION *******/
 /* **************************************************************** */
-
-void panBrakingBar(int first_col, int first_line){
-
-    int bLevel = (int)(accelOSD / 250.0 * -15);
-
-    osd.setPanel(first_col, first_line);
-    osd.openPanel();
-    
-    //osd.printf_P(PSTR("\xed     \xf2       \xf3")); 
-      switch(bLevel) {
-        case 0:
-         osd.printf_P(PSTR("\xed\xee    \xf2       \xf3")); 
-         break;
-        case 1:
-         osd.printf_P(PSTR("\xed \xee   \xf2       \xf3")); 
-         break;
-        case 2:
-         osd.printf_P(PSTR("\xed  \xee  \xf2       \xf3")); 
-         break;
-        case 3:
-         osd.printf_P(PSTR("\xed   \xee \xf2       \xf3")); 
-         break;
-        case 4:
-         osd.printf_P(PSTR("\xed    \xee\xf2       \xf3")); 
-         break;
-        case 6:
-         osd.printf_P(PSTR("\xed     \xee       \xf3")); 
-         break;
-        case 7:
-         osd.printf_P(PSTR("\xed     \xf2\xee      \xf3")); 
-         break;
-        case 8:
-         osd.printf_P(PSTR("\xed     \xf2 \xee     \xf3")); 
-         break;
-        case 9:
-         osd.printf_P(PSTR("\xed     \xf2  \xee    \xf3")); 
-         break;
-        case 10:
-         osd.printf_P(PSTR("\xed     \xf2   \xee   \xf3")); 
-         break;
-        case 11:
-         osd.printf_P(PSTR("\xed     \xf2    \xee  \xf3"));
-         break;
-        case 12:
-         osd.printf_P(PSTR("\xed     \xf2     \xee \xf3"));
-         break;
-        case 13:
-         osd.printf_P(PSTR("\xed     \xf2      \xee\xf3"));
-         break;
-        case 14:
-         osd.printf_P(PSTR("\xed     \xf2       \xee"));
-         break;
-        case 15:
-         osd.printf_P(PSTR("\xed     \xf2       \xee"));
-         break;        
-      }
-      osd.closePanel();
-}
-
-
-
-
-
-
-
-
-
 // Panel  : panProfile
 // Needs  : X, Y locations
 // Output : Rider's name
@@ -251,12 +182,12 @@ void panSpeeds(int first_col, int first_line){
 
   osd.setPanel(first_col, first_line);
   osd.openPanel();
-  osd.printf("Vg:%5.1f     ", GPS_Speed); // GS = 0xE9 char
+  osd.printf("Vg:%5.1f     ", simulatedSpeed); // GS = 0xE9 char
   osd.closePanel();
   
   osd.setPanel(first_col, first_line + 2);
   osd.openPanel();
-  osd.printf(" %%:%5.0f     ", 100 - (GPS_Speed - simulatedSpeed) / simulatedSpeed * 100);
+  osd.printf("Vs:%5.1f     ", simulatedSpeed);
   osd.closePanel();
 }
 
@@ -301,7 +232,7 @@ void panPower(int first_col, int first_line) {
   
   osd.setPanel(first_col, first_line);
   osd.openPanel();
-  osd.printf("R: %3u W", power);
+  osd.printf("R: %3u W", targetPower);
   osd.closePanel();
 }
 

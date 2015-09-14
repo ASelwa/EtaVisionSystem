@@ -4,9 +4,9 @@
  
  /*
      TODO:
-     
-      - BUG: When simulation mode, will never enter BRAKE MODE????
-     
+      - percent difference = (gps - simulated) / gps * 100%
+      - check wheel circumference (based on past excel data)
+  
       - Integer overflow on the simulated distance (32,000? even though it's always treated as a float)
       - And overflow on something else in the log    
       - check 45 M as the simpleDisp shown after simulation
@@ -14,10 +14,6 @@
       - store default calibration number (507 Hz, found in simulation.cpp also) in one place
 
       - GPS frequency investigation (moving average, update freq, and so on)
-
-
-      Done- percent difference = (gps - simulated) / gps * 100%
-      Done- check wheel circumference (based on past excel data)
   
       Done- keep only one sd card logging function (the one that takes in a filename) 
         (or do something even smarter than the current method)
@@ -44,12 +40,12 @@
  *                                                      PARAMETERS                                                    *
  **********************************************************************************************************************/
 // ADJUSTABLE PARAMETERS
-#define PERIOD 1000 // Main loop period
+#define PERIOD 250 // Main loop period
 #define BRAKE_MODE_ENTER 50000 // When distance*1000 [m] from start coordinates is less than this, enter brake mode
 #define BRAKE_MODE_EXIT 1000000 // When distance*1000 [m] from start coordinates is larger than this, exit brake mode
 #define G_BM 9.79778
 #define TIRE_CIRC 1.93 // Metres
-#define COURSE_LENGTH   8150 // Metres  ****Change this in simulation.cpp also!!!
+#define COURSE_LENGTH   8045 // Metres  ****Change this in simulation.cpp also!!!
 #define POWER_START      300 // Watts
 #define POWER_PRE_SPRINT 337 // Watts
 #define CALIBRATION_TIME 15000 // Milliseconds (Should be a few seconds less than the beginningPanels time, so the pedal calibration value can be seen)
@@ -61,7 +57,7 @@
 
 // BOOLEAN FLAGS
 #define SERIAL_PRINT false
-#define CALIBRATE true
+#define CALIBRATE false
 int BRAKE_MODE = 0;
 bool SIMULATION = false; // enabling simulation during a real run
 
@@ -84,8 +80,7 @@ char logFilename[32] = "LogTest.txt"; // "LGdflt.txt"
 char gpsFilename[32];
 // Default coordinates as bike room (256 McCaul Street)
 int32_t LattitudeStart = 436585166, LongitudeStart = -793934912, AltitudeStart = 117689;
-int32_t LattitudeFinish = 404675025, LongitudeFinish = -1170627136, AltitudeFinish = 1406018;
-
+int32_t LattitudeFinish = 436585166, LongitudeFinish = -793934912, AltitudeFinish = 117689;
 int32_t LattitudePrev, LongitudePrev, AltitudePrev;
 int8_t startSet = 0;
 uint32_t GPS_totalDistance = 0;
@@ -120,11 +115,12 @@ Analog - Orange - BLUE */
  **********************************************************************************************************************/
 uint32_t TIME;
 uint32_t TEMPTIME;
+uint32_t lastTime;
 double coeff[7] = {0};
 
 int8_t START = 0;
 
-static float power = 0, cadence, velocity, distance = 0;
+static float power, cadence, velocity = 20/3.6, distance, gearR = 1.0;
 float averagePower, power10s, targetPower;
 static bool coast = false;
 static uint16_t time_int = 0;
@@ -134,7 +130,6 @@ static uint32_t targetSpeed = 0;
 static int32_t displacement;
 static int32_t simpleDisplacement = 0;
 static int32_t accel = 0;
-int32_t rando = 0;
 float logDisplacement = 0;
 static int32_t lat, lon, alt;
 static bool GPSLost = false;
@@ -193,7 +188,6 @@ void setup() {
 
   // Initialize GPS and SD
   GPS.Init();
-  //sendGPSCOMM(true);
   sd_Init();
 
   // Figure out SD card log iteration.
@@ -216,19 +210,19 @@ void setup() {
   while (millis() - timePlaceholder < 3000) {
     delay(10);
   }
-
   // Placed here so there's time for the OSD to boot up
   sendMode(); // Send the mode to the OSD
   sendBattery(); 
-  
+
   // Calibrate pedals
   if (CALIBRATE) { calibrate(); }
 
-    // PUT OSD INTO BRAKE MODE (for testing)
-  BRAKE_MODE = 1;
-  sendBrakeMode(BRAKE_MODE);
+  // PUT OSD INTO BRAKE MODE (for testing)
+//  BRAKE_MODE = 1;
+//  sendBrakeMode(BRAKE_MODE);
 
-  TIME = millis() + PERIOD; 
+  TIME = millis() + PERIOD;
+  lastTime = millis(); 
  
 //  Serial.print("Setup ");
 //  Serial.println(millis()-timePlaceholder);
@@ -258,7 +252,6 @@ void setup() {
   //loadFinishCoordinates();
 }
 
-
 /**********************************************************************************************************************
  *                                                      MAIN PROGRAM                                                  *
  **********************************************************************************************************************/
@@ -267,99 +260,68 @@ void loop() {
 /*********************** BEGIN: PERIOD WHILE LOOP ***************************/  
  
   while (TIME > millis()) {
-    
-    //receiveOSD() // Should print messages received from OSD?
-    
-    if (BRAKE_MODE) {
-      
-      //timePlaceholder = millis();
-      
-      currSpeed = (int32_t)(hallSpeed(850, 1)*100000000); // m/s scaled up by 1E8 // 500ms gives clean data above 60km/h
-      // time is in micro seconds (scaled up by 1E6)
-      // NOTE: using currentTimeFunc which is updated at the end of the hallSpeed call
-      accel = (currSpeed - prevSpeed) / (currentTimeFunc - prevTime); // Result is m/s^2 scaled up by 1E2
-
-      prevTime = currentTimeFunc;
-      prevSpeed = currSpeed;  
-
-//      Serial.print("Current Time [micro s]: ");
-//      Serial.println(currentTimeFunc);
-//      Serial.print("Previous Time [micro s]: ");
-//      Serial.println(prevTime);
-//      Serial.print("Speed [km/h]: ");
-//      Serial.print(float(currSpeed*3.6)/100000000);
-//      Serial.print("    Accel Force [N]: ");
-//      Serial.println(accel*105/100);
-      
-      sendAccel();
-      sendSpeed();
-
-     
-    //Serial.print("BRAKE MODE     ");
-    //Serial.println(millis()-timePlaceholder); 
-    }
-    
-/************************* BEGIN: NOT BRAKE MODE ****************************/
-    else {     
-      //timePlaceholder = millis();
-/*********************** BEGIN: READ ANT+ DATA ***************************/
-      if (Serial1.available()) {
-        if ((m = receiveANT(antBuffer)) > 0) {
-          if (SERIAL_PRINT) { 
-            Serial.print("ANT+ Packet Received: ");
-            for (i = 0; i < m + 3; ++i) {
-              Serial.print(antBuffer[i], HEX);
-              Serial.print(' ');
-            } Serial.print('\n');
-          }
-          if (m == 9) {
-            switch (antBuffer[2]) { // Channel
-              case 0: // Power meter
-                readPowerMeter(antBuffer, 0, &time_int, &power, &cadence, &coast);
-                
-                if (!coast && power != 0 && time_int != 0) {
-                  simulate(power, time_int, 2, &velocity, &distance);
-                  t2 = millis();	// last power meter data message received
-                } else if (coast) {
-                  simulate(0, 2 * (millis() - t2) , 0, &velocity, &distance);
-                  t2 = millis();
-                }
-                if (power > 0.1) { // Ignore power values of 0
-                  averagePower = pwrAvg(power);
-                  power10s = tenSecPower(power);
-                }
-                sendPower();	  
-                logData(); // Write the updated values to the log file (mainly power updates)
-                break;
-  
-              case 1: // Heart rate.
-                Hrt = antBuffer[3 + 7];
-                sendHeartRate();
-                break;
-            }
-          }
-        }
-      }    
-/************************* END: READ ANT+ DATA **************************/
-
-
-/*********************** BEGIN: READ GPS DATA ***************************/
-      doGPS();
-/************************* END: READ GPS DATA ****************************/
-
-
-    }
-/************************* END: NOT BRAKE MODE ****************************/
- 
-
-
+      delay(1);
   }
-/*********************** END: PERIOD WHILE LOOP ***************************/ 
+/*********************** END: PERIOD WHILE LOOP ***************************/  
+
+  
+  power = powerLookup(distance);
+  gearR = gearLookup(velocity);
+  cadence = velocity / gearR / TIRE_CIRC * 60.0;  // gear*RPM*tirecirc/60 = speed 
+    
+  simulate(power, (millis()-lastTime)/1000.0/0.0005, 2, &velocity, &distance);
+  
+  // Simple displacement hijacked to send simulated distance
+  simpleDisplacement = (COURSE_LENGTH - distance) * 1000; 
+  
+  
+  
+  sendSimpleDisplacement(); 
+  
+  sendSpeed();
+  sendTargetSpeed();
+  sendSimSpeed(); // Modify OSD to display this value also in the real speed location (copy paste function)
+  
+  sendPower(); 
+  sendTargetPower(power); // Modify OSD to display this value also in the real power location (copy paste function)
+
+
+  Serial.print("      ");
+  Serial.print(simpleDisplacement/1000);
+  Serial.println(" M");
+  
+  Serial.print("Vg: ");
+  Serial.print(velocity*3.6, 1);
+  Serial.print("     Pr: ");
+  Serial.println(power);
+  
+  Serial.print("Vs: ");
+  Serial.print(velocity*3.6, 1);
+  Serial.print("     Pt: ");
+  Serial.println(power);
+  
+  Serial.print("%: ");
+  Serial.print("0");
+  Serial.print("     RPM: ");
+  Serial.print(cadence);
+  
+  Serial.print("              GearR: ");
+  Serial.println(gearR);
+  
+  
+  
+
+
+
+
+
+
+  lastTime = millis();
 
   TIME += PERIOD;
   
   //timePlaceholder = millis();
-  logData();  
+  //logData();  
   //Serial.print("LogData        ");
   //Serial.println(millis()-timePlaceholder);
 }
@@ -389,7 +351,7 @@ void logData() {
 
   // Speeds
   sd_Print(dtoa(sdBuffer, GPS.Ground_Speed*0.036)); sd_Print(", ");
-  sd_Print(dtoa(sdBuffer, velAvg*39/18.0*3.6)); sd_Print(", ");
+  sd_Print(dtoa(sdBuffer, velAvg*39/18*3.6)); sd_Print(", ");
   sd_Print(dtoa(sdBuffer, targetSpeed*0.036)); sd_Print(", ");  
   sd_Print(dtoa(sdBuffer, velocity * 3.6)); sd_Print(", ");
  
@@ -399,8 +361,6 @@ void logData() {
   
   // Accel Force
   sd_Print(dtoa(sdBuffer, float(accel)*105/100)); sd_Print(", ");
-//  Serial.print("debug accel: ");
-//  Serial.println(float(accel)*105/100);
  
   // GPS Coordinates
   sd_Print(dtoa(sdBuffer, lat*1.0 / 10000000)); sd_Print(", ");
@@ -545,7 +505,6 @@ float hallSpeed(int sampleTime, int samples) {
           if (count != 0) {
             vel = TIRE_CIRC/(currentTimeFunc-previousTimeFunc)*1000000;  
             velAvg = velAvg + vel;
-            
 //            Serial.print(currentTimeFunc);
 //            Serial.print('\t');
 //            Serial.print(vel);
@@ -563,16 +522,7 @@ float hallSpeed(int sampleTime, int samples) {
         trigger = 0;
       }
       
-      
-//      currentTimeFunc = micros();
-//    timePlaceholder = millis();
-      doGPS();
-//    Serial.print("doGPS took: ");
-//    Serial.println(millis() - timePlaceholder);
-      
-      
-      
-
+      currentTimeFunc = micros();
     }
     
 //    Serial.println(3);
@@ -580,155 +530,19 @@ float hallSpeed(int sampleTime, int samples) {
 //    Serial.print(count);
 //    Serial.print(" samples, velAvg = ");
 //    Serial.print(velAvg/count);
-
-
     
     if (count == 0) {
       //Serial.println("Zero - bad avg...");
       return 0; 
   }
     else { 
-      velAvgInt = (int32_t)(velAvg*100*39/18)/(count - 1); // m/s becomes 100 m/s and 39-18 gear reduction
+      velAvgInt = (int32_t)(velAvg*100*39/18); // m/s becomes 100 m/s and 39-18 gear reduction
       // Check gear ratio
       // Check wheel circumference
       // Check cadence and gear and speed correlation.
-
-      return velAvg*39/18/(count - 1); 
+      
+      
+      return velAvg/count; 
     }    
 
 }
-
-
-void doGPS() {
-  
-  GPS.Read(); //Read GPS Data (Updates buffer?)
-      //Serial.println(GPS.NewData);
-      if (GPS.NewData) {
-        GPS.NewData = 0;
-        lastGPSUpdate = millis();
-        GPSLost = false;
-        
-        if (SERIAL_PRINT) { Serial.println("GPS received!"); }
-        
-        // Variables for moving average
-        const int numTerms = 3;
-        static int32_t latitude[numTerms];
-        static int32_t longitude[numTerms];
-        static int32_t altitude[numTerms];
-        static int index = 0;      
-   
-        if (startSet == 0) {
-          GPS_setStart();
-  
-          // Prepare the moving average arrays
-          for (int x = 0; x < numTerms; x++) {
-            latitude[x] = GPS.Lattitude;
-            longitude[x] = GPS.Longitude;
-            altitude[x] = GPS.Altitude; 
-          }
-        }
-        
-        if (index == numTerms)
-          index = 0;
-  
-        latitude[index] = GPS.Lattitude;
-        longitude[index] = GPS.Longitude;
-        altitude[index++] = GPS.Altitude;
-  
-        lat = average(latitude, numTerms);
-        lon = average(longitude, numTerms);
-        alt = average(altitude, numTerms);
-              
-        //displacement = GPS_getDistance(LattitudeFinish, LongitudeFinish, AltitudeFinish, lat, lon, alt);
-        //uint32_t currDistance = GPS_getDistance(LattitudePrev, LongitudePrev, AltitudePrev, lat, lon, alt);
-        //logDisplacement = GPS_getDistance(LattitudeStart, LongitudeStart, AltitudeStart, lat, lon, alt);
-        //Serial.print(GPS_getDistance(LattitudeStart, LongitudeStart, AltitudeStart, lat, lon, alt));
-
-
-        //simpleDisplacement = GPS_getDistance(LattitudeStart, LongitudeStart, AltitudeStart, lat, lon, alt);
-        simpleDisplacement = GPS_getDistance(LattitudeFinish, LongitudeFinish, AltitudeFinish, lat, lon, alt);
-  
-  
-        delay(1); //required for proper update freq
-        //Serial.println("New speed should have been sent....");
-                      
-        if (SIMULATION) { 
-          // Simple displacement hijacked to send simulated distance
-          simpleDisplacement = (COURSE_LENGTH - distance) * 1000;    
-        }
-        
-        // Checking and adjusting BRAKE_MODE appropriately
-        if (simpleDisplacement < BRAKE_MODE_ENTER) {  
-          BRAKE_MODE = 1; 
-        }
-        if (simpleDisplacement > BRAKE_MODE_EXIT) {
-          BRAKE_MODE = 0;
-        }
-        sendBrakeMode(BRAKE_MODE);
-  
-        targetSpeed = speedLookup(COURSE_LENGTH - (simpleDisplacement / 1000.0));
-        targetPower = powerLookup(COURSE_LENGTH - (simpleDisplacement / 1000.0));
-  
-  
-  
-        sendSpeed();
-        sendTargetSpeed();
-        sendSimSpeed();
-  
-        sendTargetPower(targetPower);
-        
-        sendSimpleDisplacement();
-  
-        //sendBattery();
-        //sendTemperature();
-  
-      } else if (GPSLost && millis() - lastGPSUpdate > 1000) {
-        lastGPSUpdate = millis();
-        Serial2.end();
-        GPS.Init();
-        
-                
-        if (SIMULATION) { 
-          // Simple displacement hijacked to send simulated distance
-          simpleDisplacement = (COURSE_LENGTH - distance) * 1000;    
-        }
-        
-        // Checking and adjusting BRAKE_MODE appropriately
-        if (simpleDisplacement < BRAKE_MODE_ENTER) {  
-          BRAKE_MODE = 1; 
-        }
-        if (simpleDisplacement > BRAKE_MODE_EXIT) {
-          BRAKE_MODE = 0;
-        }
-        sendBrakeMode(BRAKE_MODE);
-        
-  
-        targetSpeed = speedLookup(COURSE_LENGTH - (simpleDisplacement / 1000.0));
-        targetPower = powerLookup(COURSE_LENGTH - (simpleDisplacement / 1000.0));     
-        
-  
-        sendSpeed();
-        sendTargetSpeed();
-        sendSimSpeed();
-  
-        sendTargetPower(targetPower);
-        
-        sendSimpleDisplacement();
-        
-        //sendBattery();
-        //sendTemperature();    
-        
-      } else if (millis() - lastGPSUpdate > 10000) {
-        GPSLost = true;
-        //sendGPSCOMM(0);
-  
-        sd_Open(logFilename);
-        sd_Print(" GPS lost");
-        sd_Close();
-        if (SERIAL_PRINT) { Serial.println("GPS lost"); }
-      }
-      
-}
-  
-  
-

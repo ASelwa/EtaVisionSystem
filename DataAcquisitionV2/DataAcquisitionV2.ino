@@ -135,7 +135,7 @@ void loop() {
     
     // O2
     valO2 = analogRead(pinO2);
-    O2_temp = O2_temp + valO2; // read the value of the O2 sensor
+    O2_temp = 0; // Commented since sensor removed: O2_temp + valO2; // read the value of the O2 sensor
     
     // CO2  
     sendRequest(readCO2); 

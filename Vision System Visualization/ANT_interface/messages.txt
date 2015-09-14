@@ -1,0 +1,16 @@
+Power Meeter Messages
+3 40 0 42 0 A5 
+0x40 = channel event, 0 = channel number, 0x42 is the initiating message, 0 is the response code
+3 40 0 43 0 A4 
+0x40 = channel event, 0 = channel number, 0x43 is the initiating message, 0 is the response code
+3 40 0 4B 0 AC 
+0x40 = channel event, 0 = channel number, 0x43 is the initiating message, 0 is the response code
+5 51 0 0 0 B 0 FB 
+0x51 = channel ID msg, 0 = channel number, 0x00 = device number, B = device type ID, 0 = transmission type
+9 4E 0 1 10 1 0 0 0 1 FA 8 
+0x4E = broadcast data msg, 0 = channel number, payload = 1 10 1 0 0 0 1 FA
+0x1 = # indicates manual calibration page, 0x10 = Tx: Crank Torque Freq calibration ID, 
+	0x01 = indicates Offset calibration parameter, 0x01FA = Offset data
+	0x01FA = 506
+9 4E 0 FA FF FF 0 95 51 D8 1C 19
+9 4E 0 FB 0 0 E BF D8 1C FF 92

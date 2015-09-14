@@ -38,23 +38,11 @@ void sendTargetPower(float tarP) {
 
 /**************** SPEED ****************/
 void sendSpeed() {
-  // Send Speed through SLIP
-  *((uint8_t*)slipBuffer + 0) = ID_SPEED;
   
-  if (SIMULATION) {
-      *((int32_t*)(slipBuffer + 1 + 0)) = (int)(velocity*100); //velAvgInt;    
-  }
-  else { 
-    *((int32_t*)(slipBuffer + 1 + 0)) = GPS.Ground_Speed; //velAvgInt; 
-  }
-  *((uint8_t*)slipBuffer + 1 + 4) = 0;
-  SlipPacketSend(6, (char*)slipBuffer, &Serial3);
-}
-
-void sendBrakeSpeed() {
+  velAvgInt = velocity*100;
   // Send Speed through SLIP
   *((uint8_t*)slipBuffer + 0) = ID_SPEED;
-  *((int32_t*)(slipBuffer + 1 + 0)) = velAvgInt; 
+  *((int32_t*)(slipBuffer + 1 + 0)) = velocity * 100; //GPS.Ground_Speed; //velAvgInt; 
   *((uint8_t*)slipBuffer + 1 + 4) = 0;
   SlipPacketSend(6, (char*)slipBuffer, &Serial3);
 }
@@ -62,7 +50,7 @@ void sendBrakeSpeed() {
 void sendTargetSpeed() {
   //Send target speed through SLIP
   *((uint8_t*)slipBuffer + 0) = ID_TSPEED;
-  *((int32_t*)(slipBuffer + 1 + 0)) = targetSpeed;
+  *((int32_t*)(slipBuffer + 1 + 0)) = velocity * 100;
   *((uint8_t*)slipBuffer + 1 + 4) = 0;
   SlipPacketSend(6, (char*)slipBuffer, &Serial3);
 }
@@ -110,10 +98,10 @@ void sendDisplacement() {
 /**************** ACCELERATION ****************/
 void sendAccel() {
     
-    if (SERIAL_PRINT) { Serial.print("Acceleration: "); Serial.println(accel*105/100); } 
+    if (SERIAL_PRINT) { Serial.print("Acceleration: "); Serial.println(accel*105/100); }  
    
     *((uint8_t*)slipBuffer + 0) = ID_ACCEL;
-    *((int32_t*)(slipBuffer + 1 + 0)) = accel*105/100;
+    *((int32_t*)(slipBuffer + 1 + 0)) = accel*-105/100;
     //*((int32_t*)(slipBuffer + 1 + 0)) = (int32_t)(accel*G_BM*100); // 100*m/s^2 scaling, gets adjusted in OSD_SLIP
     *((uint8_t*)slipBuffer + 1 + 4) = 0;
     SlipPacketSend(6, (char*)slipBuffer, &Serial3);
@@ -147,12 +135,7 @@ void sendMode() {
   
   // Send real time or simulation mode through SLIP
   *((uint8_t*)slipBuffer + 0) = ID_MODE;
-  if (SIMULATION) {
-    *((uint8_t*)(slipBuffer + 1 + 0)) = 1;
-  }
-  else {
-    *((uint8_t*)(slipBuffer + 1 + 0)) = 0;
-  }
+  *((uint8_t*)(slipBuffer + 1 + 0)) = SIMULATION;
   *((uint8_t*)slipBuffer + 1 + 2) = 0;
   SlipPacketSend(2, (char*)slipBuffer, &Serial3);
 }

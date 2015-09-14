@@ -1,0 +1,67 @@
+Set up CTS interrupt. 
+Set up ANT+ reset pin 
+Receive successful
+Set up serial ports. 
+Program start!
+Set up Channel. 
+Receive successful
+Receive successful
+Receive successful
+Receive successful
+Receive successful
+Receive successful
+Receive successful
+Receive successful
+Time diff: 2685	Torque tick diff: 354	Cadence: 44.69 RPM	Torque: 12.93Nm 	Power: 60.50W
+Time diff: 6122	Torque tick diff: 1927	Cadence: 39.20 RPM	Torque: 30.86Nm 	Power: 126.69W
+Time diff: 6122	Torque tick diff: 1927	Cadence: 39.20 RPM	Torque: 30.86Nm 	Power: 126.69W
+Time diff: 6122	Torque tick diff: 1927	Cadence: 39.20 RPM	Torque: 30.86Nm 	Power: 126.69W
+Time diff: 6122	Torque tick diff: 1927	Cadence: 39.20 RPM	Torque: 30.86Nm 	Power: 126.69W
+Time diff: 9428	Torque tick diff: 3411	Cadence: 38.18 RPM	Torque: 35.47Nm 	Power: 141.83W
+Time diff: 9428	Torque tick diff: 3411	Cadence: 38.18 RPM	Torque: 35.47Nm 	Power: 141.83W
+Time diff: 9428	Torque tick diff: 3411	Cadence: 38.18 RPM	Torque: 35.47Nm 	Power: 141.83W
+Time diff: 12637	Torque tick diff: 4826	Cadence: 37.98 RPM	Torque: 37.44Nm 	Power: 148.93W
+Time diff: 12637	Torque tick diff: 4826	Cadence: 37.98 RPM	Torque: 37.44Nm 	Power: 148.93W
+Time diff: 12637	Torque tick diff: 4826	Cadence: 37.98 RPM	Torque: 37.44Nm 	Power: 148.93W
+Time diff: 15782	Torque tick diff: 6201	Cadence: 38.02 RPM	Torque: 38.52Nm 	Power: 153.36W
+Time diff: 15782	Torque tick diff: 6201	Cadence: 38.02 RPM	Torque: 38.52Nm 	Power: 153.36W
+Time diff: 15782	Torque tick diff: 6201	Cadence: 38.02 RPM	Torque: 38.52Nm 	Power: 153.36W
+Time diff: 18932	Torque tick diff: 7582	Cadence: 38.03 RPM	Torque: 39.26Nm 	Power: 156.37W
+Time diff: 18932	Torque tick diff: 7582	Cadence: 38.03 RPM	Torque: 39.26Nm 	Power: 156.37W
+Time diff: 18932	Torque tick diff: 7582	Cadence: 38.03 RPM	Torque: 39.26Nm 	Power: 156.37W
+Time diff: 22011	Torque tick diff: 8918	Cadence: 38.16 RPM	Torque: 39.72Nm 	Power: 158.74W
+Time diff: 22011	Torque tick diff: 8918	Cadence: 38.16 RPM	Torque: 39.72Nm 	Power: 158.74W
+Time diff: 22011	Torque tick diff: 8918	Cadence: 38.16 RPM	Torque: 39.72Nm 	Power: 158.74W
+Time diff: 25247	Torque tick diff: 10262	Cadence: 38.02 RPM	Torque: 39.85Nm 	Power: 158.68W
+Time diff: 25247	Torque tick diff: 10262	Cadence: 38.02 RPM	Torque: 39.85Nm 	Power: 158.68W
+Time diff: 25247	Torque tick diff: 10262	Cadence: 38.02 RPM	Torque: 39.85Nm 	Power: 158.68W
+Time diff: 25247	Torque tick diff: 10262	Cadence: 38.02 RPM	Torque: 39.85Nm 	Power: 158.68W
+Time diff: 28424	Torque tick diff: 11656	Cadence: 38.00 RPM	Torque: 40.20Nm 	Power: 159.97W
+Time diff: 28424	Torque tick diff: 11656	Cadence: 38.00 RPM	Torque: 40.20Nm 	Power: 159.97W
+Time diff: 28424	Torque tick diff: 11656	Cadence: 38.00 RPM	Torque: 40.20Nm 	Power: 159.97W
+Time diff: 31590	Torque tick diff: 13009	Cadence: 37.99 RPM	Torque: 40.37Nm 	Power: 160.60W
+Time diff: 31590	Torque tick diff: 13009	Cadence: 37.99 RPM	Torque: 40.37Nm 	Power: 160.60W
+Time diff: 31590	Torque tick diff: 13009	Cadence: 37.99 RPM	Torque: 40.37Nm 	Power: 160.60W
+Time diff: 34652	Torque tick diff: 14449	Cadence: 38.09 RPM	Torque: 40.88Nm 	Power: 163.07W
+Time diff: 34652	Torque tick diff: 14449	Cadence: 38.09 RPM	Torque: 40.88Nm 	Power: 163.07W
+Time diff: 36857	Torque tick diff: 15713	Cadence: 39.07 RPM	Torque: 41.80Nm 	Power: 171.01W
+Time diff: 36857	Torque tick diff: 15713	Cadence: 39.07 RPM	Torque: 41.80Nm 	Power: 171.01W
+Time diff: 38793	Torque tick diff: 16584	Cadence: 40.21 RPM	Torque: 41.91Nm 	Power: 176.50W
+Time diff: 38793	Torque tick diff: 16584	Cadence: 40.21 RPM	Torque: 41.91Nm 	Power: 176.50W
+Time diff: 40746	Torque tick diff: 17467	Cadence: 41.23 RPM	Torque: 42.03Nm 	Power: 181.46W
+Time diff: 40746	Torque tick diff: 17467	Cadence: 41.23 RPM	Torque: 42.03Nm 	Power: 181.46W
+Time diff: 42686	Torque tick diff: 18315	Cadence: 42.17 RPM	Torque: 42.07Nm 	Power: 185.75W
+Time diff: 42686	Torque tick diff: 18315	Cadence: 42.17 RPM	Torque: 42.07Nm 	Power: 185.75W
+Time diff: 44657	Torque tick diff: 19195	Cadence: 42.99 RPM	Torque: 42.14Nm 	Power: 189.73W
+Time diff: 44657	Torque tick diff: 19195	Cadence: 42.99 RPM	Torque: 42.14Nm 	Power: 189.73W
+Time diff: 46598	Torque tick diff: 20041	Cadence: 43.78 RPM	Torque: 42.16Nm 	Power: 193.30W
+Time diff: 46598	Torque tick diff: 20041	Cadence: 43.78 RPM	Torque: 42.16Nm 	Power: 193.30W
+Time diff: 48566	Torque tick diff: 20895	Cadence: 44.48 RPM	Torque: 42.18Nm 	Power: 196.45W
+Time diff: 48566	Torque tick diff: 20895	Cadence: 44.48 RPM	Torque: 42.18Nm 	Power: 196.45W
+Time diff: 50545	Torque tick diff: 21770	Cadence: 45.11 RPM	Torque: 42.23Nm 	Power: 199.46W
+Time diff: 50545	Torque tick diff: 21770	Cadence: 45.11 RPM	Torque: 42.23Nm 	Power: 199.46W
+Time diff: 52501	Torque tick diff: 22608	Cadence: 45.71 RPM	Torque: 42.22Nm 	Power: 202.10W
+Time diff: 54372	Torque tick diff: 23663	Cadence: 46.35 RPM	Torque: 42.67Nm 	Power: 207.08W
+Time diff: 54372	Torque tick diff: 23663	Cadence: 46.35 RPM	Torque: 42.67Nm 	Power: 207.08W
+Time diff: 55880	Torque tick diff: 24578	Cadence: 47.24 RPM	Torque: 43.12Nm 	Power: 213.34W
+Time diff: 57252	Torque tick diff: 25259	Cadence: 48.21 RPM	Torque: 43.25Nm 	Power: 218.36W
