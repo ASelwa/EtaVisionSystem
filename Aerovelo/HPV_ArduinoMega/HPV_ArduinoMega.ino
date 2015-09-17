@@ -673,10 +673,6 @@ void doGPS() {
         }
         sendBrakeMode(BRAKE_MODE);
   
-  
-        simpleDisplacement = simpleDisplacement - qqq;
-        qqq = qqq + 50000;
-  
         targetSpeed = speedLookup(COURSE_LENGTH - (simpleDisplacement / 1000.0));
         targetPower = powerLookup(COURSE_LENGTH - (simpleDisplacement / 1000.0));
         
