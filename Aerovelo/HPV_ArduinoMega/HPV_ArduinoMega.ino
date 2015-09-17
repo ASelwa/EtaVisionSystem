@@ -46,10 +46,10 @@
 // ADJUSTABLE PARAMETERS
 #define PERIOD 1000 // Main loop period
 #define BRAKE_MODE_ENTER 50000 // When distance*1000 [m] from start coordinates is less than this, enter brake mode
-#define BRAKE_MODE_EXIT 1000000 // When distance*1000 [m] from start coordinates is larger than this, exit brake mode
+#define BRAKE_MODE_EXIT 1200000 // When distance*1000 [m] from start coordinates is larger than this, exit brake mode
 #define G_BM 9.79778
 #define TIRE_CIRC 1.93 // Metres
-#define COURSE_LENGTH   8150 // Metres  ****Change this in simulation.cpp also!!!
+#define COURSE_LENGTH   8045 // Metres  ****Change this in simulation.cpp also!!!
 #define POWER_START      300 // Watts
 #define POWER_PRE_SPRINT 337 // Watts
 #define CALIBRATION_TIME 15000 // Milliseconds (Should be a few seconds less than the beginningPanels time, so the pedal calibration value can be seen)
@@ -84,7 +84,12 @@ char logFilename[32] = "LogTest.txt"; // "LGdflt.txt"
 char gpsFilename[32];
 // Default coordinates as bike room (256 McCaul Street)
 int32_t LattitudeStart = 436585166, LongitudeStart = -793934912, AltitudeStart = 117689;
-int32_t LattitudeFinish = 404675025, LongitudeFinish = -1170627136, AltitudeFinish = 1406018;
+
+// Finish based on run on Monday Sept 14 (Morning)
+int32_t LattitudeFinish = 404667129, LongitudeFinish = -1170625839, AltitudeFinish = 1408776;
+
+// Finish based on coordinates from old SD card
+//int32_t LattitudeFinish = 404675025, LongitudeFinish = -1170627136, AltitudeFinish = 1406018;
 
 int32_t LattitudePrev, LongitudePrev, AltitudePrev;
 int8_t startSet = 0;
@@ -161,6 +166,8 @@ int threshold = 288;
 // Runtime
 uint16_t timePlaceholder = 0;
 
+int32_t qqq = 0;
+
 /**********************************************************************************************************************
  *                                                         SETUP                                                      *
  **********************************************************************************************************************/
@@ -224,9 +231,9 @@ void setup() {
   // Calibrate pedals
   if (CALIBRATE) { calibrate(); }
 
-    // PUT OSD INTO BRAKE MODE (for testing)
-  BRAKE_MODE = 1;
-  sendBrakeMode(BRAKE_MODE);
+  // PUT OSD INTO BRAKE MODE (for testing)
+//  BRAKE_MODE = 1;
+//  sendBrakeMode(BRAKE_MODE);
 
   TIME = millis() + PERIOD; 
  
@@ -292,7 +299,7 @@ void loop() {
 //      Serial.println(accel*105/100);
       
       sendAccel();
-      sendSpeed();
+      //sendSpeed();
 
      
     //Serial.print("BRAKE MODE     ");
@@ -666,10 +673,19 @@ void doGPS() {
         }
         sendBrakeMode(BRAKE_MODE);
   
+  
+        simpleDisplacement = simpleDisplacement - qqq;
+        qqq = qqq + 50000;
+  
         targetSpeed = speedLookup(COURSE_LENGTH - (simpleDisplacement / 1000.0));
         targetPower = powerLookup(COURSE_LENGTH - (simpleDisplacement / 1000.0));
-  
-  
+        
+//        Serial.print("targetSpeed: ");
+//        Serial.print(targetSpeed*0.036);
+//        Serial.print("    distance: ");
+//        Serial.println(COURSE_LENGTH - ((simpleDisplacement-qqq) / 1000.0));
+//        Serial.print("simpleDisplacement: ");
+//        Serial.println(simpleDisplacement / 1000.0);
   
         sendSpeed();
         sendTargetSpeed();
@@ -704,8 +720,7 @@ void doGPS() {
         
   
         targetSpeed = speedLookup(COURSE_LENGTH - (simpleDisplacement / 1000.0));
-        targetPower = powerLookup(COURSE_LENGTH - (simpleDisplacement / 1000.0));     
-        
+        targetPower = powerLookup(COURSE_LENGTH - (simpleDisplacement / 1000.0));
   
         sendSpeed();
         sendTargetSpeed();

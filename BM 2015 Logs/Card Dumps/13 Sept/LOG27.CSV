@@ -1,0 +1,5 @@
+Time (hh:mm:ss), Time (ms), Displacement (m), Sim Distance (m), GPS Speed (km/h), HallEff Speed (km/h), Target Speed (km/h), Sim Speed (km/h), Power (W), Cadence (rpm), Accel Force (N), Latitude (deg), Longitude (deg), Altitude (m), Heart Rate (bpm), Battery (V), Temperature (C),Begin calibration... Waiting for calibration messages.Calibration timed-out...Offset is set as default: 507 Hz GPS lost
+17:17:13, 19453.0039367, 8050, 0.0, 126.6480025, 0, 19.9799994, 0, 0, 0, 0, 41.1925163, -103.9695434, 1513.7681579, 0, 3.8912, 23.3607, 
+17:17:14, 20453.0039367, 8050, 0.0, 126.7560043, 0, 19.9799994, 0, 0, 0, 0, 41.1925201, -103.9700393, 1514.3172302, 0, 3.8912, 23.1412, 
+17:17:15, 21454.0041198, 8050, 0.0, 126.6480025, 0, 19.9799994, 0, 0, 0, 0, 41.1925239, -103.9706344, 1515.6221618, 0, 3.9074, 23.2878, 
+17:17:16, 22454.0043029, 8050, 0.0, 127.0080032, 0, 19.9799994, 0, 0, 0, 0, 41.1925315, -103.9709624, 1516.3372497, 0, 3.9074, 23.2878, 

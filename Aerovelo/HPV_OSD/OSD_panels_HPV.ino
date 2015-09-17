@@ -223,14 +223,14 @@ void panDisplace(int first_col, int first_line){
   osd.openPanel();
   
   
-  osd.setPanel(first_col-3, first_line);
+  osd.setPanel(1, 6);
   osd.openPanel();
   osd.printf("Vg:%5.1f     ", GPS_Speed); // GS = 0xE9 char
   osd.closePanel();
   
-  osd.setPanel(first_col, first_line+2);
-  osd.openPanel();
-  osd.printf("%5li N ", accelOSD);
+//  osd.setPanel(first_col, first_line+2);
+//  osd.openPanel();
+//  osd.printf("%5li N ", accelOSD);
   //osd.printf("%5.1f", accelOSD);
   osd.closePanel();
   
@@ -256,7 +256,7 @@ void panSpeeds(int first_col, int first_line){
   
   osd.setPanel(first_col, first_line + 2);
   osd.openPanel();
-  osd.printf(" %%:%5.0f     ", 100 - (GPS_Speed - simulatedSpeed) / simulatedSpeed * 100);
+  osd.printf(" %%:%5.0f     ", (GPS_Speed - simulatedSpeed) / simulatedSpeed * 100 + 100);
   osd.closePanel();
 }
 
