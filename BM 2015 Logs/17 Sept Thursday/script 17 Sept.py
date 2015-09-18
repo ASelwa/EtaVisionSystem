@@ -24,7 +24,7 @@ import scipy.signal as sps
 
 
 
-filename = "Morn.CSV"
+filename = "Eve.CSV"
 data = np.genfromtxt(filename, delimiter=",", skip_header=1)
 
 # Interpolate time since lost precision (assume constant sampling frequency)
@@ -35,15 +35,15 @@ caliper = data[:, 3]
 disk = data[:, 4]
 ambient = data[:, 5]
 
-#%%
 
 
-mainLog = "MornMain.CSV"
+
+mainLog = "EveMain.CSV"
 
 dataMain = np.genfromtxt(mainLog, delimiter=",", skip_header=10)
 
 # To align the temp and air data with the speed data
-offset = -30 # seconds
+offset = -82 # seconds
 plotIndex = 4300 # How many datapoints to plot 
 
 rawTime = dataMain[:, 1] 
@@ -169,14 +169,14 @@ ax.grid(True)
 ax.set_xlabel('Time [s]')
 plt.title("Thurs Sept 17")
 
-#ax2.plot(rawTime, speed, label='Speed', color='g')
-#ax2.set_ylabel("Speed (m/s)",fontsize=12)
+ax2.plot(rawTime, speed, label='Speed', color='g')
+ax2.set_ylabel("Speed (m/s)",fontsize=12)
 
 
-ax2.plot(time, caliper, label='Caliper', color='g')
-ax2.plot(time, disk, label='Disk', color='r')
+#ax2.plot(time, caliper, label='Caliper', color='g')
+#ax2.plot(time, disk, label='Disk', color='r')
 #ax.plot(time, ambient, label='Ambient', color='y')
-ax2.set_ylabel("Temperature [C]",fontsize=12)
+#ax2.set_ylabel("Temperature [C]",fontsize=12)
 
 
 ax.plot(time, moving_averageV3(CO2, 50), label='CO2', color='b')

@@ -13,13 +13,13 @@ void sendPower() {
   *((uint8_t*)slipBuffer + 1 + 3) = 0;
   SlipPacketSend(4, (char*)slipBuffer, &Serial3);
 
-/*
   // Average Power
   *((uint8_t*)slipBuffer + 0) = ID_AVG_POWER;
   *((uint16_t*)(slipBuffer + 1 + 0)) = averagePower;
   *((uint8_t*)slipBuffer + 1 + 2) = 0;
   SlipPacketSend(3, (char*)slipBuffer, &Serial3);
-  
+
+/*  
   // 10 second running average power
   *((uint8_t*)slipBuffer + 0) = ID_10S_POWER;
   *((uint16_t*)(slipBuffer + 1 + 0)) = power10s;
